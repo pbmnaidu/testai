@@ -1,0 +1,332 @@
+@import "./tailwind.generated.css";
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap');
+
+:root {
+  --bg-main: #f4f6f9;
+  --surface-card: #ffffff;
+  --surface-hover: #f8fafc;
+  --border-color: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --accent-emerald: #10b981;
+  --accent-indigo: #6366f1;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.011em;
+}
+
+font-mono, .font-mono {
+  font-family: 'JetBrains Mono', monospace !important;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.card-panel {
+  background-color: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 1.25rem;
+  box-shadow: 0 4px 20px -4px rgba(15, 23, 42, 0.03), 0 2px 6px -2px rgba(15, 23, 42, 0.02);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-panel:hover {
+  box-shadow: 0 12px 30px -8px rgba(15, 23, 42, 0.07), 0 4px 12px -2px rgba(15, 23, 42, 0.03);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 1.25rem;
+  box-shadow: 0 8px 32px -8px rgba(15, 23, 42, 0.05);
+}
+
+select,
+input[type="text"],
+input[type="search"] {
+  color-scheme: light;
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+input[type="text"]::placeholder,
+input[type="search"]::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1 !important;
+}
+
+input[type="text"]:focus,
+input[type="search"]:focus,
+select:focus {
+  background-color: #ffffff !important;
+  border-color: #0f172a !important;
+  outline: 2px solid #0f172a !important;
+}
+
+select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  padding: 8px !important;
+}
+
+button {
+  color-scheme: light;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus,
+button:active {
+  outline: none;
+}
+
+/* Custom Human Design Accents */
+.accent-glow-emerald {
+  box-shadow: 0 0 20px -3px rgba(16, 185, 129, 0.35);
+}
+
+.accent-glow-amber {
+  box-shadow: 0 0 20px -3px rgba(245, 158, 11, 0.35);
+}
+
+.accent-glow-rose {
+  box-shadow: 0 0 20px -3px rgba(239, 68, 68, 0.35);
+}
+
+/* ================= DARK MODE / NIGHT VIEW OVERRIDES ================= */
+.dark body {
+  background-color: #080c14 !important;
+  color: #f8fafc !important;
+}
+
+.dark .bg-\[\#f3f4f6\],
+.dark .bg-\[\#f4f6f9\] {
+  background-color: #080c14 !important;
+}
+
+.dark .bg-white {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+}
+
+.dark .bg-slate-50 {
+  background-color: #162032 !important;
+}
+
+.dark .bg-slate-100 {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+.dark .card-panel {
+  background-color: #0f172a !important;
+  border-color: #1e293b !important;
+  color: #f8fafc !important;
+  box-shadow: 0 8px 30px -10px rgba(0, 0, 0, 0.5) !important;
+}
+
+.dark .glass-card {
+  background: rgba(15, 23, 42, 0.9) !important;
+  border-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+.dark .text-slate-900 {
+  color: #f8fafc !important;
+}
+
+.dark .text-slate-800 {
+  color: #f1f5f9 !important;
+}
+
+.dark .text-slate-700 {
+  color: #e2e8f0 !important;
+}
+
+.dark .text-slate-600 {
+  color: #cbd5e1 !important;
+}
+
+.dark .text-slate-500 {
+  color: #94a3b8 !important;
+}
+
+.dark .border-slate-200,
+.dark .border-slate-200\/80,
+.dark .border-slate-200\/90,
+.dark .border-slate-100 {
+  border-color: #1e293b !important;
+}
+
+.dark select,
+.dark input[type="text"],
+.dark input[type="search"] {
+  color-scheme: dark !important;
+  background-color: #0b0f19 !important;
+  color: #f8fafc !important;
+  border-color: #1e293b !important;
+}
+
+.dark select option {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+}
+
+/* Folder 2-inspired daytime palette for the theme switch. The existing
+   utility classes are intentionally retained so the original dark view is
+   unchanged, while hard-coded dashboard text remains readable in light mode. */
+html:not(.dark) .text-slate-100 { color: #1f2937 !important; }
+html:not(.dark) .text-slate-200 { color: #334155 !important; }
+html:not(.dark) .text-slate-300 { color: #475569 !important; }
+html:not(.dark) .text-slate-400 { color: #64748b !important; }
+html:not(.dark) [class*="bg-slate-800"] { background-color: #f1f5f9 !important; }
+html:not(.dark) [class*="bg-slate-900"] { background-color: #1f3a63 !important; }
+html:not(.dark) [class*="border-slate-800"] { border-color: #dbe3ee !important; }
+html:not(.dark) .hover\:bg-slate-800:hover { background-color: #e2e8f0 !important; }
+
+/* Component-scoped daytime corrections. These rules deliberately live
+   outside the dark-mode block so the existing night view is unchanged. */
+html:not(.dark) .risk-evidence-engine-summary {
+  background: #eef6f5 !important;
+  border: 1px solid #b7d9d1 !important;
+  color: #1f2937 !important;
+}
+html:not(.dark) .risk-evidence-engine-summary h4 { color: #0f766e !important; }
+html:not(.dark) .risk-evidence-engine-summary p { color: #1f2937 !important; }
+
+html:not(.dark) .risk-evidence-admin-action {
+  background: #eff6ff !important;
+  border: 1px solid #bfdbfe !important;
+  color: #1e3a8a !important;
+}
+html:not(.dark) .risk-evidence-admin-action .text-emerald-400 { color: #047857 !important; }
+html:not(.dark) .risk-evidence-admin-action .text-slate-200 { color: #1e3a8a !important; }
+
+html:not(.dark) .gis-map-panel {
+  background: #ffffff !important;
+  border-color: #dbe3ee !important;
+  box-shadow: 0 8px 24px -14px rgba(15, 23, 42, 0.28) !important;
+}
+html:not(.dark) .gis-map-filter,
+html:not(.dark) .gis-map-header-chip,
+html:not(.dark) .gis-map-live-chip {
+  background: #ffffff !important;
+  border-color: #dbe3ee !important;
+  color: #334155 !important;
+}
+html:not(.dark) .gis-map-filter .text-slate-400 { color: #64748b !important; }
+html:not(.dark) .gis-map-filter .hover\:text-slate-200:hover { color: #0f172a !important; }
+html:not(.dark) .gis-map-canvas {
+  background: #edf4f7 !important;
+  border-color: #cbd5e1 !important;
+}
+/* The map image is close to square. Give its overlay layer an explicit width
+   so absolute marker percentages never collapse into a single vertical line
+   when the utility CSS is regenerated without arbitrary aspect-ratio rules. */
+.gis-map-image-layer {
+  width: min(100%, 381px);
+  height: 100%;
+  aspect-ratio: 724 / 740;
+}
+html:not(.dark) .gis-node-badge { border-color: #ffffff !important; }
+html:not(.dark) .gis-map-tooltip {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: 0 12px 24px -12px rgba(15, 23, 42, 0.35) !important;
+}
+html:not(.dark) .gis-map-tooltip .text-slate-400 { color: #64748b !important; }
+
+html:not(.dark) .gis-selected-region-panel {
+  background: #ffffff !important;
+  border-color: #dbe3ee !important;
+  color: #1f2937 !important;
+}
+html:not(.dark) .gis-risk-badge--critical { background: #fff1f2 !important; color: #be123c !important; border-color: #fecdd3 !important; }
+html:not(.dark) .gis-risk-badge--high { background: #fffbeb !important; color: #b45309 !important; border-color: #fde68a !important; }
+html:not(.dark) .gis-risk-badge--medium { background: #fff7ed !important; color: #c2410c !important; border-color: #fed7aa !important; }
+html:not(.dark) .gis-risk-badge--low { background: #ecfdf5 !important; color: #047857 !important; border-color: #a7f3d0 !important; }
+html:not(.dark) .gis-duplicate-detail {
+  background: #fffaf0 !important;
+  border-color: #f5d9a8 !important;
+}
+html:not(.dark) .gis-duplicate-count { color: #b45309 !important; }
+html:not(.dark) .gis-state-risk-detail {
+  background: #f8fafc !important;
+  border-color: #dbe3ee !important;
+}
+html:not(.dark) .gis-dominant-risk { color: #b45309 !important; }
+html:not(.dark) .gis-risk-signal-card {
+  background: #ffffff !important;
+  border-color: #dbe3ee !important;
+}
+html:not(.dark) .gis-coordinates {
+  background: #f8fafc !important;
+  border-color: #dbe3ee !important;
+  color: #64748b !important;
+}
+html:not(.dark) .gis-coordinates .text-slate-300 { color: #334155 !important; }
+html:not(.dark) .gis-map-info {
+  background: #eff6ff !important;
+  border-color: #bfdbfe !important;
+  color: #1d4ed8 !important;
+}
+
+html:not(.dark) .schedule-monitor-banner {
+  background: linear-gradient(90deg, #fff8eb 0%, #ffffff 55%, #f8fbfd 100%) !important;
+  border-color: #f3c98b !important;
+  color: #1f2937 !important;
+}
+html:not(.dark) .schedule-monitor-banner h3 { color: #0f172a !important; }
+html:not(.dark) .schedule-monitor-banner p { color: #64748b !important; }
+html:not(.dark) .schedule-monitor-icon {
+  background: #fff3d6 !important;
+  color: #b45309 !important;
+  border-color: #f3c98b !important;
+}
+html:not(.dark) .schedule-monitor-badge {
+  background: #fff3d6 !important;
+  color: #92400e !important;
+  border-color: #f3c98b !important;
+}
+html:not(.dark) .schedule-monitor-action {
+  background: #fff7ed !important;
+  color: #b45309 !important;
+  border-color: #f3c98b !important;
+}
+
+/* Explicit shell geometry keeps the fixed/collapsed layout stable across
+   Tailwind versions and mirrors folder 2's 64px collapsed rail. */
+.sidebar-shell { width: 18rem; }
+.shell-topbar { left: 0; }
+.shell-main { margin-left: 0; }
+@media (min-width: 1024px) {
+  .sidebar-shell { width: 16rem; }
+  .sidebar-shell.sidebar-shell--collapsed { width: 4rem; }
+  .shell-topbar { left: 16rem; }
+  .shell-topbar.shell-topbar--collapsed { left: 4rem; }
+  .shell-main { margin-left: 16rem; }
+  .shell-main.shell-main--collapsed { margin-left: 4rem; }
+}

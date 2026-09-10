@@ -1,0 +1,28 @@
+[
+  {
+    "sync_id": "SYNC-1789075530",
+    "timestamp": "2026-09-11T02:55:30.729111",
+    "duration_seconds": 1.21,
+    "status": "SUCCESS",
+    "snapshot_id": "SNAP-2026-09-11",
+    "source_url": "https://mplads.gov.in/public/dataset/latest",
+    "total_records": 164614,
+    "new_records_count": 0,
+    "updated_records_count": 1,
+    "unchanged_records_count": 79067,
+    "next_scheduled_sync": "2026-09-18 02:55:30"
+  },
+  {
+    "sync_id": "SYNC-1788933914",
+    "timestamp": "2026-09-09T11:35:14.973315",
+    "duration_seconds": 0.48,
+    "status": "SUCCESS",
+    "snapshot_id": "SNAP-2026-09-09",
+    "source_url": "https://mplads.gov.in/public/dataset/latest",
+    "total_records": 164614,
+    "new_records_count": 0,
+    "updated_records_count": 0,
+    "unchanged_records_count": 164614,
+    "next_scheduled_sync": "2026-09-16 11:35:14"
+  }
+]

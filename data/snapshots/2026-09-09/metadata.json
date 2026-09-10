@@ -1,0 +1,33 @@
+{
+  "snapshot_id": "SNAP-2026-09-09",
+  "date": "2026-09-09",
+  "created_at": "2026-09-09T11:35:15.447870",
+  "total_records": 164614,
+  "files": {
+    "t1": {
+      "file_name": "t1_allocated_limits.parquet",
+      "record_count": 543,
+      "sha256_hash": "5d8eedd06b789809011715f93e299bb1fb02537417724c73380808d6155a3339"
+    },
+    "t3": {
+      "file_name": "t3_works_recommended.parquet",
+      "record_count": 28001,
+      "sha256_hash": "e2a4e0f33b059027db005a59c8c740b7717c84c0887064ea589bbf601697bcb1"
+    },
+    "t4": {
+      "file_name": "t4_works_sanctioned.parquet",
+      "record_count": 79068,
+      "sha256_hash": "13cebe49eee13647b58284e737391e5f8503cd1efc90ae986e69255cfd248a32"
+    },
+    "t5": {
+      "file_name": "t5_works_completed.parquet",
+      "record_count": 12001,
+      "sha256_hash": "a703c75a0c4b21e1dde9484affd60802b9258f6e7f8ae3c7be286992738b138c"
+    },
+    "t6": {
+      "file_name": "t6_expenditure.parquet",
+      "record_count": 45001,
+      "sha256_hash": "e19ae60f3e74be114c49981234241bd6d16b03103f9223a602530087fc01234f"
+    }
+  }
+}

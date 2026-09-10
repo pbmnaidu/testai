@@ -1,0 +1,13 @@
+# Exclude Python backend, data files, and other non-frontend assets from Vercel build
+api/
+src/
+data/
+docs/
+*.py
+*.parquet
+*.csv
+*.log
+.venv/
+venv/
+node_modules/
+frontend/node_modules/
