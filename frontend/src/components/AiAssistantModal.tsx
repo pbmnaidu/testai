@@ -36,7 +36,7 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
     {
       id: '1',
       sender: 'assistant',
-      text: `Hello! I am your MPLADS AI Risk Copilot. I analyze real-time expenditure data, physical-financial progress gaps, duplicate work candidates, and compliance evidence gaps across ${totalWorks ? totalWorks.toLocaleString() : 'the current'} works.\n\nHow can I assist your review today?`,
+      text: `Hello! I am your MPLADS InsightGrid Copilot. I analyze real-time expenditure data, physical-financial progress gaps, duplicate work candidates, and compliance evidence gaps across ${totalWorks ? totalWorks.toLocaleString() : 'the current'} works.\n\nHow can I assist your review today?`,
       timestamp: 'Just now',
     },
   ]);
@@ -47,7 +47,7 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
     if (!totalWorks) return;
     setMessages((previous) => {
       if (previous.length !== 1 || previous[0].id !== '1') return previous;
-      return [{ ...previous[0], text: `Hello! I am your MPLADS AI Risk Copilot. I analyze real-time expenditure data, physical-financial progress gaps, duplicate work candidates, and compliance evidence gaps across ${totalWorks.toLocaleString()} works.\n\nHow can I assist your review today?` }];
+      return [{ ...previous[0], text: `Hello! I am your MPLADS InsightGrid Copilot. I analyze real-time expenditure data, physical-financial progress gaps, duplicate work candidates, and compliance evidence gaps across ${totalWorks.toLocaleString()} works.\n\nHow can I assist your review today?` }];
     });
   }, [totalWorks]);
 
@@ -143,7 +143,7 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
           },
         ];
       } else {
-        aiText = `I have analyzed your query regarding "${textToSend}".\n\nThe MPLADS AI Risk Intelligence Platform evaluates works across 4 key dimensions:\n1. Composite Multi-Signal Risk Score\n2. Financial Disbursal Anomaly Model\n3. Candidate Duplicate Vector Matching\n4. Compliance & Utilization Certificate Evidence Gaps.`;
+        aiText = `I have analyzed your query regarding "${textToSend}".\n\nMPLADS InsightGrid evaluates works across 4 key dimensions:\n1. Composite Multi-Signal Risk Score\n2. Financial Disbursal Anomaly Model\n3. Candidate Duplicate Vector Matching\n4. Compliance & Utilization Certificate Evidence Gaps.`;
         actions = [
           {
             label: 'Explore Executive Dashboard',
@@ -180,7 +180,7 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">MPLADS AI Risk Copilot</h3>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">MPLADS InsightGrid Copilot</h3>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live DSS Engine
                 </span>

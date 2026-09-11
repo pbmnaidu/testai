@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__) + "/.."))
 from src.preprocessing.cleaner import preprocess_all
 from src.data.master_builder import build_master_dataset
 from src.modules.financial_anomaly import run_financial_anomaly_detection
+from src.data.build_financial_benchmarks import build_financial_benchmarks
 from src.modules.duplicate_detection import run_duplicate_work_detection
 from src.modules.compliance_engine import run_compliance_engine
 from src.modules.delay_risk import run_schedule_risk_engine
@@ -33,6 +34,8 @@ def run_entire_pipeline(progress_callback=None, run_preprocessing=True, record_s
     
     progress("FINANCIAL_ISOLATION_FOREST")
     run_financial_anomaly_detection()
+    progress("FINANCIAL_PEER_BENCHMARKS")
+    build_financial_benchmarks()
     
     progress("DUPLICATE_TFIDF_COSINE")
     run_duplicate_work_detection()

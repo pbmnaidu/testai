@@ -95,8 +95,11 @@ def write_validation_template(df, path, sample_size=500):
     groups = [df[generic], df[~generic]]
     sample = pd.concat([g.sample(min(len(g), max(1, sample_size // len(groups))), random_state=42) for g in groups]).drop_duplicates("work_id")
     if len(sample) < sample_size:
-        remaining = df[~df.work_id.isin(sample.work_id)].sample(min(sample_size-len(sample), len(df)-len(sample)), random_state=42)
-        sample = pd.concat([sample, remaining])
+        remaining_pool = df[~df.work_id.isin(sample.work_id)]
+        remaining_count = min(sample_size - len(sample), len(remaining_pool))
+        if remaining_count > 0:
+            remaining = remaining_pool.sample(remaining_count, random_state=42)
+            sample = pd.concat([sample, remaining])
     out = pd.DataFrame({"work_id": sample.work_id, "sanctioned_work_description": sample.description, "original_work_category": sample.work_category, "human_category": "", "human_subcategory": "", "ai_category": sample.ai_work_category, "ai_subcategory": sample.work_subcategory, "classification_confidence": sample.category_confidence, "classification_source": sample.category_source, "correct": "", "reviewer_notes": ""})
     os.makedirs(os.path.dirname(path), exist_ok=True)
     out.head(sample_size).to_csv(path, index=False)

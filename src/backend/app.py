@@ -12,12 +12,20 @@ from fastapi.middleware.cors import CORSMiddleware
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__) + "/../.."))
 
 from src.data.sync.snapshot_manager import get_snapshot_history
-from src.data.sync.sync_runner import get_sync_status as get_automation_status, preview_diff, commit_preview, run_sync_job, start_scheduler
+from src.data.sync.sync_runner import (
+    get_sync_status as get_automation_status,
+    get_sync_health,
+    preview_diff,
+    commit_preview,
+    run_sync_job,
+    start_sync_job,
+    start_scheduler,
+)
 from src.data.sync.training_manager import TRAINING_MANAGER
 from src.utils.mlflow_tracker import MLflowTracker
 from src.modules.material_context import analyze_material_context
-from src.modules.sector_classifier import classify_and_cost, MPLADS_SECTOR_MATRIX
 from src.modules.work_classifier import classify_work_descriptions
+from src.modules.compliance_engine import GUIDELINE_SOURCE, public_scope_matrix
 
 app = FastAPI(
     title="MPLADS AI Monitoring & Risk Intelligence Platform API",
@@ -164,8 +172,12 @@ def _read_master_frame(path: str) -> pd.DataFrame:
 
 
 def get_data():
+    master_p = os.path.join(FEATURES_DIR, "master_project_risk_scores.parquet")
+    master_mtime = os.path.getmtime(master_p) if os.path.exists(master_p) else None
+    if _DATA_CACHE.get("_master_mtime") != master_mtime:
+        _DATA_CACHE.clear()
+        _DATA_CACHE["_master_mtime"] = master_mtime
     if "master" not in _DATA_CACHE:
-        master_p = os.path.join(FEATURES_DIR, "master_project_risk_scores.parquet")
         try:
             if os.path.exists(master_p):
                 df = _read_master_frame(master_p)
@@ -191,6 +203,34 @@ def get_data():
         _DATA_CACHE["duplicates"] = dups
 
         _DATA_CACHE["dup_index"] = LazyDuplicateIndex(dups)
+
+    if "duplicate_clusters" not in _DATA_CACHE:
+        cluster_p = os.path.join(FEATURES_DIR, "duplicate_work_clusters.parquet")
+        try:
+            clusters = pd.read_parquet(cluster_p) if os.path.exists(cluster_p) else pd.DataFrame()
+        except Exception:
+            clusters = pd.DataFrame()
+        _DATA_CACHE["duplicate_clusters"] = clusters
+
+    if "constituency_compliance" not in _DATA_CACHE:
+        constituency_p = os.path.join(FEATURES_DIR, "constituency_compliance_analysis.parquet")
+        try:
+            _DATA_CACHE["constituency_compliance"] = (
+                pd.read_parquet(constituency_p) if os.path.exists(constituency_p) else pd.DataFrame()
+            )
+        except Exception:
+            _DATA_CACHE["constituency_compliance"] = pd.DataFrame()
+
+    benchmark_p = os.path.join(FEATURES_DIR, "financial_peer_benchmarks.parquet")
+    benchmark_mtime = os.path.getmtime(benchmark_p) if os.path.exists(benchmark_p) else None
+    if _DATA_CACHE.get("_benchmark_mtime") != benchmark_mtime:
+        _DATA_CACHE.pop("financial_peer_benchmarks", None)
+        _DATA_CACHE["_benchmark_mtime"] = benchmark_mtime
+    if "financial_peer_benchmarks" not in _DATA_CACHE:
+        try:
+            _DATA_CACHE["financial_peer_benchmarks"] = pd.read_parquet(benchmark_p) if os.path.exists(benchmark_p) else pd.DataFrame()
+        except Exception:
+            _DATA_CACHE["financial_peer_benchmarks"] = pd.DataFrame()
 
     if "t1" not in _DATA_CACHE:
         t1_p = os.path.join(PROCESSED_DIR, "t1_allocated_limits.parquet")
@@ -259,6 +299,24 @@ def clean_record_for_json(record):
 
     return {str(key): clean_value(value) for key, value in record.items()}
 
+
+def _analytics_metadata() -> dict:
+    sync = get_automation_status()
+    data_version = sync.get("data_version") or sync.get("current_snapshot_id") or "UNKNOWN"
+    analysis_version = sync.get("analysis_version") or "UNKNOWN"
+    return {
+        "data_version": data_version,
+        "analysis_version": analysis_version,
+        "generated_at": datetime.now().astimezone().isoformat(),
+        "last_successful_sync": sync.get("last_successful_sync"),
+        "analysis_generated_at": sync.get("analysis_generated_at"),
+        "stale_analysis": (
+            analysis_version not in {"UNKNOWN", None}
+            and data_version not in {"UNKNOWN", None}
+            and analysis_version != data_version
+        ),
+    }
+
 @app.get("/api/health")
 def health_check():
     master_p = os.path.join(FEATURES_DIR, "master_project_risk_scores.parquet")
@@ -318,6 +376,27 @@ def get_national_overview():
         return "LOW"
 
     state_agg["risk_level"] = state_agg["average_risk_score"].fillna(0).map(state_risk_level)
+    state_agg["risk_percentage"] = (
+        state_agg["high_risk_works"] / state_agg["total_works"].replace(0, np.nan) * 100
+    ).fillna(0).round(1)
+
+    for label, column in (
+        ("financial_risk_works", "financial_risk_score"),
+        ("compliance_risk_works", "compliance_risk_score"),
+        ("duplicate_risk_works", "duplicate_risk_score"),
+        ("schedule_risk_works", "schedule_risk_score"),
+    ):
+        if column in state_source.columns:
+            counts = (
+                pd.to_numeric(state_source[column], errors="coerce")
+                .fillna(0)
+                .ge(35)
+                .groupby(state_source["state"])
+                .sum()
+            )
+            state_agg[label] = state_agg["state"].map(counts).fillna(0).astype(int)
+        else:
+            state_agg[label] = 0
 
     # Duplicate candidates are the only duplicate-specific quantity available
     # in the current feature store.  Do not label overall high-risk works as
@@ -341,13 +420,13 @@ def get_national_overview():
     
     cat_list = [clean_record_for_json(r) for r in cat_agg.to_dict(orient="records")]
 
-    financial_scores = pd.to_numeric(master.get("financial_risk_score", pd.Series(0, index=master.index)), errors="coerce").fillna(0)
-    peer_ratios = pd.to_numeric(master.get("amount_to_peer_ratio", pd.Series(0, index=master.index)), errors="coerce").fillna(0)
     financial_outlier_mask = master.get("is_financial_outlier", pd.Series(False, index=master.index)).fillna(False).astype(bool)
+    historical_available = pd.to_numeric(master.get("historical_sample_size", pd.Series(0, index=master.index)), errors="coerce").fillna(0).ge(2)
+    unit_available = pd.to_numeric(master.get("historical_unit_price_count", pd.Series(0, index=master.index)), errors="coerce").fillna(0).ge(2)
     financial_summary = {
-        "flagged_financial_outliers": int(financial_scores.ge(50).sum()),
-        "high_peer_ratio_works": int(peer_ratios.gt(3).sum()),
-        "isolation_outlier_rate_pct": round(float(financial_outlier_mask.mean() * 100), 2) if len(master) else 0.0,
+        "flagged_financial_outliers": int(financial_outlier_mask.sum()),
+        "historical_comparison_available": int(historical_available.sum()),
+        "unit_price_comparisons": int(unit_available.sum()),
     }
     
     return {
@@ -371,7 +450,181 @@ def get_national_overview():
         "top_states": state_list[:10],
         "state_metrics": state_list,
         "financial_summary": financial_summary,
-        "category_distribution": cat_list[:8]
+        "category_distribution": cat_list[:8],
+        "metadata": _analytics_metadata(),
+    }
+
+
+@app.get("/api/analytics/overview")
+def get_analytics_overview():
+    """Versioned analytics contract used by charts and external reviewers."""
+    return get_national_overview()
+
+
+def _normalise_state_key(value: object) -> str:
+    text = str(value or "").upper().replace("&", " AND ")
+    return " ".join("".join(char if char.isalnum() else " " for char in text).split())
+
+
+def _state_frame(master: pd.DataFrame, state: str | None) -> pd.DataFrame:
+    if master.empty or "state" not in master.columns:
+        return master.iloc[0:0]
+    frame = master[master["state"].fillna("").astype(str).str.strip().ne("")].copy()
+    if state and state.strip():
+        requested = _normalise_state_key(state)
+        aliases = {
+            "DADRA AND NAGAR HAVELI": "THE DADRA AND NAGAR HAVELI AND DAMAN AND DIU",
+        }
+        requested = aliases.get(requested, requested)
+        frame = frame[frame["state"].map(_normalise_state_key).eq(requested)]
+    return frame
+
+
+@app.get("/api/analytics/states")
+def get_state_analytics():
+    """Return state risk statistics derived from the individual work records."""
+    overview = get_national_overview()
+    return {
+        "metadata": overview.get("metadata", _analytics_metadata()),
+        "states": overview.get("state_metrics", []),
+        "methodology": {
+            "source": "individual work records in the active validated dataset",
+            "flag_threshold": 35,
+            "risk_percentage": "works with any dimension score >= 35 divided by total works",
+        },
+    }
+
+
+@app.get("/api/analytics/states/{state}/highest-risk")
+def get_highest_risk_works_by_state(
+    state: str,
+    limit: int = Query(10, ge=1, le=100),
+):
+    """Return actionable highest-risk work records for one state."""
+    frame = _state_frame(get_data()["master"], state)
+    if frame.empty:
+        return {
+            "state": state,
+            "total_works": 0,
+            "records": [],
+            "metadata": _analytics_metadata(),
+        }
+
+    dimensions = {
+        "financial": "financial_risk_score",
+        "compliance": "compliance_risk_score",
+        "duplicate": "duplicate_risk_score",
+        "schedule": "schedule_risk_score",
+    }
+    for column in dimensions.values():
+        if column not in frame.columns:
+            frame[column] = 0
+        frame[column] = pd.to_numeric(frame[column], errors="coerce").fillna(0)
+    for key, column in dimensions.items():
+        frame[key] = frame[column]
+    frame["priority_score"] = frame[list(dimensions.values())].max(axis=1)
+    frame["risk_level"] = frame["priority_score"].map(
+        lambda value: "CRITICAL" if value >= 85 else "HIGH" if value >= 65 else "MEDIUM" if value >= 35 else "LOW"
+    )
+    score_to_type = {column: key for key, column in dimensions.items()}
+    frame["risk_type"] = frame[list(dimensions.values())].idxmax(axis=1).map(score_to_type)
+
+    def explanation(row):
+        field = dimensions.get(row["risk_type"])
+        if row["risk_type"] == "financial":
+            return row.get("financial_explanation") or "The work was flagged for financial review."
+        if row["risk_type"] == "compliance":
+            return row.get("compliance_explanation") or "The work was flagged for compliance review."
+        if row["risk_type"] == "schedule":
+            return row.get("schedule_explanation") or "The work was flagged for schedule review."
+        return "The work is part of a possible duplicate or split-work cluster requiring review."
+
+    frame = frame.sort_values(["priority_score", "composite_risk_score"], ascending=False).head(limit)
+    records = []
+    for row in frame.to_dict(orient="records"):
+        records.append(clean_record_for_json({
+            "work_id": row.get("work_id"),
+            "short_work_name": str(row.get("description") or "")[:180],
+            "constituency": row.get("constituency"),
+            "state": row.get("state"),
+            "sector": row.get("main_sector") or row.get("work_category"),
+            "risk_type": row.get("risk_type"),
+            "risk_level": row.get("risk_level"),
+            "risk_score": row.get("priority_score"),
+            "composite_risk_score": row.get("composite_risk_score"),
+            "risk_explanation": explanation(row),
+            "original_record": {
+                "recommended_date": row.get("recommended_date"),
+                "sanction_date": row.get("sanction_date"),
+                "completion_date": row.get("completion_date"),
+                "sanction_amount": row.get("sanction_amount"),
+                "effective_expenditure": row.get("effective_expenditure"),
+                "work_status": row.get("work_status"),
+            },
+        }))
+    return {
+        "state": state,
+        "total_works": int(len(_state_frame(get_data()["master"], state))),
+        "records": records,
+        "metadata": _analytics_metadata(),
+    }
+
+
+@app.get("/api/analytics/original-records")
+def get_original_analysis_records(
+    state: str = None,
+    risk_type: str = Query(None, pattern="^(financial|compliance|duplicate|schedule)$"),
+    risk_level: str = Query(None, pattern="^(LOW|MEDIUM|HIGH|CRITICAL)$"),
+    page: int = Query(1, ge=1),
+    limit: int = Query(50, ge=1, le=200),
+):
+    """Expose original values alongside the derived reason for a chart finding."""
+    if not isinstance(risk_type, str):
+        risk_type = None
+    if not isinstance(risk_level, str):
+        risk_level = None
+    frame = _state_frame(get_data()["master"], state)
+    dimension_map = {
+        "financial": "financial_risk_score",
+        "compliance": "compliance_risk_score",
+        "duplicate": "duplicate_risk_score",
+        "schedule": "schedule_risk_score",
+    }
+    if risk_type:
+        column = dimension_map[risk_type]
+        values = pd.to_numeric(frame.get(column, pd.Series(0, index=frame.index)), errors="coerce").fillna(0)
+        frame = frame[values.ge(35)]
+    if risk_level:
+        frame = frame[frame.get("overall_risk_level", pd.Series("", index=frame.index)).fillna("").eq(risk_level)]
+    total = len(frame)
+    frame = frame.sort_values("composite_risk_score", ascending=False, na_position="last")
+    start, end = (page - 1) * limit, page * limit
+    original_fields = [
+        "work_id", "state", "constituency", "mp_name", "description", "work_category",
+        "main_sector", "recommended_date", "sanction_date", "completion_date",
+        "work_status", "sanction_amount", "effective_expenditure",
+    ]
+    analysis_fields = [
+        "financial_risk_score", "compliance_risk_score", "duplicate_risk_score",
+        "schedule_risk_score", "composite_risk_score", "overall_risk_level",
+        "financial_explanation", "financial_what_happened", "financial_why_it_matters",
+        "compliance_explanation", "compliance_what_happened", "compliance_why_it_matters",
+        "schedule_explanation", "schedule_what_happened", "schedule_why_it_matters",
+        "duplicate_explanation", "duplicate_what_happened", "duplicate_why_it_matters",
+        "triggered_rules",
+    ]
+    records = []
+    for row in frame.iloc[start:end].to_dict(orient="records"):
+        records.append(clean_record_for_json({
+            "original": {field: row.get(field) for field in original_fields},
+            "analysis": {field: row.get(field) for field in analysis_fields},
+        }))
+    return {
+        "total": int(total),
+        "page": page,
+        "limit": limit,
+        "records": records,
+        "metadata": _analytics_metadata(),
     }
 
 
@@ -398,6 +651,7 @@ def get_state_risk_summary(state: str = Query(..., min_length=1)):
             "total_works": 0,
             "signals": [],
             "dominant_signal": None,
+            "metadata": _analytics_metadata(),
         }
 
     state_keys = master["state"].map(state_key)
@@ -434,6 +688,7 @@ def get_state_risk_summary(state: str = Query(..., min_length=1)):
         "total_works": int(len(frame)),
         "signals": signals,
         "dominant_signal": dominant_signal,
+        "metadata": _analytics_metadata(),
     }
 
 @app.get("/api/mp-intelligence")
@@ -488,7 +743,8 @@ def get_mp_intelligence(
             "total_expenditure": total_expenditure,
             "utilization_rate": round((total_expenditure / (total_sanctioned + 1e-5)) * 100, 1)
         },
-        "suspicious_works": suspicious_records
+        "suspicious_works": suspicious_records,
+        "metadata": _analytics_metadata(),
     }
 
 @app.get("/api/schedule-risk")
@@ -536,12 +792,31 @@ def get_schedule_risk_analytics(
                 "CRITICAL": int(risk_levels.get("CRITICAL", 0))
             }
         },
-        "records": records
+        "records": records,
+        "metadata": _analytics_metadata(),
     }
 
 @app.get("/api/sync/status")
 def get_sync_status():
     return get_automation_status()
+
+
+@app.get("/api/sync/health")
+def get_sync_source_health():
+    """Return source availability and request telemetry without secrets."""
+    return get_sync_health()
+
+
+@app.post("/api/sync/start")
+def start_sync():
+    """Queue a non-blocking official-data synchronization job."""
+    try:
+        return start_sync_job()
+    except Exception:
+        raise HTTPException(
+            status_code=503,
+            detail="A synchronization job could not be started. The previous validated dataset remains available.",
+        )
 
 @app.get("/api/sync/history")
 def get_sync_history():
@@ -549,7 +824,12 @@ def get_sync_history():
     if os.path.exists(log_file):
         try:
             with open(log_file, 'r') as f:
-                return json.load(f)
+                history = json.load(f)
+            # Sync deltas can contain pandas NaN values (for example when a
+            # source row has no state name). Python's JSON loader accepts NaN,
+            # but Starlette's strict response encoder correctly rejects it.
+            # Normalize the complete nested history before returning it.
+            return [clean_record_for_json(entry) for entry in history] if isinstance(history, list) else []
         except Exception:
             pass
     return []
@@ -615,16 +895,32 @@ def sync_commit(request: SyncCommitRequest):
 
 @app.post("/api/sync/run-now")
 def sync_run_now():
-    result = run_sync_job()
-    if result.get("success"):
-        _DATA_CACHE.clear()
-        return result
-    raise HTTPException(status_code=502, detail=result.get("sync", {}).get("error", "Official REST sync failed"))
+    """Compatibility alias for the non-blocking Sync Now action."""
+    try:
+        return start_sync_job()
+    except Exception:
+        raise HTTPException(
+            status_code=503,
+            detail="A synchronization job could not be started. The previous validated dataset remains available.",
+        )
 
 
 @app.get("/api/sync/training-status")
 def sync_training_status():
     return TRAINING_MANAGER.status()
+
+
+@app.post("/api/sync/training/start")
+def start_training():
+    """Queue analysis independently of data synchronization."""
+    current = TRAINING_MANAGER.status()
+    if current.get("status") in {"QUEUED", "RUNNING"}:
+        return current
+    sync_status = get_automation_status()
+    snapshot_id = sync_status.get("current_snapshot_id")
+    if not snapshot_id or snapshot_id == "NONE":
+        raise HTTPException(status_code=409, detail="Analysis cannot start until a validated dataset snapshot is available.")
+    return TRAINING_MANAGER.start(snapshot_id, {"manual": True, "new_count": 0, "updated_count": 0, "removed_count": 0})
 
 @app.get("/api/model/status")
 def get_model_status():
@@ -660,36 +956,131 @@ def get_classification(work_id: str = Query(...)):
 
 @app.get("/api/analytics/sector-cost")
 def get_sector_cost(work_id: str = Query(...)):
-    """Return reference-sector cost context for one work, when a match exists."""
+    """Return the work's selected completed-work peer context."""
     data = get_data()
     record = data["work_index"].get(work_id.strip())
     if not record:
         raise HTTPException(status_code=404, detail=f"Work ID '{work_id}' not found.")
-    reference = os.path.join(DATA_DIR, "reference", "mplads_sector_cost_reference.csv")
-    if not os.path.exists(reference):
-        raise HTTPException(status_code=503, detail="Sector reference data is unavailable.")
-    frame = pd.DataFrame([record])
-    if "sanctioned_work_description" not in frame:
-        frame["sanctioned_work_description"] = frame.get("description", "")
-    result = classify_and_cost(frame, reference).iloc[0].to_dict()
-    return clean_record_for_json(result)
+    financial_fields = [
+        "comparison_state", "comparison_constituency", "comparison_scope", "comparison_level",
+        "comparison_group_label", "comparison_sector", "comparison_subsector", "comparison_work_type",
+        "comparison_peer_category", "peer_category", "peer_category_auto_generated",
+        "original_effective_work_category",
+        "unit_comparison_scope", "unit_price_comparison_eligible", "unit_price_skip_reason",
+        "current_cost", "current_unit_price", "quantity_detected", "quantity_unit",
+        "historical_cost_min", "historical_cost_max", "historical_cost_median", "historical_cost_count",
+        "historical_unit_price_min", "historical_unit_price_max", "historical_unit_price_median",
+        "historical_unit_price_count", "cost_comparison_status", "unit_comparison_status",
+        "financial_explanation", "financial_what_happened", "financial_why_it_matters",
+        "financial_supporting_details", "financial_risk_evidence", "financial_audit_interpretation",
+    ]
+    return clean_record_for_json({field: record.get(field) for field in financial_fields})
+
+
+@app.get("/api/financial/benchmarks")
+def get_financial_benchmarks(
+    scope: str = None,
+    state: str = None,
+    constituency: str = None,
+    main_sector: str = None,
+    subsector: str = None,
+    page: int = Query(1, ge=1),
+    limit: int = Query(50, ge=1, le=200),
+):
+    """Return auditable completed-work low/median/high peer statistics."""
+    frame = get_data().get("financial_peer_benchmarks", pd.DataFrame()).copy()
+    if frame.empty:
+        return {"total": 0, "page": page, "limit": limit, "records": [], "available": {"states": [], "sectors": [], "subsectors": []}}
+    for column, value in (("comparison_scope", scope), ("state", state), ("constituency", constituency), ("main_sector", main_sector), ("subsector", subsector)):
+        if value and column in frame.columns:
+            frame = frame[frame[column].fillna("").astype(str).str.upper().eq(value.strip().upper())]
+    total = len(frame)
+    sort_columns = [column for column in ["comparison_scope", "state", "constituency", "main_sector", "comparison_level", "subsector"] if column in frame.columns]
+    if sort_columns:
+        frame = frame.sort_values(sort_columns, kind="stable")
+    start, end = (page - 1) * limit, page * limit
+    source = get_data().get("financial_peer_benchmarks", pd.DataFrame())
+    return {
+        "total": total, "page": page, "limit": limit, "total_pages": int(np.ceil(total / limit)) if total else 0,
+        "records": [clean_record_for_json(row) for row in frame.iloc[start:end].to_dict(orient="records")],
+        "available": {
+            "states": sorted(source.get("state", pd.Series(dtype=str)).dropna().astype(str).unique().tolist()),
+            "sectors": sorted(source.get("main_sector", pd.Series(dtype=str)).dropna().astype(str).unique().tolist()),
+            "subsectors": sorted(source.get("subsector", pd.Series(dtype=str)).dropna().astype(str).unique().tolist()),
+        },
+    }
 
 @app.get("/api/sectors")
 def get_sector_matrix():
-    """Expose the source project's sector reference model to the final API."""
-    return {"sector_matrix": MPLADS_SECTOR_MATRIX, "count": len(MPLADS_SECTOR_MATRIX)}
+    """Return classified sectors without exposing any price benchmark."""
+    data = get_data()
+    sectors = sorted({str(value).strip() for value in data["master"].get("main_sector", pd.Series(dtype=str)).dropna() if str(value).strip()})
+    return {"sectors": sectors, "count": len(sectors)}
 
 @app.get("/api/compliance/rules")
 def get_compliance_rules():
-    """Return the 2023 guideline thresholds used by the compliance engine."""
+    """Return source-backed rules with their work/constituency scope."""
     return {
-        "source": "mplads_2023_guidelines_including_changes.pdf",
-        "deadlines": {"sanction_or_rejection_days": 45, "general_completion_days": 365},
-        "minimum_work_amount_inr": 250000,
-        "sc_target_pct": 15.0,
-        "st_target_pct": 7.5,
-        "repair_renovation": {"annual_authorization_cap_pct": 10.0, "requires_reasonable_gap": True},
-        "prohibited_categories": ["residential", "commercial_private", "operation_maintenance", "grants_loans", "relief_funds", "land_acquisition", "reimbursement", "individual_family_benefit", "csr_pooling", "religious", "swagat_dwar", "unauthorized_colony"],
+        "source": GUIDELINE_SOURCE,
+        "work_level_rules": [rule for rule in public_scope_matrix() if rule["scope"] == "WORK"],
+        "constituency_level_rules": [rule for rule in public_scope_matrix() if rule["scope"] == "CONSTITUENCY"],
+        "non_guideline_heuristics": [rule for rule in public_scope_matrix() if rule["scope"] == "NON_GUIDELINE_HEURISTIC"],
+    }
+
+
+@app.get("/api/compliance/constituency")
+def get_constituency_compliance(
+    state: str = None,
+    constituency: str = None,
+    mp_name: str = None,
+    financial_year: str = None,
+    page: int = Query(1, ge=1),
+    limit: int = Query(25, ge=1, le=200),
+):
+    """Return aggregate compliance observations, never individual work flags."""
+    data = get_data()
+    frame = data.get("constituency_compliance", pd.DataFrame()).copy()
+    if frame.empty:
+        return {"total": 0, "page": page, "limit": limit, "records": []}
+    for field, value in (("state", state), ("constituency", constituency), ("mp_name", mp_name), ("financial_year", financial_year)):
+        if value and field in frame.columns:
+            frame = frame[frame[field].fillna("").astype(str).str.upper().eq(value.strip().upper())]
+    total = len(frame)
+    sort_columns = [column for column in ["sc_status", "st_status", "state", "constituency"] if column in frame.columns]
+    if sort_columns:
+        frame = frame.sort_values(sort_columns, ascending=[True] * len(sort_columns))
+    start, end = (page - 1) * limit, page * limit
+    return {
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "records": [clean_record_for_json(row) for row in frame.iloc[start:end].to_dict(orient="records")],
+    }
+
+
+@app.get("/api/compliance/summary")
+def get_compliance_summary():
+    """Return counts for the work-level compliance order and its rule drivers."""
+    master = get_data()["master"]
+    if master.empty:
+        return {"work_level_risk": 0, "critical": 0, "high": 0, "medium": 0, "needs_review": 0, "rule_counts": {}}
+    score_values = master["compliance_risk_score"] if "compliance_risk_score" in master.columns else pd.Series(0, index=master.index)
+    level_values = master["compliance_risk_level"] if "compliance_risk_level" in master.columns else pd.Series("LOW", index=master.index)
+    scores = pd.to_numeric(score_values, errors="coerce").fillna(0)
+    levels = level_values.fillna("LOW").astype(str).str.upper()
+    rule_counts = {}
+    if "triggered_rules" in master.columns:
+        values = master["triggered_rules"].fillna("").astype(str).str.split(", ").explode()
+        values = values[values.ne("")]
+        rule_counts = {str(key): int(value) for key, value in values.value_counts().items()}
+    return {
+        "work_level_risk": int(scores.ge(20).sum()),
+        "critical": int(levels.eq("CRITICAL").sum()),
+        "high": int(levels.eq("HIGH").sum()),
+        "medium": int(levels.eq("MEDIUM").sum()),
+        "needs_review": int(scores.ge(20).sum()),
+        "rule_counts": rule_counts,
+        "constituency_observations": int(len(get_data().get("constituency_compliance", pd.DataFrame()))),
     }
 
 @app.get("/api/risk-monitor")
@@ -700,6 +1091,7 @@ def get_risk_monitor_queue(
     severity: str = None,
     search: str = None,
     min_financial_risk: float = None,
+    financial_only: bool = False,
     min_compliance_risk: float = None,
     sort_by: str = None,
     page: int = Query(1, ge=1),
@@ -718,6 +1110,11 @@ def get_risk_monitor_queue(
         df = df[df["overall_risk_level"].str.upper() == severity.strip().upper()]
     if min_financial_risk is not None:
         df = df[df["financial_risk_score"] >= min_financial_risk]
+    if financial_only:
+        # This is the authoritative Financial Risk Order. It is intentionally
+        # separate from the internal score so no flagged work can disappear
+        # because a distribution-derived score happens to be low.
+        df = df[df.get("is_financial_outlier", pd.Series(False, index=df.index)).fillna(False).astype(bool)]
     if min_compliance_risk is not None:
         df = df[df["compliance_risk_score"] >= min_compliance_risk]
     if search and search.strip():
@@ -741,7 +1138,8 @@ def get_risk_monitor_queue(
         top_scores[key] = round(float(values.max()), 1) if len(values) else 0.0
 
     sort_col = sort_by if (sort_by and sort_by in df.columns) else "composite_risk_score"
-    df_sorted = df.sort_values(sort_col, ascending=False)
+    ascending = financial_only and sort_col == "financial_risk_rank"
+    df_sorted = df.sort_values(sort_col, ascending=ascending, na_position="last")
     
     start = (page - 1) * limit
     end = start + limit
@@ -755,7 +1153,8 @@ def get_risk_monitor_queue(
         "limit": limit,
         "total_pages": int(np.ceil(total_records / limit)) if total_records > 0 else 0,
         "top_scores": top_scores,
-        "records": records
+        "records": records,
+        "metadata": _analytics_metadata(),
     }
 
 def _fetch_work_detail_internal(target_work_id: str):
@@ -818,6 +1217,9 @@ def get_duplicate_candidates(
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100)
 ):
+    page = int(page.default) if hasattr(page, "default") else int(page)
+    limit = int(limit.default) if hasattr(limit, "default") else int(limit)
+    min_similarity = float(min_similarity.default) if hasattr(min_similarity, "default") else float(min_similarity)
     data = get_data()
     dups = data["duplicates"].copy()
     
@@ -845,6 +1247,55 @@ def get_duplicate_candidates(
         "page": page,
         "limit": limit,
         "records": records
+    }
+
+
+@app.get("/api/duplicate-clusters")
+def get_duplicate_clusters(
+    state: str = None,
+    constituency: str = None,
+    risk_level: str = None,
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+):
+    """Return concise, ranked duplicate/split-work clusters for reviewers."""
+    page = int(page.default) if hasattr(page, "default") else int(page)
+    limit = int(limit.default) if hasattr(limit, "default") else int(limit)
+    data = get_data()
+    clusters = data.get("duplicate_clusters", pd.DataFrame()).copy()
+    if clusters.empty:
+        return {"total": 0, "page": page, "limit": limit, "total_pages": 0, "records": []}
+    if state and state.strip() and "state" in clusters.columns:
+        clusters = clusters[clusters["state"].fillna("").astype(str).str.upper().eq(state.strip().upper())]
+    if constituency and constituency.strip() and "constituency" in clusters.columns:
+        clusters = clusters[clusters["constituency"].fillna("").astype(str).str.upper().eq(constituency.strip().upper())]
+    if risk_level and risk_level.strip() and "duplicate_risk_level" in clusters.columns:
+        clusters = clusters[clusters["duplicate_risk_level"].fillna("").astype(str).str.upper().eq(risk_level.strip().upper())]
+    total_records = len(clusters)
+    clusters = clusters.sort_values(["duplicate_risk_score", "cluster_size"], ascending=[False, False])
+    start, end = (page - 1) * limit, page * limit
+    records = []
+    for row in clusters.iloc[start:end].to_dict(orient="records"):
+        if isinstance(row.get("record_summaries"), str):
+            try:
+                row["record_summaries"] = json.loads(row["record_summaries"])
+            except Exception:
+                row["record_summaries"] = []
+        if isinstance(row.get("key_indicators"), str):
+            try:
+                row["key_indicators"] = json.loads(row["key_indicators"])
+            except Exception:
+                row["key_indicators"] = [row["key_indicators"]]
+        if isinstance(row.get("quantity_totals"), str):
+            try:
+                row["quantity_totals"] = json.loads(row["quantity_totals"])
+            except Exception:
+                row["quantity_totals"] = {}
+        records.append(clean_record_for_json(row))
+    return {
+        "total": total_records, "page": page, "limit": limit,
+        "total_pages": int(np.ceil(total_records / limit)) if total_records else 0,
+        "records": records,
     }
 
 @app.get("/api/filters")

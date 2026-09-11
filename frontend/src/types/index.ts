@@ -17,13 +17,73 @@ export interface WorkRecord {
   financial_risk_score: number;
   financial_risk_level: string;
   financial_explanation?: string;
+  financial_what_happened?: string;
+  financial_why_it_matters?: string;
+  financial_supporting_details?: string;
+  financial_risk_evidence?: string;
+  financial_audit_interpretation?: string;
+  financial_risk_rank?: number;
+  is_financial_outlier?: boolean;
+  current_cost?: number;
+  current_unit_price?: number;
+  quantity_detected?: number;
+  quantity_unit?: string;
+  historical_cost_min?: number;
+  historical_cost_max?: number;
+  historical_cost_median?: number;
+  historical_cost_count?: number;
+  historical_unit_price_min?: number;
+  historical_unit_price_max?: number;
+  historical_unit_price_median?: number;
+  historical_unit_price_count?: number;
+  cost_comparison_status?: string;
+  unit_comparison_status?: string;
+  unit_price_comparison_eligible?: boolean;
+  unit_price_skip_reason?: string;
+  comparison_scope?: 'CONSTITUENCY' | 'STATE' | 'ALL_INDIA' | string;
+  comparison_level?: 'EFFECTIVE_CATEGORY' | 'SUBSECTOR' | 'MAIN_SECTOR' | string;
+  comparison_state?: string;
+  comparison_constituency?: string;
+  comparison_sector?: string;
+  comparison_subsector?: string;
+  comparison_work_type?: string;
+  comparison_peer_category?: string;
+  peer_category?: string;
+  peer_category_auto_generated?: boolean;
+  original_effective_work_category?: string;
+  comparison_group_label?: string;
+  unit_comparison_scope?: string;
   duplicate_risk_score: number;
+  duplicate_risk_level?: string;
+  duplicate_explanation?: string;
+  duplicate_what_happened?: string;
+  duplicate_why_it_matters?: string;
+  duplicate_supporting_details?: string;
   compliance_risk_score: number;
   compliance_risk_level: string;
   compliance_explanation?: string;
+  compliance_scope?: 'WORK_LEVEL_ONLY' | string;
+  compliance_review_status?: string;
+  is_work_level_compliance_risk?: boolean;
+  compliance_primary_rule_id?: string;
+  compliance_primary_status?: string;
+  compliance_primary_guideline_basis?: string;
+  compliance_primary_what_happened?: string;
+  compliance_primary_why_it_matters?: string;
+  compliance_primary_supporting_details?: string;
+  compliance_primary_details_json?: string;
+  compliance_what_happened?: string;
+  compliance_why_it_matters?: string;
+  compliance_supporting_details?: string;
+  compliance_data_quality?: string[];
+  compliance_findings?: ComplianceFinding[];
+  compliance_rule_results?: ComplianceFinding[];
   schedule_risk_score: number;
   schedule_risk_level: string;
   schedule_explanation?: string;
+  schedule_what_happened?: string;
+  schedule_why_it_matters?: string;
+  schedule_supporting_details?: string;
   expected_timeline_progress_pct?: number;
   expenditure_progress_pct?: number;
   progress_gap_pct?: number;
@@ -41,6 +101,7 @@ export interface WorkRecord {
   last_analyzed_at?: string;
   original_work_category?: string;
   effective_work_category?: string;
+  main_sector?: string;
   work_domain?: string;
   ai_work_domain?: string;
   ai_work_category?: string;
@@ -66,6 +127,56 @@ export interface ExpenditureTrip {
   expenditure_date?: string;
   expenditure_amount?: number;
   payment_status?: string;
+}
+
+export interface ComplianceFinding {
+  rule_id: string;
+  rule_name: string;
+  status: 'FAIL' | 'NEEDS_REVIEW' | 'PASS' | 'NOT_EVALUATED' | string;
+  severity?: string;
+  scope?: string;
+  guideline_name?: string;
+  guideline_section?: string;
+  source_document?: string;
+  guideline_basis?: string;
+  rule_interpretation?: string;
+  threshold?: string;
+  what_happened?: string;
+  why_it_matters?: string;
+  supporting_details?: string;
+  details?: Record<string, unknown>;
+  evidence_quality?: string;
+  review_priority?: string;
+}
+
+export interface ConstituencyComplianceRecord {
+  scope: 'CONSTITUENCY' | string;
+  state: string;
+  constituency: string;
+  mp_name?: string;
+  financial_year: string;
+  total_observed_sanctioned_amount?: number;
+  official_allocation_reference_inr?: number;
+  allocation_basis?: string;
+  sc_observed_amount?: number;
+  sc_observed_pct_of_allocation_basis?: number;
+  sc_target_pct?: number;
+  sc_status?: string;
+  sc_evidence_work_count?: number;
+  st_observed_amount?: number;
+  st_observed_pct_of_allocation_basis?: number;
+  st_target_pct?: number;
+  st_status?: string;
+  st_evidence_work_count?: number;
+  repair_renovation_pct_of_allocation_basis?: number;
+  repair_status?: string;
+  entity_assistance_pct_of_allocation_basis?: number;
+  entity_assistance_status?: string;
+  bar_library_pct_of_allocation_basis?: number;
+  bar_library_status?: string;
+  allocation_data_status?: string;
+  analysis_note?: string;
+  source_sections?: string;
 }
 
 export interface CandidateDuplicatePair {
@@ -108,7 +219,45 @@ export interface CandidateDuplicatePair {
   nlp_explanation?: string;
 }
 
+export interface DuplicateClusterRecord {
+  work_id: string;
+  work_name: string;
+  sanction_amount?: number;
+  recommended_amount?: number;
+  recommended_work_id?: string;
+  sanctioned_work_id?: string;
+  comparison_source?: string;
+  recommended_date?: string;
+  sanction_date?: string;
+  quantity?: string;
+}
+
+export interface DuplicateCluster {
+  cluster_id: string;
+  work_ids: string[];
+  cluster_size: number;
+  state: string;
+  constituency: string;
+  sector?: string;
+  common_asset: string;
+  duplicate_risk_score: number;
+  duplicate_risk_level: 'HIGH' | 'MEDIUM' | 'LOW' | string;
+  possible_split_work: boolean;
+  review_classification?: string;
+  related_record_count: number;
+  id_range?: number;
+  total_sanctioned_amount?: number;
+  total_recommended_amount?: number;
+  recommended_to_sanctioned_ratio?: number;
+  quantity_totals?: Record<string, number>;
+  key_indicators: string[];
+  risk_reason: string;
+  audit_observation: string;
+  record_summaries: DuplicateClusterRecord[];
+}
+
 export interface NationalOverviewResponse {
+  metadata?: AnalyticsMetadata;
   summary: {
     total_allocated_funds: number;
     total_sanctioned_amount: number;
@@ -121,8 +270,8 @@ export interface NationalOverviewResponse {
   };
   financial_summary?: {
     flagged_financial_outliers: number;
-    high_peer_ratio_works: number;
-    isolation_outlier_rate_pct: number;
+    historical_comparison_available: number;
+    unit_price_comparisons: number;
   };
   risk_distribution: {
     LOW: number;
@@ -136,6 +285,11 @@ export interface NationalOverviewResponse {
     total_sanctioned: number;
     total_disbursed?: number;
     high_risk_works: number;
+    risk_percentage?: number;
+    financial_risk_works?: number;
+    compliance_risk_works?: number;
+    duplicate_risk_works?: number;
+    schedule_risk_works?: number;
   }>;
   state_metrics?: Array<{
     state: string;
@@ -147,6 +301,11 @@ export interface NationalOverviewResponse {
     average_risk_score?: number;
     risk_level?: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
     duplicate_candidate_pairs?: number;
+    risk_percentage?: number;
+    financial_risk_works?: number;
+    compliance_risk_works?: number;
+    duplicate_risk_works?: number;
+    schedule_risk_works?: number;
   }>;
   category_distribution: Array<{
     work_category: string;
@@ -154,6 +313,15 @@ export interface NationalOverviewResponse {
     total_sanctioned: number;
     high_risk_works: number;
   }>;
+}
+
+export interface AnalyticsMetadata {
+  data_version: string;
+  analysis_version: string;
+  generated_at: string;
+  last_successful_sync?: string;
+  analysis_generated_at?: string;
+  stale_analysis?: boolean;
 }
 
 export interface StateRiskSummary {
@@ -206,6 +374,36 @@ export interface SyncStatusResponse {
   removed_records_since_last_sync?: number;
   snapshot_count: number;
   training?: TrainingStatus;
+  job?: SyncJobStatus;
+  last_successful_sync?: string;
+  data_version?: string;
+  analysis_version?: string;
+  analysis_generated_at?: string;
+}
+
+export interface SyncJobStatus {
+  job_id?: string;
+  status: 'IDLE' | 'QUEUED' | 'RUNNING' | 'COMPLETED' | 'FAILED' | string;
+  message?: string;
+  queued_at?: string;
+  started_at?: string;
+  completed_at?: string;
+  snapshot_id?: string;
+  sync_id?: string;
+  last_event?: string;
+  datasets?: Array<{
+    dataset: string;
+    label?: string;
+    status?: string;
+    records_received?: number;
+    records_processed?: number;
+    records_failed?: number;
+    pages_fetched?: number;
+    error?: string;
+  }>;
+  counters?: Record<string, number>;
+  error_count?: number;
+  technical_error?: string;
 }
 
 export interface TrainingStatus {
@@ -269,4 +467,32 @@ export interface FilterOptions {
   mps?: string[];
   categories: string[];
   severities: string[];
+}
+
+export interface FinancialBenchmarkRecord {
+  benchmark_id: string;
+  comparison_scope: 'CONSTITUENCY' | 'STATE' | 'ALL_INDIA' | string;
+  comparison_level: 'EFFECTIVE_CATEGORY' | 'SUBSECTOR' | 'MAIN_SECTOR' | string;
+  state: string;
+  constituency: string;
+  main_sector: string;
+  subsector: string;
+  effective_work_category: string;
+  original_effective_work_category?: string;
+  peer_category?: string;
+  peer_category_auto_generated?: boolean;
+  completed_work_count: number;
+  current_work_count: number;
+  outlier_count: number;
+  historical_cost_min?: number;
+  historical_cost_median?: number;
+  historical_cost_max?: number;
+  historical_unit_price_min?: number;
+  historical_unit_price_median?: number;
+  historical_unit_price_max?: number;
+  historical_unit_price_count?: number;
+}
+
+export interface FinancialBenchmarkResponse extends PaginatedResponse<FinancialBenchmarkRecord> {
+  available: { states: string[]; sectors: string[]; subsectors: string[] };
 }

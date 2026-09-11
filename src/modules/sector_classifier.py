@@ -1,4 +1,4 @@
-"""TF-IDF + linear SVM classifier backed by the supplied sector cost reference."""
+"""TF-IDF + linear SVM classifier backed by the supplied sector taxonomy."""
 import re
 import numpy as np
 import pandas as pd
@@ -8,75 +8,6 @@ try:
     HAS_SKLEARN = True
 except Exception:
     HAS_SKLEARN = False
-
-MPLADS_SECTOR_MATRIX = {
-    "SEC01": {
-        "name": "Drinking Water Facility",
-        "min_cost": 45000, "max_cost": 2500000,
-        "min_days": 7, "max_days": 120,
-        "primary_risk": "Invoice Inflation / Overlapping Site Duplication"
-    },
-    "SEC02": {
-        "name": "Education",
-        "min_cost": 300000, "max_cost": 1000000,
-        "min_days": 15, "max_days": 180,
-        "primary_risk": "Project Splitting / Hardware Kickbacks"
-    },
-    "SEC03": {
-        "name": "Public Health & Sanitation",
-        "min_cost": 800000, "max_cost": 3500000,
-        "min_days": 30, "max_days": 270,
-        "primary_risk": "Cost Escalation / Fake Asset Procurement"
-    },
-    "SEC04": {
-        "name": "Roads, Pathways & Bridges",
-        "min_cost": 300000, "max_cost": 3000000,
-        "min_days": 60, "max_days": 120,
-        "primary_risk": "Cost Inflation per Meter / Ghost Infrastructure"
-    },
-    "SEC05": {
-        "name": "Electricity & Energy",
-        "min_cost": 18000, "max_cost": 450000,
-        "min_days": 7, "max_days": 30,
-        "primary_risk": "Back-to-Back Splitting / Phantom Inventory"
-    },
-    "SEC06": {
-        "name": "Agriculture & Allied",
-        "min_cost": 500000, "max_cost": 4000000,
-        "min_days": 45, "max_days": 270,
-        "primary_risk": "Private Trust Exploitation / Ownership Fraud"
-    },
-    "SEC07": {
-        "name": "Irrigation & Flood Control",
-        "min_cost": 200000, "max_cost": 2500000,
-        "min_days": 15, "max_days": 150,
-        "primary_risk": "Paper-Only Earthwork / False Engineering Clearances"
-    },
-    "SEC08": {
-        "name": "Sports & Youth Welfare",
-        "min_cost": 200000, "max_cost": 5000000,
-        "min_days": 15, "max_days": 365,
-        "primary_risk": "Equipment Maintenance Bypassing / Delayed Completion"
-    },
-    "SEC09": {
-        "name": "Railways & Utilities",
-        "min_cost": 500000, "max_cost": 4000000,
-        "min_days": 60, "max_days": 240,
-        "primary_risk": "Jurisdictional Delay Fund Hoarding / Tender Collusion"
-    },
-    "SEC10": {
-        "name": "Community Buildings",
-        "min_cost": 600000, "max_cost": 3000000,
-        "min_days": 120, "max_days": 270,
-        "primary_risk": "Rapid Payout Risk / Banned Commercial Space Allocation"
-    },
-    "SEC11": {
-        "name": "Public Safety & Security",
-        "min_cost": 200000, "max_cost": 1200000,
-        "min_days": 30, "max_days": 90,
-        "primary_risk": "Overpriced Software & Hardware Licensing Fees"
-    }
-}
 
 SECTOR_PHRASES = {
     "Tube Well & Hand Pump": ["tube well", "tubewell", "hand pump", "borewell", "bore well", "deep tube well"],
@@ -116,14 +47,19 @@ def _clean(value):
 
 def _quantity(text):
     patterns = [
-        # Pattern 1: e.g. 286 pc, 286 pcs, 10 nos, 50 units, 100 lights, 5 sets, 20 classrooms
-        r"(?<!\w)(\d+(?:\.\d+)?)\s*(?:pcs?\.?|pieces?|nos?\.?|numbers?|units?|poles?|lights?|classrooms?|rooms?|ambulances?|hand pumps?|tube wells?|culverts?|bridges?|sets?)\b",
+        # Pattern 1: e.g. 286 pc, 286 pcs, 10 nos, 50 units, 100 lights, 5 sets, 20 classrooms.
+        # ``nos`` is deliberately plural-only here.  A bare ``no-2``/``no 2``
+        # in a work description is commonly an address, ward, or record
+        # identifier rather than a physical quantity.
+        r"(?<!\w)(\d+(?:\.\d+)?)\s*(?:pcs?\.?|pieces?|nos\.?|numbers?|units?|poles?|lights?|classrooms?|rooms?|ambulances?|hand pumps?|tube wells?|culverts?|bridges?|sets?)\b",
         # Pattern 2: e.g. 12m high mast 5 lights, 10 high mast lights
         r"(?<!\w)(\d+(?:\.\d+)?)\s*(?:(?:one|two|three|four|five|six|seven|eight|nine|ten)\s*)?(?:led\s+)?(?:highmast|high\s+mast|solar\s+street|solar)\s*(?:\s+electric)?\s+lights?\b",
         # Pattern 3: kilometers / meters
         r"\b(\d+(?:\.\d+)?)\s*(?:km|kilomet(?:er|re)s?|meters?|mtrs?)\b",
-        # Pattern 4: unit keyword followed by number e.g. "pc 286", "nos 50"
-        r"\b(?:pc|pcs|pieces|nos|no|units|sets|lights|poles)\s*(\d+(?:\.\d+)?)\b",
+        # Pattern 4: unit keyword followed by number e.g. "pc 286", "nos 50".
+        # Do not treat bare ``no`` as a quantity keyword; it is too often an
+        # address/identifier marker (for example ``SONGSOD NO-2``).
+        r"\b(?:pc|pcs|pieces|nos|units|sets|lights|poles)\s*(\d+(?:\.\d+)?)\b",
     ]
     for pattern in patterns:
         hit = re.search(pattern, text, re.I)
@@ -133,7 +69,7 @@ def _quantity(text):
                 return val, "units", "description"
     return None, None, None
 
-def classify_and_cost(df, reference_path):
+def classify_sectors(df, reference_path):
     ref = pd.read_csv(reference_path)
     descriptions = df["sanctioned_work_description"].fillna(df["description"]).map(_clean)
     quantities = [_quantity(text) for text in descriptions]
@@ -164,21 +100,5 @@ def classify_and_cost(df, reference_path):
     result["quantity_detected"] = [q[0] for q in quantities]
     result["quantity_unit"] = [q[1] for q in quantities]
     result["quantity_source"] = [q[2] for q in quantities]
-    result["base_avg_cost_inr"] = [float(ref.loc[ref.Sub_Sector.eq(x), "Base_Avg_Cost_INR"].iloc[0]) if x != "Unclassified" and any(ref.Sub_Sector.eq(x)) else np.nan for x in labels]
-    state = df["state"].fillna("").astype(str).str.upper()
-    result["regional_multiplier"] = np.where(state.isin(["UTTAR PRADESH", "BIHAR"]), 1.0, np.where(state.str.contains("ARUNACHAL|ASSAM|MANIPUR|MEGHALAYA|MIZORAM|NAGALAND|SIKKIM|TRIPURA", regex=True), 1.5, np.where(state.isin(["KARNATAKA", "TAMIL NADU", "TELANGANA", "ANDHRA PRADESH", "KERALA"]), 1.1, 1.1)))
-    result["reference_expected_cost_inr"] = result["base_avg_cost_inr"] * result["regional_multiplier"]
-    result["reference_unit_cost_inr"] = result["reference_expected_cost_inr"]
-    result["reference_total_cost_inr"] = result["reference_unit_cost_inr"] * result["quantity_detected"]
-    # A generic high-mast description has no height/light-count subtype. Keep
-    # both supplied SEC05 prices as an indicative range rather than inventing
-    # a subtype, and use the midpoint only for contextual comparison.
-    hm = result["ai_work_category"].eq("High Mast Light System (Unspecified)")
-    result["reference_unit_cost_min_inr"] = np.where(hm, 180000 * result["regional_multiplier"], result["reference_unit_cost_inr"])
-    result["reference_unit_cost_max_inr"] = np.where(hm, 450000 * result["regional_multiplier"], result["reference_unit_cost_inr"])
-    result["reference_total_cost_min_inr"] = result["reference_unit_cost_min_inr"] * result["quantity_detected"]
-    result["reference_total_cost_max_inr"] = result["reference_unit_cost_max_inr"] * result["quantity_detected"]
-    result["reference_total_cost_inr"] = result["reference_total_cost_inr"].where(~hm, (result["reference_total_cost_min_inr"] + result["reference_total_cost_max_inr"]) / 2)
-    result["reference_unit_cost_inr"] = result["reference_unit_cost_inr"].where(~hm, (result["reference_unit_cost_min_inr"] + result["reference_unit_cost_max_inr"]) / 2)
     replace = [c for c in result.columns if c in df.columns]
     return pd.concat([df.drop(columns=replace), result], axis=1)

@@ -3,6 +3,7 @@ import { fetchScheduleRisk, fetchFilters } from '../services/api';
 import { WorkRecord, FilterOptions } from '../types';
 import { RiskBadge } from '../components/cards/RiskBadge';
 import { Clock, Eye, Filter, RotateCcw, User, MapPin, ArrowUpDown } from 'lucide-react';
+import { usePersistentState } from '../hooks/usePersistentState';
 
 interface ScheduleProgressPageProps {
   onSelectWork: (workId: string) => void;
@@ -14,12 +15,12 @@ export const ScheduleProgressPage: React.FC<ScheduleProgressPageProps> = ({ onSe
   const [loading, setLoading] = useState<boolean>(true);
 
   // Filtering state
-  const [selectedState, setSelectedState] = useState<string>('');
-  const [selectedConstituency, setSelectedConstituency] = useState<string>('');
-  const [mpName, setMpName] = useState<string>('');
+  const [selectedState, setSelectedState] = usePersistentState<string>('mplads.schedule-progress.state', '');
+  const [selectedConstituency, setSelectedConstituency] = usePersistentState<string>('mplads.schedule-progress.constituency', '');
+  const [mpName, setMpName] = usePersistentState<string>('mplads.schedule-progress.mp', '');
   const [filterOpts, setFilterOpts] = useState<FilterOptions | null>(null);
-  const [sortField, setSortField] = useState<string>('progress_gap');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [sortField, setSortField] = usePersistentState<string>('mplads.schedule-progress.sort-field', 'progress_gap');
+  const [sortOrder, setSortOrder] = usePersistentState<'asc' | 'desc'>('mplads.schedule-progress.sort-order', 'desc');
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -34,7 +35,7 @@ export const ScheduleProgressPage: React.FC<ScheduleProgressPageProps> = ({ onSe
     return [...records].sort((a, b) => {
       let aVal: any = a[sortField as keyof typeof a];
       let bVal: any = b[sortField as keyof typeof b];
-      if (sortField === 'State') { aVal = a.State; bVal = b.State; }
+      if (sortField === 'State') { aVal = a.state || a.State; bVal = b.state || b.State; }
       if (sortField === 'progress_gap') {
         aVal = (a.expected_timeline_progress_pct || 0) - (a.expenditure_progress_pct || 0);
         bVal = (b.expected_timeline_progress_pct || 0) - (b.expenditure_progress_pct || 0);
@@ -245,7 +246,7 @@ export const ScheduleProgressPage: React.FC<ScheduleProgressPageProps> = ({ onSe
                   <tr key={r.work_id} className="hover:bg-slate-50/70 transition-colors">
                     <td className="py-3 px-4 font-mono font-bold text-slate-900">{r.work_id}</td>
                     <td className="py-3 px-4">
-                      <div className="font-bold text-slate-900">{r.State} • {r.Constituency}</div>
+                      <div className="font-bold text-slate-900">{r.state || r.State} • {r.constituency || r.Constituency}</div>
                       {r.mp_name && <div className="text-[11px] text-indigo-700 font-medium">MP: {r.mp_name}</div>}
                     </td>
                     <td className="py-3 px-4 text-slate-700 font-medium">{r.work_category}</td>

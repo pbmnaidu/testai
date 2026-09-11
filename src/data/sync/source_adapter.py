@@ -6,19 +6,21 @@ import http.client
 import os
 import re
 import ssl
+import threading
 import time
+import uuid
 import urllib.request
 from urllib.error import HTTPError, URLError
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Callable
 
 import pandas as pd
 
 from src.data.sync.delta_engine import _normalise_frame
 from src.data.sync.sync_config import (
     MONITORED_FILES, OFFICIAL_SOURCE_URL, RAW_DIR, REQUEST_TIMEOUT_SECONDS,
-    SOURCE_URL, VERIFY_SSL,
+    SOURCE_URL, SYNC_AUDIT_FILE, VERIFY_SSL,
 )
 
 DEFAULT_TILE_KEY = "Works Completed"
@@ -65,6 +67,17 @@ ALIASES = {
 }
 
 
+def _append_operational_event(event: dict) -> None:
+    """Persist credential-free request telemetry for sync observability."""
+    try:
+        os.makedirs(os.path.dirname(SYNC_AUDIT_FILE), exist_ok=True)
+        with open(SYNC_AUDIT_FILE, "a", encoding="utf-8") as handle:
+            handle.write(json.dumps({"timestamp": datetime.now(timezone.utc).isoformat(), **event}, default=str) + "\n")
+    except OSError:
+        # Telemetry must never prevent a safe sync attempt.
+        pass
+
+
 class MPLADSRestClient:
     def __init__(self, source_url: str = SOURCE_URL):
         self.source_url = source_url
@@ -84,23 +97,42 @@ class MPLADSRestClient:
             urllib.request.HTTPSHandler(context=context),
         )
 
-    def fetch_payload(self, tile_key: str = DEFAULT_TILE_KEY, combo: str = DEFAULT_COMBO) -> Any:
-        request_body = json.dumps({"combo": combo, "key": tile_key}).encode("utf-8")
+    def fetch_payload(
+        self,
+        tile_key: str = DEFAULT_TILE_KEY,
+        combo: str = DEFAULT_COMBO,
+        request_callback: Callable[[dict], None] | None = None,
+        page: int | None = None,
+    ) -> Any:
+        request_data = {"combo": combo, "key": tile_key}
+        if page is not None:
+            request_data["page"] = page
+        request_body = json.dumps(request_data).encode("utf-8")
         attempts = max(1, int(os.getenv("MPLADS_SYNC_RETRIES", "3")))
         context = ssl.create_default_context() if VERIFY_SSL else ssl._create_unverified_context()
         opener = self._opener(context)
         last_error: Exception | None = None
         for attempt in range(attempts):
+            request_id = f"REQ-{uuid.uuid4().hex[:12].upper()}"
+            request_started = time.perf_counter()
             request = urllib.request.Request(
                 self.source_url, data=request_body,
                 headers={"Content-Type": "application/json", "Accept": "application/json", "User-Agent": "Mozilla/5.0"},
                 method="POST",
             )
             try:
+                if request_callback:
+                    request_callback({"event": "api_request_started", "request_id": request_id, "endpoint": self.source_url, "tile_key": tile_key, "page": page or 1, "attempt": attempt + 1})
                 with opener.open(request, timeout=REQUEST_TIMEOUT_SECONDS) as response:
-                    return json.loads(response.read().decode("utf-8"))
+                    body = response.read()
+                    response_ms = round((time.perf_counter() - request_started) * 1000, 1)
+                    if request_callback:
+                        request_callback({"event": "api_request_completed", "request_id": request_id, "endpoint": self.source_url, "tile_key": tile_key, "page": page or 1, "attempt": attempt + 1, "response_bytes": len(body), "response_ms": response_ms})
+                    return json.loads(body.decode("utf-8"))
             except (HTTPError, URLError, http.client.RemoteDisconnected, ConnectionResetError, TimeoutError, json.JSONDecodeError) as exc:
                 last_error = exc
+                if request_callback:
+                    request_callback({"event": "api_request_failed", "request_id": request_id, "endpoint": self.source_url, "tile_key": tile_key, "page": page or 1, "attempt": attempt + 1, "response_ms": round((time.perf_counter() - request_started) * 1000, 1), "error": str(exc), "will_retry": attempt + 1 < attempts})
                 if attempt + 1 >= attempts:
                     raise
                 time.sleep(min(2 ** attempt, 8))
@@ -175,39 +207,114 @@ class MPLADSRestClient:
         return found
 
     @staticmethod
+    def _next_page(payload: Any, current_page: int) -> int | None:
+        """Read common pagination metadata without assuming one API schema."""
+        if isinstance(payload, dict):
+            for key in ("next_page", "nextPage", "next_page_number", "nextPageNumber"):
+                value = payload.get(key)
+                if isinstance(value, int) and value > current_page:
+                    return value
+            for key in ("has_next", "hasNext", "has_more", "hasMore"):
+                if payload.get(key) is True:
+                    return current_page + 1
+            total = next((payload.get(key) for key in ("total_pages", "totalPages", "page_count", "pageCount") if payload.get(key) is not None), None)
+            if isinstance(total, int) and total > current_page:
+                return current_page + 1
+            for value in payload.values():
+                next_page = MPLADSRestClient._next_page(value, current_page)
+                if next_page:
+                    return next_page
+        elif isinstance(payload, list):
+            for value in payload:
+                next_page = MPLADSRestClient._next_page(value, current_page)
+                if next_page:
+                    return next_page
+        return None
+
+    @staticmethod
     def _missing_required_columns(table: str, frame: pd.DataFrame) -> list[list[str]]:
         available = {_key(column) for column in frame.columns}
         return [list(group) for group in REQUIRED_COLUMN_GROUPS.get(table, ()) if not any(alias in available for alias in group)]
 
-    def fetch_to_staging(self, staging_dir: str) -> dict:
+    def fetch_to_staging(self, staging_dir: str, progress_callback: Callable[[dict], None] | None = None) -> dict:
         started = datetime.now(timezone.utc)
         os.makedirs(staging_dir, exist_ok=True)
         written = {}
         errors = []
+        stats = {"api_requests": 0, "retry_count": 0, "pages_fetched": 0, "records_received": 0, "records_processed": 0, "records_failed": 0, "records_skipped": 0, "datasets_failed": 0}
+        stats_lock = threading.Lock()
+
+        def emit(event: dict) -> None:
+            if progress_callback:
+                progress_callback({**event, "timestamp": datetime.now(timezone.utc).isoformat()})
+
+        def request_event(event: dict) -> None:
+            _append_operational_event({
+                "event": event.get("event"),
+                "request_id": event.get("request_id"),
+                "sync_id": os.path.basename(staging_dir),
+                "dataset": event.get("tile_key"),
+                "page": event.get("page", 1),
+                "endpoint": event.get("endpoint", self.source_url),
+                "status": "FAILED" if event.get("event") == "api_request_failed" else "SUCCESS" if event.get("event") == "api_request_completed" else "STARTED",
+                "response_ms": event.get("response_ms"),
+                "error": event.get("error"),
+                "retry_count": max(0, int(event.get("attempt", 1)) - 1),
+            })
+            with stats_lock:
+                if event.get("event") == "api_request_started":
+                    stats["api_requests"] += 1
+                    if int(event.get("attempt", 1)) > 1:
+                        stats["retry_count"] += 1
+                counters = dict(stats)
+            emit({**event, **counters})
+
+        emit({"event": "fetch_started", "datasets": [table for table, _ in SOURCE_TABLE_REQUESTS]})
 
         def fetch_table(table: str, tile_key: str):
             try:
-                tables = self._extract_tables(self.fetch_payload(tile_key, DEFAULT_COMBO), default_table=table)
+                emit({"event": "dataset_fetch_started", "dataset": table, "label": tile_key})
+                page = 1
+                payload = self.fetch_payload(tile_key, DEFAULT_COMBO, request_callback=request_event)
+                page_payloads = [payload]
+                while True:
+                    next_page = self._next_page(payload, page)
+                    if not next_page or next_page <= page or next_page > page + 1000:
+                        break
+                    page = next_page
+                    payload = self.fetch_payload(tile_key, DEFAULT_COMBO, request_callback=request_event, page=page)
+                    page_payloads.append(payload)
+                tables = {}
+                for page_payload in page_payloads:
+                    for page_table, page_frame in self._extract_tables(page_payload, default_table=table).items():
+                        if page_table in tables:
+                            tables[page_table] = pd.concat([tables[page_table], page_frame], ignore_index=True)
+                        else:
+                            tables[page_table] = page_frame.copy()
                 frame = tables.get(table)
                 if frame is None and len(tables) == 1:
                     frame = next(iter(tables.values()))
                 if frame is None or frame.empty:
                     raise ValueError("response contained no records")
-                return table, tile_key, frame, None
+                return table, tile_key, frame.drop_duplicates(ignore_index=True), None, len(page_payloads)
             except Exception as exc:
-                return table, tile_key, None, str(exc)
+                return table, tile_key, None, str(exc), 0
 
         fetched = {}
         with ThreadPoolExecutor(max_workers=len(SOURCE_TABLE_REQUESTS), thread_name_prefix="mospi-fetch") as executor:
             futures = [executor.submit(fetch_table, table, tile_key) for table, tile_key in SOURCE_TABLE_REQUESTS]
             for future in as_completed(futures):
-                table, tile_key, frame, error = future.result()
-                fetched[table] = (tile_key, frame, error)
+                table, tile_key, frame, error, pages = future.result()
+                fetched[table] = (tile_key, frame, error, pages)
 
         for table, tile_key in SOURCE_TABLE_REQUESTS:
-            actual_tile_key, frame, error = fetched.get(table, (tile_key, None, "request did not complete"))
+            actual_tile_key, frame, error, pages = fetched.get(table, (tile_key, None, "request did not complete", 0))
             if error:
                 errors.append(f"{table} ({actual_tile_key}): {error}")
+                with stats_lock:
+                    stats["datasets_failed"] += 1
+                    counters = dict(stats)
+                emit({"event": "dataset_failed", "dataset": table, "label": actual_tile_key, "error": error, **counters})
                 continue
             frame = _normalise_frame(frame)
             if table == "t6" and "expenditure_amount" not in frame.columns and "completed_disbursed_amount" in frame.columns:
@@ -224,6 +331,18 @@ class MPLADSRestClient:
             written[table] = {"tile_key": tile_key, "path": path, "rows": int(len(frame)), "columns": list(frame.columns), "missing_required_column_groups": missing}
             if missing:
                 errors.append(f"{table} ({tile_key}) missing required column groups: {missing}")
+                with stats_lock:
+                    stats["datasets_failed"] += 1
+                    stats["records_failed"] += int(len(frame))
+                    counters = dict(stats)
+                emit({"event": "dataset_failed", "dataset": table, "label": tile_key, "records_received": int(len(frame)), "error": "Required columns were missing.", **counters})
+            else:
+                with stats_lock:
+                    stats["pages_fetched"] += pages
+                    stats["records_received"] += int(len(frame))
+                    stats["records_processed"] += int(len(frame))
+                    counters = dict(stats)
+                emit({"event": "dataset_completed", "dataset": table, "label": tile_key, "records_received": int(len(frame),), "records_processed": int(len(frame)), "pages_fetched": pages, **counters})
         missing_tables = [table for table, _ in SOURCE_TABLE_REQUESTS if table not in written]
         if missing_tables:
             errors.append(f"missing datasets: {', '.join(missing_tables)}")
@@ -231,6 +350,7 @@ class MPLADSRestClient:
         return {"success": success, "source_url": self.source_url, "endpoint": OFFICIAL_SOURCE_URL,
                 "fetched_at": started.isoformat(), "tables": written, "errors": errors,
                 "missing_tables": missing_tables, "staging_dir": staging_dir,
+                "counters": {**stats, "datasets_completed": len(written) - stats["datasets_failed"], "datasets_failed": stats["datasets_failed"]},
                 "error": "; ".join(errors) if errors else None,
                 "message": "All six official datasets fetched and validated" if success else "Official dataset validation failed; no promotion is allowed"}
 

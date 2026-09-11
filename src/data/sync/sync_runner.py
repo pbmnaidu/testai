@@ -7,6 +7,7 @@ import shutil
 import threading
 import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 
 import pandas as pd
@@ -15,14 +16,123 @@ from src.data.sync.delta_engine import COMPARE_FIELDS, MPLADSDeltaEngine
 from src.data.sync.snapshot_manager import create_snapshot, get_snapshot_history
 from src.data.sync.source_adapter import MPLADSRestClient
 from src.data.sync.sync_config import (
-    DATA_DIR, MONITORED_FILES, PROCESSED_DIR, SOURCE_URL, SYNC_INTERVAL_DAYS,
-    SNAPSHOTS_DIR, SYNC_LOG_FILE,
+    DATA_DIR, MONITORED_FILES, PROCESSED_DIR, SOURCE_URL, SYNC_AUDIT_FILE,
+    SYNC_DAILY_TIME, SYNC_INTERVAL_HOURS, SYNC_JOB_STATUS_FILE, SNAPSHOTS_DIR,
+    SYNC_LOG_FILE,
 )
 from src.data.sync.training_manager import TRAINING_MANAGER
 
 _PREVIEW_DIR = os.path.join(DATA_DIR, "sync_previews")
 _scheduler_started = False
 _scheduler_lock = threading.Lock()
+_sync_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="mplads-sync")
+_sync_job_lock = threading.Lock()
+_job_status_lock = threading.Lock()
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _next_scheduled_sync(now: datetime | None = None) -> datetime:
+    """Return the next configured automatic run in UTC.
+
+    ``MPLADS_SYNC_DAILY_TIME=02:00`` enables a daily fixed-time run.  In all
+    other deployments the configurable hour interval is used.
+    """
+    now = now or _now()
+    if SYNC_DAILY_TIME:
+        try:
+            hour, minute = (int(part) for part in SYNC_DAILY_TIME.split(":", 1))
+            candidate = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+            return candidate if candidate > now else candidate + timedelta(days=1)
+        except (TypeError, ValueError):
+            pass
+    return now + timedelta(hours=SYNC_INTERVAL_HOURS)
+
+
+def _schedule_label() -> str:
+    return f"Daily at {SYNC_DAILY_TIME} UTC" if SYNC_DAILY_TIME else f"Every {SYNC_INTERVAL_HOURS} Hours (Automatic)"
+
+
+def _write_job_status(payload: dict) -> dict:
+    os.makedirs(os.path.dirname(SYNC_JOB_STATUS_FILE), exist_ok=True)
+    with open(SYNC_JOB_STATUS_FILE, "w", encoding="utf-8") as handle:
+        json.dump(payload, handle, indent=2, default=str)
+    return payload
+
+
+def _read_job_status() -> dict:
+    try:
+        with open(SYNC_JOB_STATUS_FILE, encoding="utf-8") as handle:
+            return json.load(handle)
+    except Exception:
+        return {"status": "IDLE", "message": "No synchronization job is running.", "datasets": [], "counters": {}}
+
+
+def _update_job_status(job_id: str, event: dict | None = None, **updates) -> dict:
+    with _job_status_lock:
+        current = _read_job_status()
+        payload = dict(current)
+        payload.update(updates)
+        payload["job_id"] = job_id
+        payload["updated_at"] = _now().isoformat()
+        if event:
+            event_name = event.get("event", "operation")
+            payload["last_event"] = event_name
+            payload["last_event_at"] = event.get("timestamp") or _now().isoformat()
+            payload["message"] = event.get("message") or payload.get("message") or event_name.replace("_", " ").title()
+            payload["event_detail"] = {
+                key: value for key, value in event.items()
+                if key not in {"timestamp", "error"}
+            }
+            if event.get("error"):
+                payload["technical_error"] = str(event["error"])
+            dataset = event.get("dataset")
+            if dataset:
+                datasets = list(payload.get("datasets") or [])
+                row = next((item for item in datasets if item.get("dataset") == dataset), None)
+                if row is None:
+                    row = {"dataset": dataset}
+                    datasets.append(row)
+                row.update({
+                    key: value for key, value in event.items()
+                    if key in {"status", "label", "records_received", "records_processed", "records_failed", "pages_fetched", "error"}
+                })
+                if event_name == "dataset_fetch_started":
+                    row["status"] = "RUNNING"
+                elif event_name == "dataset_completed":
+                    row["status"] = "COMPLETED"
+                elif event_name == "dataset_failed":
+                    row["status"] = "FAILED"
+                payload["datasets"] = datasets
+            counters = dict(payload.get("counters") or {})
+            for key in ("records_received", "records_processed", "pages_fetched", "api_requests", "retry_count"):
+                if key in event:
+                    counters[key] = event[key]
+            payload["counters"] = counters
+        return _write_job_status(payload)
+
+
+def _append_audit(event: dict) -> None:
+    """Write compact, credential-free operational events for later review."""
+    os.makedirs(os.path.dirname(SYNC_AUDIT_FILE), exist_ok=True)
+    event = {"timestamp": _now().isoformat(), **event}
+    with open(SYNC_AUDIT_FILE, "a", encoding="utf-8") as handle:
+        handle.write(json.dumps(event, default=str) + "\n")
+
+
+def _friendly_error(error: object) -> str:
+    text = str(error or "").lower()
+    if any(token in text for token in ("timeout", "timed out")):
+        return "The source service did not respond in time. The previous validated dataset remains available."
+    if any(token in text for token in ("429", "too many requests")):
+        return "The source service is temporarily limiting requests. Please try synchronization again later."
+    if any(token in text for token in ("connection", "urlopen", "reset", "refused", "dns")):
+        return "The source service could not be reached. The previous validated dataset remains available."
+    if "required column" in text or "validation" in text:
+        return "The dataset was received but did not pass validation. The previous validated dataset remains available."
+    return "Synchronization could not be completed. The previous validated dataset remains available."
 
 
 def _read_history() -> list:
@@ -119,7 +229,7 @@ def record_local_pipeline_run(training_status: str = "COMPLETED") -> dict:
     previous = snapshots[0] if snapshots else None
     diff = _compare_processed_to_snapshot(previous)
     snapshot = create_snapshot()
-    now = datetime.now(timezone.utc)
+    now = _now()
     entry = {
         "sync_id": f"LOCAL-{now.strftime('%Y%m%dT%H%M%SZ')}",
         "timestamp": now.isoformat(),
@@ -133,18 +243,32 @@ def record_local_pipeline_run(training_status: str = "COMPLETED") -> dict:
         "updated_records_count": diff["updated_count"],
         "removed_records_count": diff["removed_count"],
         "unchanged_records_count": diff["unchanged_count"],
+        "records_requested": None,
+        "records_received": snapshot["total_records"],
+        "records_inserted": diff["new_count"],
+        "records_updated": diff["updated_count"],
+        "records_skipped": diff["unchanged_count"],
+        "records_failed": 0,
+        "pages_fetched": len(MONITORED_FILES),
+        "api_requests": 0,
+        "retry_count": 0,
+        "training_triggered": training_status != "NOT_STARTED",
+        "risk_analysis_triggered": training_status != "NOT_STARTED",
+        "error_count": 0,
+        "datasets": list(MONITORED_FILES.keys()),
+        "last_successful_sync": now.isoformat(),
         "training_status": training_status,
-        "next_scheduled_sync": (now + timedelta(days=SYNC_INTERVAL_DAYS)).strftime("%Y-%m-%d %H:%M:%S"),
+        "next_scheduled_sync": _next_scheduled_sync(now).isoformat(),
         "delta": diff,
     }
     _write_history(entry)
     return entry
 
 
-def preview_diff(filters: dict | None = None) -> dict:
+def preview_diff(filters: dict | None = None, progress_callback=None) -> dict:
     token = uuid.uuid4().hex
     staging_dir = os.path.join(_PREVIEW_DIR, token)
-    fetch = MPLADSRestClient().fetch_to_staging(staging_dir)
+    fetch = MPLADSRestClient().fetch_to_staging(staging_dir, progress_callback=progress_callback)
     if not fetch.get("success"):
         return {"success": False, "fetch": fetch, "source_url": SOURCE_URL}
     diff = MPLADSDeltaEngine().compare_staging(staging_dir)
@@ -155,7 +279,7 @@ def preview_diff(filters: dict | None = None) -> dict:
     return payload
 
 
-def commit_preview(preview_token: str) -> dict:
+def commit_preview(preview_token: str, progress_callback=None) -> dict:
     staging_dir = os.path.join(_PREVIEW_DIR, os.path.basename(preview_token))
     meta_path = os.path.join(staging_dir, "preview.json")
     if not os.path.exists(meta_path):
@@ -163,39 +287,127 @@ def commit_preview(preview_token: str) -> dict:
     with open(meta_path, encoding="utf-8") as handle:
         preview = json.load(handle)
     diff = preview["diff"]
+    fetch = preview.get("fetch", {})
+    if progress_callback:
+        progress_callback({"event": "dataset_promotion_started", "message": "Promoting the validated dataset version."})
     state = MPLADSDeltaEngine().commit_staging(staging_dir, diff)
     snapshot = create_snapshot()
-    now = datetime.now(timezone.utc)
+    now = _now()
+    counters = fetch.get("counters", {})
     entry = {
         "sync_id": f"SYNC-{now.strftime('%Y%m%dT%H%M%SZ')}", "timestamp": now.isoformat(),
+        "started_at": preview.get("created_at"), "completed_at": now.isoformat(),
         "status": "SUCCESS", "mode": "manual_or_scheduled", "source_url": SOURCE_URL,
+        "data_origin": "official_api",
         "snapshot_id": snapshot["snapshot_id"], "total_records": snapshot["total_records"],
         "new_records_count": diff.get("new_count", 0), "updated_records_count": diff.get("updated_count", 0),
         "removed_records_count": diff.get("removed_count", 0), "unchanged_records_count": diff.get("unchanged_count", 0),
-        "next_scheduled_sync": (now + timedelta(days=SYNC_INTERVAL_DAYS)).strftime("%Y-%m-%d %H:%M:%S"),
+        "records_requested": None, "records_received": counters.get("records_received", 0),
+        "records_inserted": diff.get("new_count", 0), "records_updated": diff.get("updated_count", 0),
+        "records_skipped": diff.get("unchanged_count", 0), "records_failed": counters.get("datasets_failed", 0),
+        "pages_fetched": counters.get("pages_fetched", 0), "api_requests": counters.get("api_requests", 0),
+        "retry_count": counters.get("retry_count", 0), "training_triggered": True,
+        "risk_analysis_triggered": True, "error_count": 0,
+        "datasets": list(fetch.get("tables", {}).keys()),
+        "counters": counters,
+        "last_successful_sync": now.isoformat(),
+        "next_scheduled_sync": _next_scheduled_sync(now).isoformat(),
         "delta": diff,
     }
     _write_history(entry)
+    _append_audit({"sync_id": entry["sync_id"], "event": "sync_committed", "status": "SUCCESS", "snapshot_id": snapshot["snapshot_id"], "counters": counters})
+    if progress_callback:
+        progress_callback({"event": "dataset_promotion_completed", "snapshot_id": snapshot["snapshot_id"], "records_processed": snapshot["total_records"]})
     training = TRAINING_MANAGER.start(snapshot["snapshot_id"], diff)
+    if progress_callback:
+        progress_callback({"event": "analysis_queued", "training": training, "message": "Validated data was published and analysis was queued."})
     shutil.rmtree(staging_dir, ignore_errors=True)
     return {"success": True, "sync": entry, "state": state, "training": training}
 
 
-def run_sync_job() -> dict:
-    preview = preview_diff()
+def run_sync_job(progress_callback=None, job_id: str | None = None) -> dict:
+    job_id = job_id or f"SYNCJOB-{uuid.uuid4().hex[:12].upper()}"
+
+    def emit(event: dict) -> None:
+        _update_job_status(job_id, event)
+        if progress_callback:
+            progress_callback(event)
+
+    _update_job_status(
+        job_id,
+        status="RUNNING",
+        started_at=_now().isoformat(),
+        message="Connecting to the official MPLADS data source.",
+        datasets=[],
+        counters={},
+    )
+    preview = preview_diff(progress_callback=emit)
     if not preview.get("success"):
-        now = datetime.now(timezone.utc)
+        now = _now()
+        fetch = preview.get("fetch", {})
+        counters = fetch.get("counters", {})
+        raw_error = fetch.get("error") or "; ".join(fetch.get("errors", [])) or "REST fetch failed"
         entry = {"sync_id": f"SYNC-{now.strftime('%Y%m%dT%H%M%SZ')}", "timestamp": now.isoformat(),
-                 "status": "FAILED", "source_url": SOURCE_URL, "error": preview.get("fetch", {}).get("error") or "; ".join(preview.get("fetch", {}).get("errors", [])) or "REST fetch failed",
-                 "next_scheduled_sync": (now + timedelta(days=SYNC_INTERVAL_DAYS)).strftime("%Y-%m-%d %H:%M:%S")}
+                 "started_at": preview.get("created_at"), "completed_at": now.isoformat(), "status": "FAILED", "source_url": SOURCE_URL,
+                 "error": raw_error, "user_message": _friendly_error(raw_error), "records_received": counters.get("records_received", 0),
+                 "records_failed": counters.get("records_failed", 0), "records_skipped": counters.get("records_skipped", 0),
+                 "datasets_failed": counters.get("datasets_failed", 0), "pages_fetched": counters.get("pages_fetched", 0),
+                 "api_requests": counters.get("api_requests", 0), "retry_count": counters.get("retry_count", 0),
+                 "training_triggered": False, "risk_analysis_triggered": False, "error_count": max(1, len(fetch.get("errors", []))),
+                 "datasets": list(fetch.get("tables", {}).keys()), "counters": counters,
+                 "next_scheduled_sync": _next_scheduled_sync(now).isoformat()}
         _write_history(entry)
+        _append_audit({"sync_id": entry["sync_id"], "event": "sync_failed", "status": "FAILED", "error": raw_error, "counters": counters})
+        _update_job_status(
+            job_id,
+            status="FAILED",
+            completed_at=now.isoformat(),
+            message=entry["user_message"],
+            counters=counters,
+            error_count=entry["error_count"],
+            technical_error=raw_error,
+        )
+        if progress_callback:
+            progress_callback({"event": "sync_failed", "message": entry["user_message"], "error": raw_error})
         return {"success": False, "sync": entry, "fetch": preview.get("fetch")}
-    return commit_preview(preview["preview_token"])
+    result = commit_preview(preview["preview_token"], progress_callback=emit)
+    if result.get("success"):
+        _update_job_status(
+            job_id,
+            status="COMPLETED",
+            completed_at=_now().isoformat(),
+            message="Synchronization completed. Validated data was published and analysis was queued.",
+            snapshot_id=result.get("sync", {}).get("snapshot_id"),
+            sync_id=result.get("sync", {}).get("sync_id"),
+            counters=result.get("sync", {}).get("counters", {}),
+            training=result.get("training"),
+        )
+    return result
+
+
+def start_sync_job() -> dict:
+    """Queue one non-blocking synchronization job and return its live status."""
+    with _sync_job_lock:
+        current = _read_job_status()
+        if current.get("status") in {"QUEUED", "RUNNING"}:
+            return current
+        job_id = f"SYNCJOB-{uuid.uuid4().hex[:12].upper()}"
+        queued = _write_job_status({
+            "job_id": job_id,
+            "status": "QUEUED",
+            "message": "Synchronization queued.",
+            "queued_at": _now().isoformat(),
+            "datasets": [],
+            "counters": {},
+        })
+        _sync_executor.submit(run_sync_job, None, job_id)
+        return queued
 
 
 def get_sync_status() -> dict:
     history = _read_history()
     latest = history[0] if history else {}
+    successful = next((item for item in history if item.get("status") == "SUCCESS"), {})
     snapshot_history = get_snapshot_history()
     # Counts are written when the local pipeline completes. Do not recompute
     # six large Parquet deltas on every dashboard refresh; the history entry
@@ -203,11 +415,11 @@ def get_sync_status() -> dict:
     local_delta = latest.get("delta") if latest.get("data_origin") == "local_dataset_files" else None
     return {
         "operational_status": "healthy" if latest.get("status", "SUCCESS") != "FAILED" else "degraded",
-        "sync_frequency": f"Every {SYNC_INTERVAL_DAYS} Days (Automatic)",
+        "sync_frequency": _schedule_label(),
         "source_url": SOURCE_URL,
         "data_origin": latest.get("data_origin") or ("official_api" if latest else None),
         "last_sync": latest.get("timestamp"), "next_scheduled_sync": latest.get("next_scheduled_sync"),
-        "current_snapshot_id": latest.get("snapshot_id", snapshot_history[0].get("snapshot_id") if snapshot_history else "NONE"),
+        "current_snapshot_id": successful.get("snapshot_id", snapshot_history[0].get("snapshot_id") if snapshot_history else "NONE"),
         "total_records_processed": latest.get("total_records", 0),
         "new_records_since_last_sync": latest.get("new_records_count", 0),
         "updated_records_since_last_sync": latest.get("updated_records_count", 0),
@@ -215,6 +427,46 @@ def get_sync_status() -> dict:
         "pending_local_dataset_changes": False,
         "local_dataset_delta": local_delta,
         "snapshot_count": len(snapshot_history), "training": TRAINING_MANAGER.status(),
+        "job": _read_job_status(),
+        "last_successful_sync": successful.get("completed_at") or successful.get("timestamp"),
+        "data_version": successful.get("snapshot_id") or (snapshot_history[0].get("snapshot_id") if snapshot_history else "NONE"),
+        "analysis_version": (TRAINING_MANAGER.status() or {}).get("snapshot_id") or "UNKNOWN",
+        "analysis_generated_at": (TRAINING_MANAGER.status() or {}).get("completed_at"),
+    }
+
+
+def get_sync_health() -> dict:
+    """Return source health metrics from credential-free request telemetry."""
+    events = []
+    try:
+        with open(SYNC_AUDIT_FILE, encoding="utf-8") as handle:
+            for line in handle.readlines()[-500:]:
+                try:
+                    item = json.loads(line)
+                    if str(item.get("event", "")).startswith("api_request_"):
+                        events.append(item)
+                except json.JSONDecodeError:
+                    continue
+    except OSError:
+        pass
+    completed = [item for item in events if item.get("event") == "api_request_completed"]
+    failed = [item for item in events if item.get("event") == "api_request_failed"]
+    latest_success = completed[-1] if completed else None
+    latest_failure = failed[-1] if failed else None
+    attempts = len(completed) + len(failed)
+    response_times = [float(item["response_ms"]) for item in completed if item.get("response_ms") is not None]
+    status = get_sync_status()
+    return {
+        "source_url": SOURCE_URL,
+        "status": "available" if latest_success and not (latest_failure and latest_failure.get("timestamp", "") > latest_success.get("timestamp", "")) else "degraded" if latest_failure else "unknown",
+        "last_successful_request": latest_success.get("timestamp") if latest_success else None,
+        "last_failure": latest_failure.get("timestamp") if latest_failure else None,
+        "response_time_ms": round(sum(response_times) / len(response_times), 1) if response_times else None,
+        "records_fetched": int(status.get("job", {}).get("counters", {}).get("records_received", 0) or status.get("total_records_processed", 0) or 0),
+        "request_count": attempts,
+        "error_count": len(failed),
+        "error_rate": round(len(failed) / attempts, 4) if attempts else 0.0,
+        "last_sync": status.get("last_sync"),
     }
 
 
@@ -228,19 +480,21 @@ def start_scheduler() -> None:
         _scheduler_started = True
 
     def worker():
-        interval = SYNC_INTERVAL_DAYS * 86400
+        interval = max(60, int(SYNC_INTERVAL_HOURS * 3600))
         while True:
             history = _read_history()
             delay = interval
             if history and history[0].get("next_scheduled_sync"):
                 try:
-                    due = datetime.strptime(history[0]["next_scheduled_sync"], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+                    due = datetime.fromisoformat(str(history[0]["next_scheduled_sync"]))
+                    if due.tzinfo is None:
+                        due = due.replace(tzinfo=timezone.utc)
                     delay = max(60, (due - datetime.now(timezone.utc)).total_seconds())
                 except (TypeError, ValueError):
                     delay = interval
             time.sleep(delay)
             try:
-                run_sync_job()
+                start_sync_job()
             except Exception as exc:
                 print(f"[MPLADS scheduler] sync failed: {exc}")
 

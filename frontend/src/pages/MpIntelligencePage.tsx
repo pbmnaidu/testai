@@ -3,6 +3,7 @@ import { fetchFilters, fetchMpIntelligence } from '../services/api';
 import { FilterOptions, MpIntelligenceResponse } from '../types';
 import { RiskBadge } from '../components/cards/RiskBadge';
 import { UserCheck, MapPin, Building, Eye, ChevronRight, ArrowUpDown } from 'lucide-react';
+import { usePersistentState } from '../hooks/usePersistentState';
 
 interface MpIntelligencePageProps {
   onSelectWork: (workId: string) => void;
@@ -12,14 +13,14 @@ export const MpIntelligencePage: React.FC<MpIntelligencePageProps> = ({ onSelect
   const [filterOpts, setFilterOpts] = useState<FilterOptions | null>(null);
   
   // Cascading optional filter states
-  const [selectedState, setSelectedState] = useState<string>('');
-  const [selectedConstituency, setSelectedConstituency] = useState<string>('');
-  const [selectedMp, setSelectedMp] = useState<string>('');
+  const [selectedState, setSelectedState] = usePersistentState<string>('mplads.mp-intelligence.state', '');
+  const [selectedConstituency, setSelectedConstituency] = usePersistentState<string>('mplads.mp-intelligence.constituency', '');
+  const [selectedMp, setSelectedMp] = usePersistentState<string>('mplads.mp-intelligence.mp', '');
 
   const [data, setData] = useState<MpIntelligenceResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [sortField, setSortField] = useState<string>('composite_risk_score');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [sortField, setSortField] = usePersistentState<string>('mplads.mp-intelligence.sort-field', 'composite_risk_score');
+  const [sortOrder, setSortOrder] = usePersistentState<'asc' | 'desc'>('mplads.mp-intelligence.sort-order', 'desc');
 
   const handleSort = (field: string) => {
     if (sortField === field) {
@@ -62,7 +63,7 @@ export const MpIntelligencePage: React.FC<MpIntelligencePageProps> = ({ onSelect
     return [...data.suspicious_works].sort((a, b) => {
       let aVal: any = a[sortField as keyof typeof a];
       let bVal: any = b[sortField as keyof typeof b];
-      if (sortField === 'State') { aVal = a.State; bVal = b.State; }
+      if (sortField === 'State') { aVal = a.state || a.State; bVal = b.state || b.State; }
       if (aVal === undefined || aVal === null) aVal = 0;
       if (bVal === undefined || bVal === null) bVal = 0;
       if (typeof aVal === 'string') {
@@ -251,8 +252,8 @@ export const MpIntelligencePage: React.FC<MpIntelligencePageProps> = ({ onSelect
                       <tr key={r.work_id} className="hover:bg-slate-50/70 transition-colors">
                         <td className="py-3 px-4 font-mono font-bold text-slate-900">{r.work_id}</td>
                         <td className="py-3 px-4">
-                          <div className="font-bold text-slate-900">{r.State}</div>
-                          <div className="text-[11px] text-slate-500">{r.Constituency}</div>
+                          <div className="font-bold text-slate-900">{r.state || r.State}</div>
+                          <div className="text-[11px] text-slate-500">{r.constituency || r.Constituency}</div>
                         </td>
                         <td className="py-3 px-4 text-slate-700 font-medium">{r.work_category}</td>
                         <td className="py-3 px-4 text-right font-mono font-bold text-slate-900">₹{(r.sanction_amount / 100000).toFixed(2)} L</td>

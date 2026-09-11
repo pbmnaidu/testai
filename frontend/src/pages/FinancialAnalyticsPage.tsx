@@ -1,271 +1,161 @@
-import React, { useState, useEffect } from 'react';
-import { fetchOverview, fetchRiskQueue, fetchFilters } from '../services/api';
-import { NationalOverviewResponse, WorkRecord, FilterOptions } from '../types';
-import { PieChart, DollarSign, Eye, Filter, RotateCcw, MapPin, ArrowUpDown } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { fetchFilters, fetchOverview, fetchRiskQueue } from '../services/api';
+import { FilterOptions, NationalOverviewResponse, WorkRecord } from '../types';
+import { ArrowLeft, ArrowUpDown, ArrowRight, BarChart3, DollarSign, Eye, Filter, RotateCcw } from 'lucide-react';
+import { usePersistentState } from '../hooks/usePersistentState';
 
 interface FinancialAnalyticsPageProps {
   onSelectWork?: (workId: string) => void;
+  onOpenBenchmarks?: () => void;
 }
 
-export const FinancialAnalyticsPage: React.FC<FinancialAnalyticsPageProps> = ({ onSelectWork }) => {
+const money = (value?: number) => {
+  if (value === undefined || value === null || Number.isNaN(value)) return 'Not available';
+  return `₹${value.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+};
+
+const comparison = (min?: number, max?: number, current?: number, unit = '') => {
+  if (min === undefined || max === undefined || current === undefined) return 'Insufficient historical data';
+  const suffix = unit ? `/${unit}` : '';
+  return `Historical: ${money(min)}${suffix} – ${money(max)}${suffix} · Current: ${money(current)}${suffix}`;
+};
+
+export const FinancialAnalyticsPage: React.FC<FinancialAnalyticsPageProps> = ({ onSelectWork, onOpenBenchmarks }) => {
   const [records, setRecords] = useState<WorkRecord[]>([]);
-  const [total, setTotal] = useState<number>(0);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState<NationalOverviewResponse | null>(null);
-
-  // Filters
-  const [selectedState, setSelectedState] = useState<string>('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [minScore, setMinScore] = useState<number>(50);
+  const [selectedState, setSelectedState] = usePersistentState('mplads.financial-analytics.state', '');
+  const [selectedCategory, setSelectedCategory] = usePersistentState('mplads.financial-analytics.category', '');
   const [filterOpts, setFilterOpts] = useState<FilterOptions | null>(null);
-  const [sortField, setSortField] = useState<string>('financial_risk_score');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-
-  const handleSort = (field: string) => {
-    if (sortField === field) {
-      setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortField(field);
-      setSortOrder('desc');
-    }
-  };
-
-  const sortedRecords = React.useMemo(() => {
-    return [...records].sort((a, b) => {
-      let aVal: any = a[sortField as keyof typeof a];
-      let bVal: any = b[sortField as keyof typeof b];
-      if (sortField === 'State') { aVal = a.State; bVal = b.State; }
-      if (aVal === undefined || aVal === null) aVal = 0;
-      if (bVal === undefined || bVal === null) bVal = 0;
-      if (typeof aVal === 'string') {
-        return sortOrder === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-      }
-      return sortOrder === 'asc' ? (aVal - bVal) : (bVal - aVal);
-    });
-  }, [records, sortField, sortOrder]);
+  const [sortField, setSortField] = usePersistentState('mplads.financial-analytics.sort-field', 'financial_risk_rank');
+  const [sortOrder, setSortOrder] = usePersistentState<'asc' | 'desc'>('mplads.financial-analytics.sort-order', 'desc');
+  const [page, setPage] = usePersistentState('mplads.financial-analytics.page', 1);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
     fetchFilters().then(setFilterOpts).catch(console.error);
     fetchOverview().then(setOverview).catch(console.error);
   }, []);
 
-  const loadFinancialQueue = () => {
+  useEffect(() => {
     setLoading(true);
     fetchRiskQueue({
       state: selectedState || undefined,
       category: selectedCategory || undefined,
-      min_financial_risk: minScore,
-      sort_by: 'financial_risk_score',
-      page: 1,
-      limit: 25,
-    })
-      .then((res) => {
-        setRecords(res.records || []);
-        setTotal(res.total || 0);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error(err);
-        setLoading(false);
-      });
+      financial_only: true,
+      min_financial_risk: 0,
+      sort_by: 'financial_risk_rank',
+      page,
+      limit: 50,
+    }).then((res) => {
+      setRecords(res.records || []);
+      setTotal(res.total || 0);
+      setTotalPages(res.total_pages || 1);
+    }).catch(console.error).finally(() => setLoading(false));
+  }, [selectedState, selectedCategory, page]);
+
+  const sortedRecords = [...records].sort((a, b) => {
+    const left = a[sortField as keyof WorkRecord] ?? '';
+    const right = b[sortField as keyof WorkRecord] ?? '';
+    const result = typeof left === 'string' || typeof right === 'string'
+      ? String(left).localeCompare(String(right))
+      : Number(left) - Number(right);
+    return sortOrder === 'asc' ? result : -result;
+  });
+
+  const handleSort = (field: string) => {
+    if (sortField === field) setSortOrder((value) => value === 'asc' ? 'desc' : 'asc');
+    else { setSortField(field); setSortOrder('desc'); }
   };
 
-  useEffect(() => {
-    loadFinancialQueue();
-  }, [selectedState, selectedCategory, minScore]);
-
-  const handleReset = () => {
-    setSelectedState('');
-    setSelectedCategory('');
-    setMinScore(50);
-  };
-
-  const formatAmount = (amt: number) => {
-    if (!amt) return '₹0.00 Lakh';
-    const inLakhs = amt / 100000;
-    if (inLakhs >= 100) {
-      return `₹${(inLakhs / 100).toFixed(2)} Cr`;
-    }
-    return `₹${inLakhs.toFixed(2)} L`;
-  };
+  const reset = () => { setSelectedState(''); setSelectedCategory(''); setPage(1); };
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
-      <div>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
         <h2 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-          <PieChart className="w-6 h-6 text-slate-900" /> Financial & Cost Anomaly Analytics
+          <DollarSign className="w-6 h-6 text-amber-600" /> Financial Risk Order
         </h2>
         <p className="text-xs text-slate-500 mt-1">
-          Deep-dive analysis into statistical cost outliers, peer-group median ratios, and multi-variate Isolation Forest anomaly scores.
+          Ranked works outside a labelled completed-work peer range. Cost groups use constituency, then state, then India only when a narrower group has insufficient history; unit prices require a specific work type and validated quantity.
         </p>
+        </div>
+        {onOpenBenchmarks && <button onClick={onOpenBenchmarks} className="inline-flex items-center gap-2 rounded-xl bg-indigo-50 border border-indigo-200 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100"><BarChart3 className="w-4 h-4" /> View peer benchmark statistics</button>}
       </div>
 
-      {/* Overview Metric Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 space-y-2 shadow-sm">
-          <span className="text-[11px] text-slate-500 uppercase font-bold tracking-wider">Flagged Financial Outliers</span>
-          <div className="text-2xl font-black text-amber-600 font-mono tracking-tight">{(overview?.financial_summary?.flagged_financial_outliers ?? 0).toLocaleString()} Works</div>
-          <p className="text-xs text-slate-500 font-medium">Financial Risk Score &ge; 50 / 100</p>
+        <div className="bg-white rounded-2xl border border-slate-200 p-5">
+          <span className="text-[11px] text-slate-500 uppercase font-bold tracking-wider">Works requiring financial review</span>
+          <div className="text-2xl font-black text-amber-600 font-mono mt-2">{(overview?.financial_summary?.flagged_financial_outliers ?? 0).toLocaleString()}</div>
+          <p className="text-xs text-slate-500 mt-1">Outside the selected completed-work peer range</p>
         </div>
-
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 space-y-2 shadow-sm">
-          <span className="text-[11px] text-slate-500 uppercase font-bold tracking-wider">High Peer Ratio Works (&gt;3.0x)</span>
-          <div className="text-2xl font-black text-orange-600 font-mono tracking-tight">{(overview?.financial_summary?.high_peer_ratio_works ?? 0).toLocaleString()} Works</div>
-          <p className="text-xs text-slate-500 font-medium">Exceed 3.0x Category Peer Median</p>
+        <div className="bg-white rounded-2xl border border-slate-200 p-5">
+          <span className="text-[11px] text-slate-500 uppercase font-bold tracking-wider">Comparable cost histories</span>
+          <div className="text-2xl font-black text-slate-900 font-mono mt-2">{(overview?.financial_summary?.historical_comparison_available ?? 0).toLocaleString()}</div>
+          <p className="text-xs text-slate-500 mt-1">At least two completed works in a labelled peer group</p>
         </div>
-
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 space-y-2 shadow-sm">
-          <span className="text-[11px] text-slate-500 uppercase font-bold tracking-wider">Isolation Forest Model</span>
-          <div className="text-2xl font-black text-slate-900 font-mono tracking-tight">{(overview?.financial_summary?.isolation_outlier_rate_pct ?? 0).toFixed(2)}% Baseline</div>
-          <p className="text-xs text-slate-500 font-medium">Trained on {(overview?.summary.total_works ?? 0).toLocaleString()} Historical Works</p>
+        <div className="bg-white rounded-2xl border border-slate-200 p-5">
+          <span className="text-[11px] text-slate-500 uppercase font-bold tracking-wider">Unit-price histories</span>
+          <div className="text-2xl font-black text-slate-900 font-mono mt-2">{(overview?.financial_summary?.unit_price_comparisons ?? 0).toLocaleString()}</div>
+          <p className="text-xs text-slate-500 mt-1">Validated quantity and matching unit</p>
         </div>
       </div>
 
-      {/* Filter Bar */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-5 space-y-3 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
-            <Filter className="w-4 h-4 text-slate-700" /> Filter Financial Anomaly Cases
-          </div>
-          {(selectedState || selectedCategory || minScore !== 50) && (
-            <button onClick={handleReset} className="text-xs text-slate-600 hover:text-slate-900 font-bold flex items-center gap-1">
-              <RotateCcw className="w-3.5 h-3.5" /> Clear Filters
-            </button>
-          )}
+      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2 text-xs font-bold text-slate-900"><Filter className="w-4 h-4" /> Filter financial risks</div>
+          {(selectedState || selectedCategory) && <button onClick={reset} className="text-xs text-slate-600 font-bold flex items-center gap-1"><RotateCcw className="w-3.5 h-3.5" /> Clear filters</button>}
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-          <div>
-            <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1">State / UT</label>
-            <select
-              value={selectedState}
-              onChange={(e) => setSelectedState(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 font-medium"
-            >
-              <option value="">All States / UTs</option>
-              {filterOpts?.states.map((st) => (
-                <option key={st} value={st}>{st}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Work Category</label>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 font-medium"
-            >
-              <option value="">All Categories</option>
-              {filterOpts?.categories.map((cat) => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1">Min Financial Risk Score</label>
-            <select
-              value={minScore}
-              onChange={(e) => setMinScore(parseFloat(e.target.value))}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 font-medium"
-            >
-              <option value={70}>70+ Critical Financial Risks</option>
-              <option value={50}>50+ Moderate Outliers</option>
-              <option value={30}>30+ Baseline Outliers</option>
-            </select>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+          <select value={selectedState} onChange={(event) => { setSelectedState(event.target.value); setPage(1); }} className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-800 font-medium">
+            <option value="">All States / UTs</option>
+            {filterOpts?.states.map((state) => <option key={state} value={state}>{state}</option>)}
+          </select>
+          <select value={selectedCategory} onChange={(event) => { setSelectedCategory(event.target.value); setPage(1); }} className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-800 font-medium">
+            <option value="">All Sectors / Categories</option>
+            {filterOpts?.categories.map((category) => <option key={category} value={category}>{category}</option>)}
+          </select>
         </div>
       </div>
 
-      {/* Interactive Financial Anomaly Work Queue Table */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-6 space-y-4 shadow-sm">
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <DollarSign className="w-4 h-4 text-emerald-600" /> Flagged Financial Anomaly Queue ({total.toLocaleString()} Cases)
-          </h3>
-          <span className="text-xs font-mono font-bold text-slate-500">Ordered by {sortField}</span>
+          <h3 className="text-sm font-bold text-slate-900">Financial Risk Order ({total.toLocaleString()} works)</h3>
+          <span className="text-xs text-slate-500">All flagged works are included</span>
         </div>
-
-        {loading ? (
-          <div className="p-8 text-center text-xs text-slate-500 font-medium">Loading Financial Risk Queue...</div>
-        ) : records.length === 0 ? (
-          <div className="p-8 text-center text-xs text-slate-500 font-medium">No financial anomaly cases found matching applied criteria.</div>
-        ) : (
+        {loading ? <div className="p-8 text-center text-xs text-slate-500">Loading Financial Risk Order...</div> : sortedRecords.length === 0 ? <div className="p-8 text-center text-xs text-slate-500">No financially unusual works found for the selected filters.</div> : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs select-none">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200/80 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
-                  <th className="py-3 px-4 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('work_id')}>
-                    <span className="flex items-center gap-1">
-                      Work ID <ArrowUpDown className={`w-3 h-3 ${sortField === 'work_id' ? 'text-amber-600 opacity-100' : 'opacity-50'}`} />
-                    </span>
-                  </th>
-                  <th className="py-3 px-4 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('State')}>
-                    <span className="flex items-center gap-1">
-                      Location & Category <ArrowUpDown className={`w-3 h-3 ${sortField === 'State' ? 'text-amber-600 opacity-100' : 'opacity-50'}`} />
-                    </span>
-                  </th>
-                  <th className="py-3 px-4 font-mono text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('sanction_amount')}>
-                    <span className="flex items-center justify-end gap-1">
-                      Sanction Budget <ArrowUpDown className={`w-3 h-3 ${sortField === 'sanction_amount' ? 'text-amber-600 opacity-100' : 'opacity-50'}`} />
-                    </span>
-                  </th>
-                  <th className="py-3 px-4 text-center cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('amount_to_peer_ratio')}>
-                    <span className="flex items-center justify-center gap-1">
-                      Peer Ratio <ArrowUpDown className={`w-3 h-3 ${sortField === 'amount_to_peer_ratio' ? 'text-amber-600 opacity-100' : 'opacity-50'}`} />
-                    </span>
-                  </th>
-                  <th className="py-3 px-4 text-center cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('financial_risk_score')}>
-                    <span className="flex items-center justify-center gap-1">
-                      Financial Risk <ArrowUpDown className={`w-3 h-3 ${sortField === 'financial_risk_score' ? 'text-amber-600 opacity-100' : 'opacity-50'}`} />
-                    </span>
-                  </th>
-                  <th className="py-3 px-4 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('financial_explanation')}>
-                    <span className="flex items-center gap-1">
-                      Audit Explanation <ArrowUpDown className={`w-3 h-3 ${sortField === 'financial_explanation' ? 'text-amber-600 opacity-100' : 'opacity-50'}`} />
-                    </span>
-                  </th>
-                  <th className="py-3 px-4 text-center">Action</th>
-                </tr>
-              </thead>
+            <table className="w-full text-left text-xs">
+              <thead><tr className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
+                <th className="py-3 px-4">Work</th><th className="py-3 px-4">Constituency / Sector</th>
+                <th className="py-3 px-4 text-center cursor-pointer" onClick={() => handleSort('financial_risk_level')}>Risk <ArrowUpDown className="inline w-3 h-3" /></th>
+                <th className="py-3 px-4 cursor-pointer" onClick={() => handleSort('financial_explanation')}>What happened? <ArrowUpDown className="inline w-3 h-3" /></th>
+                <th className="py-3 px-4">Evidence</th><th className="py-3 px-4 text-center">Action</th>
+              </tr></thead>
               <tbody className="divide-y divide-slate-100 text-slate-800">
-                {sortedRecords.map((r) => (
-                  <tr key={r.work_id} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="py-3 px-4 font-mono font-bold text-slate-900">{r.work_id}</td>
-                    <td className="py-3 px-4">
-                      <div className="font-bold text-slate-900">{r.State} • {r.Constituency}</div>
-                      <div className="text-[11px] text-slate-500">{r.work_category}</div>
-                    </td>
-                    <td className="py-3 px-4 font-mono text-right font-bold text-emerald-700">
-                      {formatAmount(r.sanction_amount)}
-                    </td>
-                    <td className="py-3 px-4 text-center font-mono font-bold text-orange-600">
-                      {(r.amount_to_peer_ratio || 1.0).toFixed(2)}x
-                    </td>
-                    <td className="py-3 px-4 text-center font-mono font-bold text-amber-600">
-                      {r.financial_risk_score.toFixed(1)}
-                    </td>
-                    <td className="py-3 px-4 text-slate-700 font-medium max-w-xs truncate" title={r.financial_explanation || r.description}>
-                      {r.financial_explanation || r.description}
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      {onSelectWork && (
-                        <button
-                          onClick={() => onSelectWork(r.work_id)}
-                          className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[11px] font-bold inline-flex items-center gap-1.5 transition-colors shadow-sm"
-                        >
-                          <Eye className="w-3.5 h-3.5" /> Inspect
-                        </button>
-                      )}
-                    </td>
+                {sortedRecords.map((record) => (
+                  <tr key={record.work_id} className="hover:bg-slate-50/70 align-top">
+                    <td className="py-3 px-4 min-w-[240px]"><div className="font-bold text-slate-900">{record.description || record.work_id}</div><div className="text-[10px] font-mono text-slate-500 mt-1">{record.work_id}</div></td>
+                    <td className="py-3 px-4 min-w-[160px]"><div className="font-bold">{record.constituency || 'Unknown constituency'}</div><div className="text-[11px] text-slate-500">{record.main_sector || record.work_category}</div></td>
+                    <td className="py-3 px-4 text-center"><span className={`rounded-full px-2.5 py-1 text-[10px] font-black ${record.financial_risk_level === 'HIGH' ? 'bg-red-100 text-red-700' : record.financial_risk_level === 'MEDIUM' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700'}`}>{record.financial_risk_level}</span><div className="text-[10px] text-slate-500 mt-2">#{record.financial_risk_rank ?? '—'}</div></td>
+                    <td className="py-3 px-4 min-w-[360px] font-medium"><div>{record.financial_what_happened || record.financial_explanation}</div><div className="mt-2 text-[11px] text-slate-600"><b>Why it matters:</b> {record.financial_why_it_matters || 'Review the estimate and supporting cost records.'}</div></td>
+                    <td className="py-3 px-4 min-w-[350px] text-slate-600 leading-5 whitespace-pre-line"><div><b className="text-slate-800">Supporting details:</b> {record.financial_supporting_details || record.financial_risk_evidence || 'Insufficient historical data for a reliable comparison.'}</div>{record.financial_audit_interpretation && <div className="mt-2 text-[11px] text-slate-500">{record.financial_audit_interpretation}</div>}</td>
+                    <td className="py-3 px-4 text-center">{onSelectWork && <button onClick={() => onSelectWork(record.work_id)} className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[11px] font-bold inline-flex items-center gap-1.5"><Eye className="w-3.5 h-3.5" /> Inspect</button>}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         )}
+        <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+          <span>Page {page} of {totalPages}</span>
+          <div className="flex gap-2">
+            <button disabled={page <= 1} onClick={() => setPage((value) => value - 1)} className="px-3 py-1.5 rounded-xl bg-slate-100 disabled:opacity-40 font-bold inline-flex items-center gap-1"><ArrowLeft className="w-3.5 h-3.5" /> Previous</button>
+            <button disabled={page >= totalPages} onClick={() => setPage((value) => value + 1)} className="px-3 py-1.5 rounded-xl bg-slate-100 disabled:opacity-40 font-bold inline-flex items-center gap-1">Next <ArrowRight className="w-3.5 h-3.5" /></button>
+          </div>
+        </div>
       </div>
     </div>
   );

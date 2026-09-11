@@ -4,6 +4,7 @@ import { WorkRecord } from '../../types';
 
 const money = (value?: number) => `₹${(Number(value || 0) / 100000).toFixed(2)} Lakh`;
 const valueOrDash = (value?: string | number) => value === undefined || value === null || value === '' ? '—' : String(value);
+const percentage = (value?: number) => value === undefined || value === null || Number.isNaN(value) ? '—' : `${(Number(value) <= 1 ? Number(value) * 100 : Number(value)).toFixed(1)}%`;
 
 interface Props { work: WorkRecord; }
 
@@ -12,21 +13,24 @@ export const WorkInfoCards: React.FC<Props> = ({ work }) => {
   const disbursed = trips.reduce((sum, trip) => sum + Number(trip.expenditure_amount || 0), 0) || Number(work.effective_expenditure || 0);
   const sanctioned = Number(work.sanction_amount || 0);
   const utilization = sanctioned > 0 ? (disbursed / sanctioned) * 100 : 0;
-  const group = work.peer_group_level || work.effective_work_category || work.work_category || 'Unclassified';
+  const group = work.peer_category || work.comparison_peer_category || work.comparison_subsector || work.peer_group_level || work.effective_work_category || work.work_category || 'Unclassified';
+  const state = work.state || work.State;
+  const constituency = work.constituency || work.Constituency;
+  const medianLabel = work.comparison_scope === 'ALL_INDIA' ? 'India peer median' : work.comparison_scope === 'STATE' ? 'State peer median' : 'Constituency peer median';
 
   return <div className="space-y-5">
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
       <section className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm">
         <h3 className="text-xs font-bold text-slate-900 flex items-center gap-2"><Layers3 className="w-4 h-4 text-indigo-600" /> Work classification / group</h3>
-        <dl className="mt-4 space-y-2 text-xs"><div><dt className="text-slate-500">Effective category</dt><dd className="font-bold text-slate-900 break-words">{valueOrDash(work.effective_work_category || work.work_category)}</dd></div><div><dt className="text-slate-500">Domain · subcategory</dt><dd className="font-semibold text-slate-800 break-words">{valueOrDash(work.work_domain || work.ai_work_domain)} · {valueOrDash(work.work_subcategory)}</dd></div><div><dt className="text-slate-500">Peer group</dt><dd className="font-bold text-slate-900 break-words">{group}</dd></div><div><dt className="text-slate-500">Classification confidence</dt><dd className="font-bold text-slate-900">{work.category_confidence !== undefined ? `${Number(work.category_confidence).toFixed(1)}%` : valueOrDash(work.category_confidence_band)}</dd></div></dl>
+        <dl className="mt-4 space-y-2 text-xs"><div><dt className="text-slate-500">Effective category</dt><dd className="font-bold text-slate-900 break-words">{valueOrDash(work.effective_work_category || work.work_category)}</dd></div><div><dt className="text-slate-500">Domain · main sector · subcategory</dt><dd className="font-semibold text-slate-800 break-words">{valueOrDash(work.work_domain || work.ai_work_domain)} · {valueOrDash(work.main_sector)} · {valueOrDash(work.work_subcategory)}</dd></div><div><dt className="text-slate-500">Peer group</dt><dd className="font-bold text-slate-900 break-words">{group}</dd>{work.peer_category_auto_generated && <p className="mt-1 text-[10px] font-semibold text-indigo-600">Auto-created family from unspecified category; unit-price comparison skipped.</p>}</div><div><dt className="text-slate-500">Classification confidence</dt><dd className="font-bold text-slate-900">{work.category_confidence !== undefined ? percentage(work.category_confidence) : valueOrDash(work.category_confidence_band)}</dd></div></dl>
       </section>
       <section className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm">
         <h3 className="text-xs font-bold text-slate-900 flex items-center gap-2"><CreditCard className="w-4 h-4 text-emerald-600" /> Financial realization</h3>
-        <dl className="mt-4 space-y-2 text-xs"><div className="flex justify-between gap-3"><dt className="text-slate-500">Sanctioned amount</dt><dd className="font-black text-slate-900">{money(sanctioned)}</dd></div><div className="flex justify-between gap-3"><dt className="text-slate-500">Disbursed amount</dt><dd className="font-black text-emerald-700">{money(disbursed)}</dd></div><div className="flex justify-between gap-3"><dt className="text-slate-500">Utilization</dt><dd className="font-bold text-slate-900">{utilization.toFixed(1)}%</dd></div><div className="flex justify-between gap-3"><dt className="text-slate-500">Peer median</dt><dd className="font-bold text-slate-900">{money(work.peer_category_median_amount || work.peer_median)}</dd></div></dl>
+        <dl className="mt-4 space-y-2 text-xs"><div className="flex justify-between gap-3"><dt className="text-slate-500">Sanctioned amount</dt><dd className="font-black text-slate-900">{money(sanctioned)}</dd></div><div className="flex justify-between gap-3"><dt className="text-slate-500">Disbursed amount</dt><dd className="font-black text-emerald-700">{money(disbursed)}</dd></div><div className="flex justify-between gap-3"><dt className="text-slate-500">Utilization</dt><dd className="font-bold text-slate-900">{utilization.toFixed(1)}%</dd></div><div className="flex justify-between gap-3"><dt className="text-slate-500">{medianLabel}</dt><dd className="font-bold text-slate-900">{money(work.historical_cost_median)}</dd></div></dl>
       </section>
       <section className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm">
         <h3 className="text-xs font-bold text-slate-900 flex items-center gap-2"><MapPinned className="w-4 h-4 text-amber-600" /> Location & ownership</h3>
-        <dl className="mt-4 space-y-2 text-xs"><div><dt className="text-slate-500">State · constituency</dt><dd className="font-bold text-slate-900">{valueOrDash(work.State)} · {valueOrDash(work.Constituency)}</dd></div><div><dt className="text-slate-500">MP</dt><dd className="font-semibold text-slate-800 break-words">{valueOrDash(work.mp_name)}</dd></div><div><dt className="text-slate-500">Source</dt><dd className="font-semibold text-slate-800">{valueOrDash(work.category_source)}</dd></div></dl>
+        <dl className="mt-4 space-y-2 text-xs"><div><dt className="text-slate-500">State · constituency</dt><dd className="font-bold text-slate-900">{valueOrDash(state)} · {valueOrDash(constituency)}</dd></div><div><dt className="text-slate-500">MP</dt><dd className="font-semibold text-slate-800 break-words">{valueOrDash(work.mp_name)}</dd></div><div><dt className="text-slate-500">Source</dt><dd className="font-semibold text-slate-800">{valueOrDash(work.category_source)}</dd></div></dl>
       </section>
       <section className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm">
         <h3 className="text-xs font-bold text-slate-900 flex items-center gap-2"><CalendarDays className="w-4 h-4 text-blue-600" /> Dates & payment count</h3>

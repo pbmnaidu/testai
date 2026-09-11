@@ -90,7 +90,9 @@ export const RiskMonitorPage: React.FC<RiskMonitorPageProps> = ({
     let effectiveSort = sortBy;
 
     if (dimension === 'financial') {
-      minFin = 35;
+      // The backend's financial_only filter is authoritative; do not hide a
+      // flagged work behind an internal score cutoff.
+      minFin = 0;
       if (sortBy === 'composite_risk_score') effectiveSort = 'financial_risk_score';
     } else if (dimension === 'compliance') {
       minComp = 20;
@@ -107,6 +109,7 @@ export const RiskMonitorPage: React.FC<RiskMonitorPageProps> = ({
       severity,
       search,
       min_financial_risk: minFin,
+      financial_only: dimension === 'financial',
       min_compliance_risk: minComp,
       sort_by: effectiveSort,
       page,
@@ -149,7 +152,7 @@ export const RiskMonitorPage: React.FC<RiskMonitorPageProps> = ({
     return [...records].sort((a, b) => {
       let aVal: any = a[sortBy as keyof typeof a];
       let bVal: any = b[sortBy as keyof typeof b];
-      if (sortBy === 'state') { aVal = a.State; bVal = b.State; }
+      if (sortBy === 'state') { aVal = a.state || a.State; bVal = b.state || b.State; }
       if (aVal === undefined || aVal === null) aVal = 0;
       if (bVal === undefined || bVal === null) bVal = 0;
       if (typeof aVal === 'string') {
@@ -342,8 +345,8 @@ export const RiskMonitorPage: React.FC<RiskMonitorPageProps> = ({
                   <tr key={r.work_id} onClick={() => onSelectWork(r.work_id)} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors cursor-pointer">
                     <td className="py-3 px-4 font-mono font-bold text-slate-900 dark:text-slate-100">{r.work_id}</td>
                     <td className="py-3 px-4">
-                      <div className="font-bold text-slate-900 dark:text-slate-100">{r.State}</div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400">{r.Constituency}</div>
+                      <div className="font-bold text-slate-900 dark:text-slate-100">{r.state || r.State}</div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400">{r.constituency || r.Constituency}</div>
                     </td>
                     <td className="py-3 px-4 truncate max-w-[140px] text-slate-600 dark:text-slate-400 font-medium">{r.work_category}</td>
                     <td className="py-3 px-4 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
@@ -375,7 +378,7 @@ export const RiskMonitorPage: React.FC<RiskMonitorPageProps> = ({
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="font-mono text-xs font-bold text-slate-100 break-all">{r.work_id}</div>
-                    <div className="mt-1 text-xs font-bold text-slate-300">{r.State} · {r.Constituency}</div>
+                    <div className="mt-1 text-xs font-bold text-slate-300">{r.state || r.State} · {r.constituency || r.Constituency}</div>
                   </div>
                   <RiskBadge level={r.overall_risk_level} score={r.composite_risk_score} />
                 </div>

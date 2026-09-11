@@ -3,7 +3,6 @@ node_modules/
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
-
 # Python
 __pycache__/
 *.py[cod]
@@ -18,11 +17,18 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Large temporary outputs
+# Logs and generated local artifacts
 *.log
+output/
+tmp/
 
-# Data sync temporary staging & training runtime caches
+# Data sync runtime state, snapshots, previews, and training caches
 data/sync_previews/
-data/training/backups/
-data/training/staging/
-data/training/mlruns/
+data/snapshots/
+data/sync_history.json
+data/sync_state.json
+data/sync_audit.jsonl
+data/sync_job_status.json
+data/training/
+data/downloaded_pdfs/
+frontend/vite.config.ts.timestamp-*.mjs

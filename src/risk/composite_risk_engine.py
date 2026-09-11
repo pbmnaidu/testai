@@ -1,4 +1,5 @@
 import os
+import re
 import pandas as pd
 import numpy as np
 
@@ -22,7 +23,23 @@ def run_composite_risk_engine():
     if os.path.exists(fin_path):
         fin_df = pd.read_parquet(fin_path)
         required_financial = ["work_id", "financial_risk_score", "financial_risk_level", "financial_explanation"]
-        financial_context = ["financial_anomaly_score", "is_financial_outlier", "risk_reasons", "anomaly_detected", "anomaly_type", "anomaly_severity", "expected_median", "current_expenditure", "deviation_percentage", "historical_sample_size", "comparison_basis", "comparable_work_count", "quantity_unit", "quantity_detected", "current_unit_price", "historical_median_unit_price", "confidence", "explanation", "risk_description", "c10_financial_invalid", "material_cost_context_score"]
+        financial_context = [
+            "is_financial_outlier", "risk_reasons", "anomaly_detected", "anomaly_type", "anomaly_severity",
+            "expected_median", "current_cost", "current_expenditure", "deviation_percentage",
+            "historical_sample_size", "comparison_basis", "comparable_work_count", "quantity_unit",
+            "quantity_detected", "current_unit_price", "historical_median_unit_price", "confidence",
+            "explanation", "risk_description", "financial_risk_evidence", "financial_audit_interpretation",
+            "historical_cost_min", "historical_cost_max", "historical_cost_median", "historical_cost_count",
+            "historical_unit_price_min", "historical_unit_price_max", "historical_unit_price_median",
+            "historical_unit_price_count", "historical_comparable_work_count", "financial_risk_rank",
+            "cost_comparison_status", "unit_comparison_status", "comparison_constituency",
+            "comparison_state", "comparison_scope", "comparison_level", "comparison_group_label",
+            "comparison_sector", "comparison_subsector", "comparison_work_type", "unit_comparison_scope",
+            "comparison_peer_category", "peer_category", "peer_category_auto_generated",
+            "original_effective_work_category",
+            "unit_price_comparison_eligible", "unit_price_skip_reason",
+            "financial_what_happened", "financial_why_it_matters", "financial_supporting_details",
+        ]
         fin_df = fin_df[[c for c in required_financial + financial_context + ["model_name", "model_version", "dataset_snapshot", "last_analyzed_at"] if c in fin_df.columns]].drop_duplicates("work_id")
         for column, default in {
             "model_name": "MPLADS_Financial_Anomaly_Model",
@@ -44,7 +61,10 @@ def run_composite_risk_engine():
     # 2. Merge Duplicate Risk
     if os.path.exists(dup_path):
         dup_df = pd.read_parquet(dup_path)
-        duplicate_columns = [c for c in ["work_id", "duplicate_risk_score", "duplicate_risk_level"] if c in dup_df.columns]
+        duplicate_columns = [c for c in [
+            "work_id", "duplicate_risk_score", "duplicate_risk_level", "duplicate_explanation",
+            "duplicate_what_happened", "duplicate_why_it_matters", "duplicate_supporting_details",
+        ] if c in dup_df.columns]
         dup_df = dup_df[duplicate_columns].drop_duplicates("work_id")
         df_base = pd.merge(df_base, dup_df, on="work_id", how="left")
     else:
@@ -53,7 +73,18 @@ def run_composite_risk_engine():
     # 3. Merge Compliance Risk
     if os.path.exists(comp_path):
         comp_df = pd.read_parquet(comp_path)
-        compliance_columns = [c for c in ["work_id", "compliance_risk_score", "compliance_risk_level", "compliance_explanation", "triggered_rules", "is_compliance_flagged", "compliance_rule_results"] if c in comp_df.columns]
+        compliance_columns = [c for c in [
+            "work_id", "compliance_risk_score", "compliance_risk_level",
+            "compliance_explanation", "triggered_rules", "is_compliance_flagged",
+            "is_work_level_compliance_risk", "compliance_scope",
+            "compliance_review_status", "compliance_findings",
+            "compliance_data_quality", "compliance_rule_results",
+            "compliance_primary_rule_id", "compliance_primary_status",
+            "compliance_primary_guideline_basis", "compliance_primary_what_happened",
+            "compliance_primary_why_it_matters", "compliance_primary_supporting_details",
+            "compliance_primary_details_json", "compliance_what_happened",
+            "compliance_why_it_matters", "compliance_supporting_details",
+        ] if c in comp_df.columns]
         comp_df = comp_df[compliance_columns].drop_duplicates("work_id")
         df_base = pd.merge(df_base, comp_df, on="work_id", how="left")
     else:
@@ -63,7 +94,7 @@ def run_composite_risk_engine():
 
     # 4. Merge Schedule Risk
     if os.path.exists(sched_path):
-        schedule_columns = [c for c in ["work_id", "schedule_risk_score", "schedule_risk_level", "schedule_explanation", "expected_timeline_progress_pct", "expenditure_progress_pct", "progress_gap_pct", "overdue_days", "expected_completion_period", "actual_or_elapsed_period", "sector_median_completion_period", "completion_deviation", "completion_risk_score", "completion_risk_category", "completion_explanation"] if c in pd.read_parquet(sched_path, columns=None).columns]
+        schedule_columns = [c for c in ["work_id", "schedule_risk_score", "schedule_risk_level", "schedule_explanation", "schedule_what_happened", "schedule_why_it_matters", "schedule_supporting_details", "expected_timeline_progress_pct", "expenditure_progress_pct", "progress_gap_pct", "overdue_days", "expected_completion_period", "actual_or_elapsed_period", "sector_median_completion_period", "completion_deviation", "completion_risk_score", "completion_risk_category", "completion_explanation"] if c in pd.read_parquet(sched_path, columns=None).columns]
         sched_df = pd.read_parquet(sched_path)[schedule_columns].drop_duplicates("work_id")
         df_base = pd.merge(df_base, sched_df, on="work_id", how="left")
     else:
@@ -115,76 +146,81 @@ def run_composite_risk_engine():
     df_base["requires_audit_action"] = df_base["composite_risk_score"] >= 35
 
 
-    # 7. Folder-2-compatible "Why Flagged?" Evidence Explanations Generator.
-    # Keep the numbered, newline-separated narrative format used by the
-    # original project so existing UI/API consumers receive the same style.
+    # 7. Human-readable evidence explanations and reviewer actions.
     print("Generating ranked explainable audit summaries & recommended reviewer actions...")
     
     f_exp = df_base["financial_explanation"].fillna("").astype(str) if "financial_explanation" in df_base.columns else pd.Series([""]*len(df_base))
     c_exp = df_base["compliance_explanation"].fillna("").astype(str) if "compliance_explanation" in df_base.columns else pd.Series([""]*len(df_base))
     s_exp = df_base["schedule_explanation"].fillna("").astype(str) if "schedule_explanation" in df_base.columns else pd.Series([""]*len(df_base))
+    d_exp = df_base["duplicate_explanation"].fillna("").astype(str) if "duplicate_explanation" in df_base.columns else pd.Series([""]*len(df_base))
 
     f_high = df_base["financial_risk_score"] >= 65
     d_high = df_base["duplicate_risk_score"] >= 85
     c_high = df_base["compliance_risk_score"] >= 35
     s_high = df_base["schedule_risk_score"] >= 35
 
-    f_driver = np.where(f_high, "Financial reason:\n" + f_exp, "")
-    d_driver = np.where(d_high, "Duplicate reason: This work description is very similar to another work.", "")
-    c_driver = np.where(c_high, "Compliance reason:\n" + c_exp, "")
-    s_driver = np.where(s_high, "Schedule reason:\n" + s_exp, "")
-
-    f_act = np.where(f_high, "Verify sanction budget against peer category baseline", "")
-    d_act = np.where(d_high, "Review candidate duplicate project to rule out double-funding", "")
-    c_act = np.where(c_high, "Request physical site evidence photo & missing compliance metadata", "")
-    s_act = np.where(s_high, "Request physical progress report from Executive Engineer", "")
-    sanction_date_related = c_exp.str.contains(
-        r"sanction|administrative sanction|75-day",
-        case=False,
-        regex=True,
-        na=False,
-    )
-    sanction_date_act = np.where(
-        sanction_date_related,
-        "Compliance — sanction-date review: verify the sanction date against the recommendation, start, and completion timeline.",
+    f_driver = np.where(f_high, f_exp, "")
+    d_driver = np.where(
+        d_high,
+        d_exp,
         "",
     )
+    c_driver = np.where(c_high, c_exp, "")
+    s_driver = np.where(s_high, s_exp, "")
 
-    def join_text(t1, t2, t3, t4, t5, fallback):
+    f_act = np.where(f_high, "Verify the estimate, quantity, scope, and supporting cost justification against comparable completed works.", "")
+    d_act = np.where(d_high, "Review related records to confirm whether they represent genuinely separate physical works or portions of the same project.", "")
+    c_act = np.where(c_high, "Verify the compliance timeline and eligibility documentation against MPLADS guidelines and supporting records.", "")
+    s_act = np.where(s_high, "Verify physical execution milestones and request a progress report from the implementing agency.", "")
+    def join_text(t1, t2, t3, t4, fallback):
         parts = []
-        for text in [t1, t2, t3, t4, t5]:
+        for text in [t1, t2, t3, t4]:
             if text:
                 parts.extend(line.strip() for line in str(text).replace(" | ", "\n").splitlines() if line.strip())
         if not parts:
             return fallback
-        # Re-number the combined evidence so each work has one consistent,
-        # human-readable explanation regardless of which engines triggered.
-        cleaned = [part.split(". ", 1)[1] if ". " in part[:4] else part for part in parts]
-        return "\n".join(f"{index}. {part}" for index, part in enumerate(cleaned, start=1))
+        # Keep each driver as a short paragraph.  This is deliberately not a
+        # numbered machine-style list: the reviewer should read a small story
+        # and then open the supporting evidence for exact values.
+        return "\n\n".join(parts)
 
     df_base["explainable_audit_summary"] = np.vectorize(join_text)(
-        f_driver, d_driver, c_driver, s_driver, "", "No major financial, duplicate, compliance, or schedule issue was found."
+        f_driver, d_driver, c_driver, s_driver, "No major financial, duplicate, compliance, or schedule concern requiring audit review was observed."
     )
     
     df_base["recommended_reviewer_action"] = np.vectorize(join_text)(
-        f_act, d_act, c_act, s_act, sanction_date_act, "Standard periodic monitoring."
+        f_act, d_act, c_act, s_act, "Standard periodic monitoring."
     )
 
     def priority_reason(row):
         if row["compliance_risk_score"] >= 85:
-            return "CRITICAL - Compliance risk detected; financial, duplicate, and schedule signals are secondary."
+            return "A high-priority work-level guideline finding is the main reason this work was prioritized for review."
         if row["compliance_risk_score"] >= 65:
-            return "HIGH - Compliance risk is the highest-priority signal and requires verification first."
+            return "A work-level guideline finding warrants priority review against the supporting records."
         if row["financial_risk_score"] >= 65:
-            return "Financial anomaly detected against comparable completed-work baselines."
+            return "The proposed pricing is outside the observed local historical pattern and warrants estimate verification."
         if row["duplicate_risk_score"] >= 85:
-            return "Possible duplicate or split-work pattern requires manual verification."
+            return "Related work records warrant scope verification to confirm that each entry represents a distinct physical work."
+        if row.get("schedule_risk_score", 0) >= 65:
+            return "Execution timeline is delayed and warrants physical progress verification."
         return "No high-priority risk signal detected."
 
     df_base["highest_priority_reason"] = df_base.apply(priority_reason, axis=1)
-    # risk_description is the detailed work-level narrative; keep the concise
-    # priority label separately in highest_priority_reason.
-    df_base["risk_description"] = df_base["explainable_audit_summary"]
+
+    def concise_risk_description(row):
+        candidates = [
+            (float(row.get("compliance_risk_score", 0) or 0), row.get("compliance_explanation", "")),
+            (float(row.get("financial_risk_score", 0) or 0), row.get("financial_explanation", "")),
+            (float(row.get("duplicate_risk_score", 0) or 0), row.get("duplicate_explanation", "")),
+            (float(row.get("schedule_risk_score", 0) or 0), row.get("schedule_explanation", "")),
+        ]
+        narrative = next((str(text).strip() for _, text in sorted(candidates, key=lambda item: item[0], reverse=True) if text and str(text).strip() and str(text).lower() != "nan"), "No major risk concern requiring audit review was observed.")
+        sentences = [part.strip() for part in re.split(r"(?<=[.!?])\s+", narrative) if part.strip()]
+        return " ".join(sentences[:3])
+
+    # The main work description stays short; the complete multi-driver
+    # narrative remains available in explainable_audit_summary and evidence.
+    df_base["risk_description"] = df_base.apply(concise_risk_description, axis=1)
     df_base["recommended_action"] = df_base["recommended_reviewer_action"]
     df_base["risk_evidence"] = df_base["explainable_audit_summary"]
     df_base["confidence"] = np.where(df_base["compliance_risk_score"].ge(65), "HIGH", np.where(df_base["financial_risk_score"].ge(65), "MEDIUM", "LOW"))

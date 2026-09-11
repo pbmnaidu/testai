@@ -12,11 +12,16 @@ TRAINING_BACKUP_DIR = os.path.join(TRAINING_DIR, "backups")
 SYNC_LOG_FILE = os.path.join(DATA_DIR, "sync_history.json")
 SYNC_STATE_FILE = os.path.join(DATA_DIR, "sync_state.json")
 SYNC_AUDIT_FILE = os.path.join(DATA_DIR, "sync_audit.jsonl")
+SYNC_JOB_STATUS_FILE = os.path.join(DATA_DIR, "sync_job_status.json")
 TRAINING_STATUS_FILE = os.path.join(TRAINING_DIR, "status.json")
 
 OFFICIAL_SOURCE_URL = "https://mplads.mospi.gov.in/rest/PreLoginDashboardData/getTilesReportData"
 SOURCE_URL = os.getenv("MPLADS_DATA_SOURCE_URL", OFFICIAL_SOURCE_URL)
-SYNC_INTERVAL_DAYS = 15
+# The scheduler is deliberately configuration-driven.  Existing deployments
+# keep the historical 15-day cadence unless an interval in hours is supplied.
+SYNC_INTERVAL_HOURS = max(1, int(os.getenv("MPLADS_SYNC_INTERVAL_HOURS", str(15 * 24))))
+SYNC_DAILY_TIME = os.getenv("MPLADS_SYNC_DAILY_TIME", "").strip()  # Optional UTC HH:MM
+SYNC_INTERVAL_DAYS = SYNC_INTERVAL_HOURS / 24
 REQUEST_TIMEOUT_SECONDS = int(os.getenv("MPLADS_SYNC_TIMEOUT_SECONDS", "300"))
 VERIFY_SSL = os.getenv("MPLADS_VERIFY_SSL", "false").lower() not in {"0", "false", "no"}
 

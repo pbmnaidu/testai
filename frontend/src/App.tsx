@@ -10,10 +10,11 @@ import { RiskMonitorPage } from './pages/RiskMonitorPage';
 import { ProjectDetailPage } from './pages/ProjectDetailPage';
 import { FinancialAnalyticsPage } from './pages/FinancialAnalyticsPage';
 import { DuplicateInspectorPage } from './pages/DuplicateInspectorPage';
-import { ComplianceMonitorPage } from './pages/ComplianceMonitorPage';
 import { ScheduleProgressPage } from './pages/ScheduleProgressPage';
 import { DataSyncPage } from './pages/DataSyncPage';
 import { ModelMonitoringPage } from './pages/ModelMonitoringPage';
+import { StateRiskAnalyticsPage } from './pages/StateRiskAnalyticsPage';
+import { FinancialBenchmarkPage } from './pages/FinancialBenchmarkPage';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<string>('overview');
@@ -114,8 +115,10 @@ export function App() {
               {activeTab === 'overview' && <OverviewPage onNavigateToRiskMonitor={handleNavigateToRiskMonitor} />}
               {activeTab === 'mp-intelligence' && <MpIntelligencePage onSelectWork={handleSelectWork} />}
               {activeTab === 'risk-monitor' && <RiskMonitorPage initialSeverity={initialSeverity} initialDimension="all" totalWorks={livePortfolio.totalWorks} onSelectWork={handleSelectWork} />}
+              {activeTab === 'state-risk-analytics' && <StateRiskAnalyticsPage onSelectWork={handleSelectWork} />}
               {activeTab === 'duplicate-inspector' && <DuplicateInspectorPage onSelectWork={handleSelectWork} />}
-              {activeTab === 'financial-analytics' && <RiskMonitorPage initialDimension="financial" totalWorks={livePortfolio.totalWorks} onSelectWork={handleSelectWork} />}
+              {activeTab === 'financial-analytics' && <FinancialAnalyticsPage onSelectWork={handleSelectWork} onOpenBenchmarks={() => setActiveTab('financial-benchmarks')} />}
+              {activeTab === 'financial-benchmarks' && <FinancialBenchmarkPage />}
               {activeTab === 'compliance-monitor' && <RiskMonitorPage initialDimension="compliance" totalWorks={livePortfolio.totalWorks} onSelectWork={handleSelectWork} />}
               {activeTab === 'schedule-progress' && <RiskMonitorPage initialDimension="schedule" totalWorks={livePortfolio.totalWorks} onSelectWork={handleSelectWork} />}
               {activeTab === 'data-sync' && <DataSyncPage />}

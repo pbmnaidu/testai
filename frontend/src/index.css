@@ -222,6 +222,26 @@ html:not(.dark) button.hover\:bg-slate-800:hover {
   color: #ffffff !important;
 }
 
+/* Keep labels readable when a dark-blue utility surface is remapped for the
+   daytime theme. Several audit cards intentionally retain a navy surface. */
+html:not(.dark) [class*="bg-slate-900"] .text-slate-100 { color: #f8fafc !important; }
+html:not(.dark) [class*="bg-slate-900"] .text-slate-200 { color: #e2e8f0 !important; }
+html:not(.dark) [class*="bg-slate-900"] .text-slate-300 { color: #cbd5e1 !important; }
+html:not(.dark) [class*="bg-slate-900"] .text-slate-400,
+html:not(.dark) [class*="bg-slate-900"] .text-slate-500 { color: #dbeafe !important; }
+html:not(.dark) [class*="bg-slate-800"] .text-slate-500 { color: #475569 !important; }
+
+/* Make row hover states visibly distinct without washing out their labels. */
+html:not(.dark) .hover\:bg-slate-50\/70:hover,
+html:not(.dark) .hover\:bg-slate-50\/80:hover,
+html:not(.dark) .hover\:bg-slate-50\/90:hover {
+  background-color: #e8eef7 !important;
+  color: #0f172a !important;
+}
+html:not(.dark) .hover\:bg-slate-50\/70:hover .text-slate-500,
+html:not(.dark) .hover\:bg-slate-50\/80:hover .text-slate-500,
+html:not(.dark) .hover\:bg-slate-50\/90:hover .text-slate-500 { color: #475569 !important; }
+
 /* Component-scoped daytime corrections. These rules deliberately live
    outside the dark-mode block so the existing night view is unchanged. */
 html:not(.dark) .risk-evidence-engine-summary {
@@ -309,6 +329,23 @@ html:not(.dark) .gis-map-info {
   border-color: #bfdbfe !important;
   color: #1d4ed8 !important;
 }
+
+/* The GIS detail card contains risk colours that are intentionally bright in
+   night view. Give those same labels dark, readable daytime equivalents. */
+html:not(.dark) .gis-selected-region-panel .text-slate-100 { color: #0f172a !important; }
+html:not(.dark) .gis-selected-region-panel .text-slate-200 { color: #1e293b !important; }
+html:not(.dark) .gis-selected-region-panel .text-slate-300 { color: #334155 !important; }
+html:not(.dark) .gis-selected-region-panel .text-slate-400 { color: #475569 !important; }
+html:not(.dark) .gis-selected-region-panel .text-slate-500 { color: #64748b !important; }
+html:not(.dark) .gis-selected-region-panel .text-indigo-400 { color: #4f46e5 !important; }
+html:not(.dark) .gis-selected-region-panel .text-indigo-300 { color: #4338ca !important; }
+html:not(.dark) .gis-selected-region-panel .text-rose-400 { color: #e11d48 !important; }
+html:not(.dark) .gis-selected-region-panel .text-amber-400 { color: #b45309 !important; }
+html:not(.dark) .gis-selected-region-panel .text-orange-400 { color: #c2410c !important; }
+html:not(.dark) .gis-selected-region-panel .text-emerald-400 { color: #047857 !important; }
+html:not(.dark) .gis-selected-region-panel .text-sky-400 { color: #0369a1 !important; }
+html:not(.dark) .gis-map-info .text-indigo-300 { color: #1d4ed8 !important; }
+html:not(.dark) .gis-map-info .text-indigo-400 { color: #4338ca !important; }
 
 html:not(.dark) .schedule-monitor-banner {
   background: linear-gradient(90deg, #fff8eb 0%, #ffffff 55%, #f8fbfd 100%) !important;

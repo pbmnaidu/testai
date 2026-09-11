@@ -151,29 +151,59 @@ def run_schedule_risk_engine():
     df["completion_risk_score"] = df["schedule_risk_score"]
     df["completion_risk_category"] = df["schedule_risk_level"]
 
-    # Human-Understandable Schedule Explanation
-    def generate_schedule_explanation(row):
-        reasons = []
+    # Human-readable schedule narrative.  The numeric fields remain available
+    # as supporting evidence, while the explanation itself stays cautious and
+    # does not present a schedule signal as proof of non-compliance.
+    def generate_schedule_narrative(row):
+        is_completed = pd.notnull(row.get("act_completion_date_dt"))
         gap = row["progress_gap_pct"]
-        expected = row["expected_timeline_progress_pct"]
-        exp = row["expenditure_progress_pct"]
         overdue = row["overdue_days"]
-        
-        if gap > 15:
-            reasons.append(f"Expected timeline progress is {expected:.1f}%, while expenditure progress is only {exp:.1f}% (Progress Gap: {gap:.1f}% points)")
-        if overdue > 0:
-            reasons.append(f"Work is {overdue} days past the estimated completion date")
-        if row["peer_progress_deviation"] < -20:
-            reasons.append(f"Financial progression is {abs(row['peer_progress_deviation']):.1f}% below the peer-group median")
-            
-        if not reasons:
-            return "Project expenditure and schedule progress align with expected timeline."
-        return " • ".join(reasons)
+        actual_delay = row.get("actual_completion_delay_days", 0)
 
-    df["schedule_explanation"] = df.apply(generate_schedule_explanation, axis=1)
-    df["completion_explanation"] = df.apply(
-        lambda row: f"Observed completion/elapsed period is {row['actual_or_elapsed_period']:.0f} days versus a historical {row['sector_median_completion_period']:.0f}-day median for {row[peer_field]}; deviation is {row['completion_deviation']:.0f} days.", axis=1
-    )
+        if is_completed and actual_delay > 0:
+            what = "The work was completed later than the historical completion timeline observed for similar works in this sector."
+            why = "The completion record and the reasons for the delay should be checked against the work file."
+        elif overdue > 0:
+            what = "The work has passed its planned completion date and remains incomplete."
+            why = "Physical progress, revised scheduling, and the implementing agency's explanation should be verified."
+        elif gap > 15:
+            what = "Recorded expenditure is behind the implementation progress expected for the elapsed period."
+            why = "The progress record should be checked to determine whether the work is advancing as planned."
+        elif row["peer_progress_deviation"] < -20:
+            what = "Recorded expenditure is lower than the pattern observed for comparable works at a similar stage."
+            why = "Site milestones and expenditure records should be reviewed together before drawing a conclusion about delay."
+        else:
+            what = "The available execution and expenditure records do not show a material schedule concern."
+            why = "Routine monitoring can continue using the next physical progress and expenditure update."
+
+        details = (
+            f"Expected timeline progress: {row['expected_timeline_progress_pct']:.1f}%; "
+            f"recorded expenditure progress: {row['expenditure_progress_pct']:.1f}%; "
+            f"progress difference: {row['progress_gap_pct']:.1f} percentage points; "
+            f"overdue days: {int(row['overdue_days'])}."
+        )
+        return pd.Series({
+            "what": what, "why": why, "details": details,
+            "explanation": f"{what} {why}",
+        })
+
+    schedule_narrative = df.apply(generate_schedule_narrative, axis=1)
+    df["schedule_what_happened"] = schedule_narrative["what"]
+    df["schedule_why_it_matters"] = schedule_narrative["why"]
+    df["schedule_supporting_details"] = schedule_narrative["details"]
+    df["schedule_explanation"] = schedule_narrative["explanation"]
+
+    def generate_completion_explanation(row):
+        if pd.notnull(row.get("act_completion_date_dt")):
+            if row["completion_deviation"] > 30:
+                return "The work was completed later than the historical completion duration observed for similar works in this sector. The completion record and any recorded explanation for the delay should be reviewed."
+            return "The work was completed within the historical completion duration observed for similar works in this sector."
+        else:
+            if row["completion_deviation"] > 30:
+                return "The elapsed execution duration is longer than the historical completion timeline observed for similar works in this sector. The current site status and revised completion plan should be reviewed."
+            return "The elapsed execution duration remains within the historical timeline observed for similar works in this sector."
+
+    df["completion_explanation"] = df.apply(generate_completion_explanation, axis=1)
 
     # Save output
     out_file = os.path.join(features_dir, "schedule_risk_analysis.parquet")

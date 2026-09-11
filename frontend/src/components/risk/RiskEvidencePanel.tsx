@@ -8,18 +8,28 @@ interface RiskEvidencePanelProps {
 
 export const RiskEvidencePanel: React.FC<RiskEvidencePanelProps> = ({ work }) => {
   const amount = work.sanction_amount || 0;
-  const ratio = work.amount_to_peer_ratio || 1.0;
-  const pct = work.category_percentile || 50.0;
-  const hasImage = work.has_evidence_image || false;
-  const complianceExplanation = work.compliance_explanation || '';
-  const sanctionDateRule = complianceExplanation
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .find((line) => /sanction|administrative sanction|75-day/i.test(line));
-  const sanctionDateAction = work.sanction_date && sanctionDateRule
-    ? `Compliance — sanction-date review: verify the sanction date against the recommendation, start, and completion timeline. ${sanctionDateRule}`
-    : '';
-  const recommendedAction = [work.recommended_reviewer_action, sanctionDateAction]
+  const nestedComplianceFinding = (work.compliance_findings || work.compliance_rule_results || [])
+    .find((finding) => finding.status === 'FAIL' || finding.status === 'NEEDS_REVIEW');
+  let primaryDetails: Record<string, unknown> = {};
+  try {
+    primaryDetails = work.compliance_primary_details_json ? JSON.parse(work.compliance_primary_details_json) : {};
+  } catch {
+    primaryDetails = {};
+  }
+  const complianceFinding = nestedComplianceFinding || (work.compliance_primary_rule_id ? {
+    rule_id: work.compliance_primary_rule_id,
+    rule_name: work.compliance_primary_rule_id,
+    status: work.compliance_primary_status || 'NEEDS_REVIEW',
+    guideline_basis: work.compliance_primary_guideline_basis,
+    what_happened: work.compliance_primary_what_happened || work.compliance_what_happened,
+    why_it_matters: work.compliance_primary_why_it_matters,
+    supporting_details: work.compliance_primary_supporting_details || work.compliance_supporting_details,
+    details: primaryDetails,
+  } : undefined);
+  const complianceAction = complianceFinding
+    ? 'Review this work against ' + (complianceFinding.guideline_basis || complianceFinding.guideline_section || 'the cited MPLADS guideline provision') + '.'
+    : 'No work-level guideline concern was identified from the available record.';
+  const recommendedAction = [work.recommended_reviewer_action, complianceAction]
     .filter((action, index, actions) => Boolean(action) && actions.indexOf(action) === index)
     .join('\n');
 
@@ -27,28 +37,34 @@ export const RiskEvidencePanel: React.FC<RiskEvidencePanelProps> = ({ work }) =>
     {
       title: 'Financial Risk Engine',
       observed: `₹${(amount / 100000).toFixed(2)} Lakh`,
-      baseline: 'Category Median Baseline',
-      deviation: `${ratio.toFixed(2)}x Peer Ratio (${pct.toFixed(1)}th percentile)`,
-      isHighDev: ratio >= 2.0,
-      explanation: work.financial_explanation || 'Expenditure falls within expected baseline bounds.'
+      baseline: work.historical_cost_count ? `${work.comparison_group_label || 'Selected peer-group'} historical range (${work.historical_cost_count} completed works)` : 'Comparable completed-work history',
+      deviation: work.financial_risk_level || 'NO SIGNAL',
+      isHighDev: Boolean(work.is_financial_outlier),
+      whatHappened: work.financial_what_happened || work.financial_explanation || "There is insufficient historical data for a reliable comparison of this work's pricing.",
+      whyItMatters: work.financial_why_it_matters || 'Review the estimate, quantity, scope, and supporting cost justification against the available local records.',
+      supportingDetails: work.financial_supporting_details || work.financial_risk_evidence || 'No additional comparable cost details are available.'
     },
     {
-      title: 'Duplicate Text (NLP Engine)',
+      title: 'Related Work Records',
       observed: work.description || 'N/A',
-      baseline: 'Unique Text Threshold (< 70%)',
-      deviation: work.duplicate_risk_score ? `${work.duplicate_risk_score.toFixed(1)}% Match` : 'No Match',
+      baseline: 'Related descriptions and record details',
+      deviation: work.duplicate_risk_level || ((work.duplicate_risk_score || 0) >= 70 ? 'REVIEW' : 'NO SIGNAL'),
       isHighDev: (work.duplicate_risk_score || 0) >= 70,
-      explanation: (work.duplicate_risk_score || 0) >= 70
-        ? `Candidate duplicate description detected in ${work.Constituency} constituency.`
-        : 'Unique description text verified across database.'
+      whatHappened: work.duplicate_what_happened || ((work.duplicate_risk_score || 0) >= 70
+        ? 'Related work records share project details and were recorded close enough together to warrant a scope check.'
+        : 'No material overlap signal was identified in the related work records.'),
+      whyItMatters: work.duplicate_why_it_matters || 'Verify that each record represents a distinct physical scope, quantity, location, and implementing arrangement.',
+      supportingDetails: work.duplicate_supporting_details || 'Open the related-record view for the descriptions, dates, quantities, and recorded costs used in the review.'
     },
     {
       title: 'Compliance & Evidence Gaps',
-      observed: hasImage ? 'Image Uploaded' : 'Missing Photo Evidence',
-      baseline: 'Physical Site Upload Required',
-      deviation: !hasImage && work.completion_date ? 'Missing Photo' : 'Compliant',
-      isHighDev: !hasImage && work.completion_date,
-      explanation: work.compliance_explanation || 'Site evidence requirements satisfied.'
+      observed: complianceFinding ? complianceFinding.status.replace(/_/g, ' ') : 'No finding',
+      baseline: complianceFinding?.threshold || 'Applicable work-level MPLADS guideline requirement',
+      deviation: complianceFinding?.severity || 'LOW',
+      isHighDev: Boolean(complianceFinding),
+      whatHappened: complianceFinding?.what_happened || work.compliance_what_happened || 'No work-level guideline concern was identified from the available record.',
+      whyItMatters: complianceFinding?.why_it_matters || work.compliance_why_it_matters || 'Continue to retain the supporting administrative and implementation records.',
+      supportingDetails: complianceFinding?.supporting_details || work.compliance_supporting_details || ('Guideline basis: ' + (complianceFinding?.guideline_basis || complianceFinding?.guideline_section || 'MPLADS Guidelines'))
     },
     {
       title: 'Schedule & Progress Risk',
@@ -56,7 +72,9 @@ export const RiskEvidencePanel: React.FC<RiskEvidencePanelProps> = ({ work }) =>
       baseline: `${work.expected_timeline_progress_pct || 0}% Expected Timeline Progress`,
       deviation: `${work.progress_gap_pct || 0}% Progress Gap`,
       isHighDev: (work.progress_gap_pct || 0) >= 15,
-      explanation: work.schedule_explanation || 'Schedule timeline progress aligns with financial disbursals.'
+      whatHappened: work.schedule_what_happened || work.schedule_explanation || 'The available execution and expenditure records do not show a material schedule concern.',
+      whyItMatters: work.schedule_why_it_matters || 'Routine monitoring can continue using the next physical progress and expenditure update.',
+      supportingDetails: work.schedule_supporting_details || 'No additional schedule details are available.'
     }
   ];
 
@@ -104,8 +122,10 @@ export const RiskEvidencePanel: React.FC<RiskEvidencePanelProps> = ({ work }) =>
               </div>
             </div>
 
-            <div className="text-xs text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-200/80 leading-relaxed font-medium whitespace-pre-line break-words" style={{ overflowWrap: 'anywhere' }}>
-              {dim.explanation}
+            <div className="text-xs text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-200/80 leading-relaxed font-medium space-y-2" style={{ overflowWrap: 'anywhere' }}>
+              <div><span className="font-bold text-slate-900">What happened?</span> {dim.whatHappened}</div>
+              <div><span className="font-bold text-slate-900">Why it matters:</span> {dim.whyItMatters}</div>
+              <div className="text-slate-600"><span className="font-bold text-slate-900">Supporting details:</span> {dim.supportingDetails}</div>
             </div>
           </div>
         ))}

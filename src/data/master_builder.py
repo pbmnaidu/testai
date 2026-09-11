@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from src.modules.material_context import analyze_material_context
 from src.modules.work_classifier import classify_work_descriptions, write_profile, write_validation_template
-from src.modules.sector_classifier import classify_and_cost
+from src.modules.sector_classifier import classify_sectors
 
 def build_master_dataset():
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -33,7 +33,9 @@ def build_master_dataset():
     
     # 2. Prepare T5 Completed Works summary
     t5_unique = t5.dropna(subset=["work_id"]).drop_duplicates(subset=["work_id"], keep="last")
-    t5_summary = t5_unique[["work_id", "completion_date", "completed_disbursed_amount", "has_image"]].rename(columns={
+    # Some supplied T5 extracts do not contain an image/evidence column. Keep
+    # the derived schema stable without inventing evidence for those records.
+    t5_summary = t5_unique.reindex(columns=["work_id", "completion_date", "completed_disbursed_amount", "has_image"]).rename(columns={
         "has_image": "has_evidence_image"
     })
 
@@ -50,16 +52,10 @@ def build_master_dataset():
     master["recommended_work_description"] = master["recommended_work_description"].fillna("")
     master = classify_work_descriptions(master)
     sector_reference = os.path.join(base_dir, "data", "reference", "mplads_sector_cost_reference.csv")
-    master = classify_and_cost(master, sector_reference)
+    master = classify_sectors(master, sector_reference)
     # Legacy consumers may still request work_category. Expose the classified
     # sector there; retain the raw source label only in original_work_category.
     master["work_category"] = master["main_sector"]
-    # Recompute the compatibility median after the sector model has replaced
-    # the earlier broad taxonomy. The UI's legacy field must equal the new
-    # peer-group median, never the pre-sector value.
-    sector_median = master.groupby(["effective_work_category", "state"])["sanction_amount"].transform("median")
-    master["peer_category_median_amount"] = sector_median
-    master["amount_to_peer_ratio"] = master["sanction_amount"] / (sector_median + 1e-5)
     write_profile(master, os.path.join(base_dir, "docs", "work_category_profile.json"))
     write_validation_template(master, os.path.join(base_dir, "data", "validation", "work_classification_validation.csv"))
     master["effective_expenditure"] = master["total_expenditure"].fillna(master["completed_disbursed_amount"])
@@ -77,11 +73,6 @@ def build_master_dataset():
 
     # Precompute conservative description/material context once for API use.
     master = analyze_material_context(master, base_dir)
-    
-    # Work Category Baseline (Median & IQR for peer comparison)
-    cat_median = master.groupby(["effective_work_category", "state"])["sanction_amount"].transform("median")
-    master["peer_category_median_amount"] = cat_median
-    master["amount_to_peer_ratio"] = master["sanction_amount"] / (master["peer_category_median_amount"] + 1e-5)
     
     out_master = os.path.join(features_dir, "master_analytical.parquet")
     master.to_parquet(out_master, index=False)

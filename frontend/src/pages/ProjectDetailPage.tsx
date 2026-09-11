@@ -117,7 +117,7 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({ workId, on
                   {work.work_category}
                 </span>
                 <span className="px-3 py-1 rounded-xl bg-emerald-50 text-emerald-800 font-semibold border border-emerald-200 flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-emerald-600" /> {work.State} • {work.Constituency}
+                  <MapPin className="w-3.5 h-3.5 text-emerald-600" /> {work.state || work.State || '—'} • {work.constituency || work.Constituency || '—'}
                 </span>
                 {work.mp_name && (
                   <span className="px-3 py-1 rounded-xl bg-indigo-50 text-indigo-800 font-semibold border border-indigo-200 flex items-center gap-1.5">
@@ -215,7 +215,7 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({ workId, on
                 {(work.overdue_days || 0) > 0 ? `${work.overdue_days} Days Overdue` : 'On Schedule'}
               </div>
               <p className="text-xs text-slate-500 font-medium">
-                Peer Category Median: <span className="text-slate-900 font-bold">{formatAmount(work.peer_category_median_amount || work.peer_median || 0)}</span>
+                Historical Cost Median: <span className="text-slate-900 font-bold">{work.historical_cost_median ? formatAmount(work.historical_cost_median) : 'Not available'}</span>
               </p>
             </div>
           </div>
@@ -233,7 +233,7 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({ workId, on
                 <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
                   <div className="bg-amber-500 h-full rounded-full" style={{ width: `${Math.min(financialRiskScore, 100)}%` }} />
                 </div>
-                <div className="text-[11px] text-slate-500 font-medium">Peer Ratio: <strong className="text-slate-900">{(work.amount_to_peer_ratio || 1.0).toFixed(2)}x</strong></div>
+                <div className="text-[11px] text-slate-500 font-medium">Historical comparison: <strong className="text-slate-900">{work.is_financial_outlier ? work.financial_risk_level : 'No range breach'}</strong></div>
               </div>
 
               {/* Duplicate Risk */}
@@ -257,7 +257,7 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({ workId, on
                 <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
                   <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${Math.min(complianceRiskScore, 100)}%` }} />
                 </div>
-                <div className="text-[11px] text-slate-500 font-medium">{work.has_evidence_image ? 'Site Photo Uploaded' : 'Missing Site Photo'}</div>
+                <div className="text-[11px] text-slate-500 font-medium">{work.compliance_review_status === 'REVIEW_REQUIRED' ? 'Work-level review required' : 'No work-level concern'}</div>
               </div>
 
               {/* Schedule & Progress Risk */}
@@ -300,7 +300,7 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({ workId, on
                 <div key={idx} className="bg-white rounded-2xl border border-slate-200/80 p-5 space-y-4 shadow-sm">
                   <div className="flex justify-between items-center text-xs border-b border-slate-100 pb-3">
                     <span className="font-mono font-bold text-slate-900">Matched Candidate: {otherWorkId}</span>
-                    <span className="bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-xl text-indigo-700 font-bold">{dup.similarity_score.toFixed(1)}% Match Similarity</span>
+                    <span className="bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-xl text-indigo-700 font-bold">{dup.possible_split_work ? 'Possible divided scope' : 'Related scope review'}</span>
                   </div>
 
                   <div className="overflow-x-auto">
@@ -325,7 +325,7 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({ workId, on
                         </tr>
                         {dup.nlp_explanation && (
                           <tr>
-                            <td className="py-2.5 px-3 font-bold text-slate-500">Review Note</td>
+                            <td className="py-2.5 px-3 font-bold text-slate-500">What happened?</td>
                             <td colSpan={2} className={`py-2.5 px-3 leading-relaxed font-semibold ${dup.possible_split_work ? 'text-amber-800 bg-amber-50' : 'text-slate-700'}`}>
                               {dup.nlp_explanation}
                             </td>

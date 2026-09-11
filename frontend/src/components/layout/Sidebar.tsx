@@ -12,6 +12,7 @@ import {
   ChevronRight,
   ShieldCheck,
   Sparkles,
+  Map,
   X
 } from 'lucide-react';
 
@@ -32,6 +33,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
         { id: 'overview', label: 'Executive Dashboard', icon: BarChart3 },
         { id: 'mp-intelligence', label: 'MP Works & Fund Intelligence', icon: UserCheck },
         { id: 'risk-monitor', label: 'Risk Intelligence Monitor', icon: ShieldAlert },
+        { id: 'state-risk-analytics', label: 'State Risk & Records', icon: Map },
       ]
     },
     {
@@ -66,10 +68,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
             </div>
             <div className={collapsed ? 'lg:hidden' : ''}>
               <div className="flex items-center gap-1">
-                <h1 className="text-sm font-black tracking-tight text-slate-900 dark:text-slate-100 uppercase">MPLADS AI</h1>
+                <h1 className="text-sm font-black tracking-tight text-slate-900 dark:text-slate-100">MPLADS InsightGrid</h1>
                 <Sparkles className="w-3 h-3 text-amber-500 fill-amber-400" />
               </div>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold tracking-wide uppercase">Risk Intelligence DSS</p>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold leading-tight mt-0.5 max-w-[180px]">A connected intelligence system that turns MPLADS data into useful decisions.</p>
             </div>
             <button aria-label="Close navigation" onClick={onClose} className="absolute right-3 top-3 lg:hidden w-8 h-8 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center">
               <X className="w-4 h-4" />
@@ -119,7 +121,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <h4 className="text-[11px] font-extrabold text-slate-900 dark:text-slate-100">MPLADS Risk DSS</h4>
+                <h4 className="text-[11px] font-extrabold text-slate-900 dark:text-slate-100">MPLADS InsightGrid</h4>
               </div>
               <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium leading-tight mt-0.5">
                 {totalWorks !== undefined ? `${totalWorks.toLocaleString()} Works Active` : 'Loading works…'}
