@@ -1,3 +1,44 @@
+Worked for 18s
+
+
+
+
+Paste this in the README:
+:: Backend
+cd /d P:\SIH\mplads_updated-main
+
+python -m venv .venv
+.venv\Scripts\activate
+
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+
+python -m uvicorn src.backend.app:app --reload --host 127.0.0.1 --port 8000
+Open a second CMD window for the frontend:
+cd /d P:\SIH\mplads_updated-main\frontend
+
+npm install
+npm run dev
+Open:
+Frontend: http://localhost:3000
+Backend API: http://127.0.0.1:8000
+API docs: http://127.0.0.1:8000/docs
+To run the backend later after setup:
+cd /d P:\SIH\mplads_updated-main
+.venv\Scripts\activate
+python -m uvicorn src.backend.app:app --reload
+
+
+2:31 AM
+
+
+
+
+
+
+
+
+
 # MPLADS AI-Powered Monitoring, Anomaly Detection & Risk Intelligence Platform
 
 ## Complete user and model guide
