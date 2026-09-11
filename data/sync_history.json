@@ -1,5 +1,179 @@
 [
   {
+    "sync_id": "LOCAL-20260911T055903Z",
+    "timestamp": "2026-09-11T05:59:03.241553+00:00",
+    "status": "SUCCESS",
+    "mode": "local_dataset_pipeline",
+    "source_url": "LOCAL_DATASET_FILES",
+    "data_origin": "local_dataset_files",
+    "snapshot_id": "SNAP-2026-09-11T055903Z",
+    "total_records": 307443,
+    "new_records_count": 0,
+    "updated_records_count": 0,
+    "removed_records_count": 0,
+    "unchanged_records_count": 279820,
+    "training_status": "COMPLETED",
+    "next_scheduled_sync": "2026-09-26 05:59:03",
+    "delta": {
+      "generated_at": "2026-09-11T05:58:59.444458+00:00",
+      "tables": {
+        "t1": {
+          "table": "t1",
+          "new": [],
+          "modified": [],
+          "removed": [],
+          "new_count": 0,
+          "modified_count": 0,
+          "removed_count": 0,
+          "unchanged_count": 543
+        },
+        "t3": {
+          "table": "t3",
+          "new": [],
+          "modified": [],
+          "removed": [],
+          "new_count": 0,
+          "modified_count": 0,
+          "removed_count": 0,
+          "unchanged_count": 107574
+        },
+        "t4": {
+          "table": "t4",
+          "new": [],
+          "modified": [],
+          "removed": [],
+          "new_count": 0,
+          "modified_count": 0,
+          "removed_count": 0,
+          "unchanged_count": 79827
+        },
+        "t5": {
+          "table": "t5",
+          "new": [],
+          "modified": [],
+          "removed": [],
+          "new_count": 0,
+          "modified_count": 0,
+          "removed_count": 0,
+          "unchanged_count": 34902
+        },
+        "t6": {
+          "table": "t6",
+          "new": [],
+          "modified": [],
+          "removed": [],
+          "new_count": 0,
+          "modified_count": 0,
+          "removed_count": 0,
+          "unchanged_count": 56962
+        },
+        "t7": {
+          "table": "t7",
+          "new": [],
+          "modified": [],
+          "removed": [],
+          "new_count": 0,
+          "modified_count": 0,
+          "removed_count": 0,
+          "unchanged_count": 12
+        }
+      },
+      "new_count": 0,
+      "updated_count": 0,
+      "removed_count": 0,
+      "unchanged_count": 279820,
+      "has_previous_snapshot": true,
+      "total_changes": 0
+    }
+  },
+  {
+    "sync_id": "LOCAL-20260911T031911Z",
+    "timestamp": "2026-09-11T03:19:11.424477+00:00",
+    "status": "SUCCESS",
+    "mode": "local_dataset_pipeline",
+    "source_url": "LOCAL_DATASET_FILES",
+    "data_origin": "local_dataset_files",
+    "snapshot_id": "SNAP-2026-09-11T031909Z",
+    "total_records": 307443,
+    "new_records_count": 132798,
+    "updated_records_count": 0,
+    "removed_records_count": 2818,
+    "unchanged_records_count": 140788,
+    "training_status": "COMPLETED",
+    "next_scheduled_sync": "2026-09-26 03:19:11",
+    "delta": {
+      "generated_at": "2026-09-11T03:18:36.944515+00:00",
+      "tables": {
+        "t1": {
+          "table": "t1",
+          "new": [],
+          "modified": [],
+          "removed": [],
+          "new_count": 0,
+          "modified_count": 0,
+          "removed_count": 0,
+          "unchanged_count": 543
+        },
+        "t3": {
+          "table": "t3",
+          "new": [],
+          "modified": [],
+          "removed": [],
+          "new_count": 80797,
+          "modified_count": 0,
+          "removed_count": 1224,
+          "unchanged_count": 26202
+        },
+        "t4": {
+          "table": "t4",
+          "new": [],
+          "modified": [],
+          "removed": [],
+          "new_count": 1801,
+          "modified_count": 0,
+          "removed_count": 1042,
+          "unchanged_count": 76021
+        },
+        "t5": {
+          "table": "t5",
+          "new": [],
+          "modified": [],
+          "removed": [],
+          "new_count": 23076,
+          "modified_count": 0,
+          "removed_count": 175,
+          "unchanged_count": 11796
+        },
+        "t6": {
+          "table": "t6",
+          "new": [],
+          "modified": [],
+          "removed": [],
+          "new_count": 27112,
+          "modified_count": 0,
+          "removed_count": 377,
+          "unchanged_count": 26226
+        },
+        "t7": {
+          "table": "t7",
+          "new": [],
+          "modified": [],
+          "removed": [],
+          "new_count": 12,
+          "modified_count": 0,
+          "removed_count": 0,
+          "unchanged_count": 0
+        }
+      },
+      "new_count": 132798,
+      "updated_count": 0,
+      "removed_count": 2818,
+      "unchanged_count": 140788,
+      "has_previous_snapshot": true,
+      "total_changes": 135616
+    }
+  },
+  {
     "sync_id": "SYNC-1789075530",
     "timestamp": "2026-09-11T02:55:30.729111",
     "duration_seconds": 1.21,

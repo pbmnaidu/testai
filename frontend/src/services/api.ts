@@ -7,7 +7,8 @@ import {
   PaginatedResponse,
   WorkRecord,
   CandidateDuplicatePair,
-  FilterOptions
+  FilterOptions,
+  SyncPreviewResponse
 } from '../types';
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || '/api';
@@ -31,24 +32,20 @@ async function safeFetchJson<T>(url: string, fallback: T): Promise<T> {
 export async function fetchOverview(): Promise<NationalOverviewResponse> {
   const fallback: NationalOverviewResponse = {
     summary: {
-      total_allocated_funds: 83336700000,
-      total_sanctioned_amount: 41688600000,
-      total_disbursed_amount: 18873200000,
-      total_works: 79068,
-      completed_works: 11791,
-      high_risk_works: 29,
+      total_allocated_funds: 0,
+      total_sanctioned_amount: 0,
+      total_disbursed_amount: 0,
+      total_works: 0,
+      completed_works: 0,
+      high_risk_works: 0,
       critical_works: 0,
+      overdue_works: 0,
     },
-    risk_distribution: { LOW: 75321, MEDIUM: 3747, HIGH: 0, CRITICAL: 0 },
-    top_states: [
-      { state: 'UTTAR PRADESH', total_works: 15019, total_sanctioned: 7630592770, high_risk_works: 17 },
-      { state: 'BIHAR', total_works: 4545, total_sanctioned: 3392002636, high_risk_works: 6 },
-      { state: 'MANIPUR', total_works: 77, total_sanctioned: 204700909, high_risk_works: 2 },
-    ],
-    category_distribution: [
-      { work_category: 'Roads & Infrastructure', total_works: 28450, total_sanctioned: 15400000000, high_risk_works: 12 },
-      { work_category: 'Education & Schools', total_works: 18200, total_sanctioned: 9800000000, high_risk_works: 7 },
-    ]
+    risk_distribution: { LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0 },
+    top_states: [],
+    state_metrics: [],
+    category_distribution: [],
+    financial_summary: { flagged_financial_outliers: 0, high_peer_ratio_works: 0, isolation_outlier_rate_pct: 0 },
   };
   return safeFetchJson<NationalOverviewResponse>(`${API_BASE}/overview`, fallback);
 }
@@ -72,9 +69,9 @@ export async function fetchMpIntelligence(params: { state?: string; constituency
 
   const fallback: MpIntelligenceResponse = {
     selected_filters: { state: params.state || null, constituency: params.constituency || null, mp_name: params.mp_name || null },
-    available_constituencies: ['BANGALORE CENTRAL', 'AMETHI', 'FATEHPUR SIKRI', 'VISAKHAPATNAM'],
-    available_mps: ['P. C. Mohan', 'Kishori Lal Sharma', 'Rajkumar Chahar'],
-    portfolio_summary: { total_works: 14, completed_works: 4, ongoing_works: 10, total_sanctioned: 14000000, total_expenditure: 8500000, utilization_rate: 60.7 },
+    available_constituencies: [],
+    available_mps: [],
+    portfolio_summary: { total_works: 0, completed_works: 0, ongoing_works: 0, total_sanctioned: 0, total_expenditure: 0, utilization_rate: 0 },
     suspicious_works: []
   };
 
@@ -93,17 +90,36 @@ export async function fetchScheduleRisk(params: { state?: string; constituency?:
 
 export async function fetchSyncStatus(): Promise<SyncStatusResponse> {
   const fallback: SyncStatusResponse = {
-    operational_status: 'healthy',
-    sync_frequency: 'Once Every 7 Days (Weekly)',
-    last_sync: '2026-09-09T11:35:14',
-    next_scheduled_sync: '2026-09-16 11:35:14',
-    current_snapshot_id: 'v2.0-Active',
-    total_records_processed: 79068,
+    operational_status: 'unavailable',
+    sync_frequency: '',
+    last_sync: '',
+    next_scheduled_sync: '',
+    current_snapshot_id: 'NONE',
+    total_records_processed: 0,
     new_records_since_last_sync: 0,
     updated_records_since_last_sync: 0,
-    snapshot_count: 1
+    snapshot_count: 0
   };
   return safeFetchJson<SyncStatusResponse>(`${API_BASE}/sync/status`, fallback);
+}
+
+async function postJson<T>(url: string, body: unknown): Promise<T> {
+  const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload?.detail || `Request failed (${response.status})`);
+  return payload as T;
+}
+
+export async function previewSyncDiff(filters: { state?: string; constituency?: string; work_ids?: string[]; page?: number; limit?: number } = {}): Promise<SyncPreviewResponse> {
+  return postJson<SyncPreviewResponse>(`${API_BASE}/sync/preview-diff`, filters);
+}
+
+export async function commitSyncDiff(preview_token: string): Promise<any> {
+  return postJson(`${API_BASE}/sync/commit-diff`, { preview_token });
+}
+
+export async function fetchTrainingStatus(): Promise<any> {
+  return safeFetchJson(`${API_BASE}/sync/training-status`, { status: 'UNKNOWN', progress: 0, message: 'Training status unavailable.' });
 }
 
 export async function fetchSyncHistory(): Promise<any[]> {
@@ -112,15 +128,15 @@ export async function fetchSyncHistory(): Promise<any[]> {
 
 export async function fetchModelStatus(): Promise<ModelStatusResponse> {
   const fallback: ModelStatusResponse = {
-    experiment_name: 'MPLADS_Financial_Anomaly_Detection',
-    registered_model: 'MPLADS_Financial_Anomaly_Model',
+    experiment_name: '',
+    registered_model: '',
     production_model: {
-      model_name: 'MPLADS_Financial_Anomaly_Model',
-      model_version: 'v2',
-      run_id: 'RUN-1788933900',
-      stage: 'Production',
-      dataset_version: 'v2.0-Active',
-      last_trained_at: new Date().toISOString()
+      model_name: '',
+      model_version: '',
+      run_id: '',
+      stage: 'UNAVAILABLE',
+      dataset_version: '',
+      last_trained_at: ''
     },
     runs: []
   };
@@ -151,7 +167,13 @@ export async function fetchRiskQueue(params: {
   if (params.page) query.append('page', params.page.toString());
   if (params.limit) query.append('limit', params.limit.toString());
 
-  return safeFetchJson<PaginatedResponse<WorkRecord>>(`${API_BASE}/risk-monitor?${query.toString()}`, { total: 0, page: 1, limit: 50, records: [] });
+  return safeFetchJson<PaginatedResponse<WorkRecord>>(`${API_BASE}/risk-monitor?${query.toString()}`, {
+    total: 0,
+    page: 1,
+    limit: 50,
+    top_scores: { financial: 0, duplicate: 0, compliance: 0, schedule: 0, composite: 0 },
+    records: [],
+  });
 }
 
 export async function fetchWorkDetail(workId: string): Promise<{ work: WorkRecord; candidate_duplicates: CandidateDuplicatePair[] }> {
@@ -186,9 +208,9 @@ export async function fetchDuplicateCandidates(params: { state?: string; min_sim
 
 export async function fetchFilters(): Promise<FilterOptions> {
   const fallback: FilterOptions = {
-    states: ['UTTAR PRADESH', 'BIHAR', 'KARNATAKA', 'MAHARASHTRA', 'MANIPUR', 'WEST BENGAL', 'ANDHRA PRADESH'],
-    categories: ['Roads & Infrastructure', 'Education & Schools', 'Water & Sanitation', 'Health & Community', 'Irrigation & Agri'],
-    severities: ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'],
+    states: [],
+    categories: [],
+    severities: [],
   };
   return safeFetchJson<FilterOptions>(`${API_BASE}/filters`, fallback);
 }

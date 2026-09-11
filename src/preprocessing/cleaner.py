@@ -30,8 +30,8 @@ def clean_text(text):
 
 def preprocess_all():
     root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-    raw_dir = os.path.join(root_dir, "data", "raw")
-    processed_dir = os.path.join(root_dir, "data", "processed")
+    raw_dir = os.environ.get("RAW_DIR", os.path.join(root_dir, "data", "raw"))
+    processed_dir = os.environ.get("PROCESSED_DIR", os.path.join(root_dir, "data", "processed"))
     os.makedirs(processed_dir, exist_ok=True)
     
     print("=== STARTING DATA CLEANING & NORMALIZATION PIPELINE ===")

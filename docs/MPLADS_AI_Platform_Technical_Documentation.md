@@ -10,8 +10,8 @@ The **MPLADS AI Risk Intelligence & Decision Support System (DSS)** is an enterp
 The platform binds four distinct operational layers into a cohesive end-to-end pipeline:
 ```
  [ RAW DATASETS ] ---> [ FEATURE & ML PIPELINE ] ---> [ FASTAPI BACKEND ] ---> [ REACT EXECUTIVE FRONTEND ]
- 79,068 Works Base      LightGBM, Isolation Forest    Parquet In-Memory Engine  36-State Interactive GIS
- CSV Administrative     Benford's Law, IQR/ML        O(1) Hashmap Lookups     Night-View Design System
+ Official MOSPI REST   Isolation Forest, TF-IDF      Parquet In-Memory Engine  36-State Interactive UI
+ JSON + local snapshots LinearSVC, rules, schedule  O(1) Hashmap Lookups     Night-View Design System
 ```
 
 ---
@@ -35,6 +35,8 @@ The platform binds four distinct operational layers into a cohesive end-to-end p
   - *Why*: High-throughput asynchronous ASGI framework. Chosen for automatic OpenAPI doc generation, ultra-low request latency ($<15\text{ms}$), and direct integration with Python ML/data libraries.
 - **Uvicorn ASGI Server**:
   - *Why*: Asynchronous server implementation providing fast concurrent request handling with CORS middleware integration.
+- **Communication: RESTful JSON APIs**:
+  - *Why*: Keeps the dashboard, manual sync review, scheduled sync worker, and external integrations on one explicit, inspectable contract.
 
 ### 2.3 Data Storage & Processing Layer
 - **Apache Parquet (PyArrow & FastParquet)**:
@@ -45,14 +47,14 @@ The platform binds four distinct operational layers into a cohesive end-to-end p
 ### 2.4 Machine Learning, Forensic Analytics & MLOps
 - **Scikit-Learn (Isolation Forest)**:
   - *Why*: Unsupervised tree-based anomaly isolation algorithm to catch non-conforming disbursals, cost overruns, and financial transaction outliers.
-- **LightGBM & XGBoost**:
-  - *Why*: High-speed gradient boosted decision trees for multi-signal risk classification with minimal inference latency.
-- **TF-IDF Vectorizer + Sentence-Transformers**:
-  - *Why*: Converts work titles into n-gram feature vectors for fuzzy text similarity matching.
-- **Benford's Law Statistical Engine (SciPy $\chi^2$)**:
-  - *Why*: Forensic accounting test analyzing first-digit frequency distribution to catch artificial invoice splitting below threshold limits.
-- **MLflow Model Registry**:
-  - *Why*: Tracks model versioning, F1-scores ($>0.91$), ROC-AUC ($>0.96$), and monitors production data drift.
+- **TF-IDF Vectorizer + cosine similarity**:
+  - *Why*: Compares normalized work descriptions to surface duplicate and possible split-work candidates.
+- **LinearSVC work-sector classifier**:
+  - *Why*: Classifies work descriptions against the supplied sector reference set; it is used for categorisation, not as the financial anomaly model.
+- **Compliance rules, schedule engine, and composite risk scorer**:
+  - *Why*: Keeps guideline deadlines, sanction-date checks, completion progress, and reviewer priorities explainable.
+- **MLflow-compatible local model registry**:
+  - *Why*: Stores parameters, metrics, dataset snapshot, version, drift summaries, and staged artifact paths for reproducible promotion and rollback.
 
 ### 2.5 Geospatial Engine
 - **Haversine Distance Formula**:

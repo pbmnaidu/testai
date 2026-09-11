@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { MapPin, AlertTriangle, Navigation, Layers, Info } from 'lucide-react';
 import indiaMapAsset from '../../assets/india_map.png';
-import { fetchStateRiskSummary } from '../../services/api';
-import { StateRiskSummary } from '../../types';
+import { fetchOverview, fetchStateRiskSummary } from '../../services/api';
+import { NationalOverviewResponse, StateRiskSummary } from '../../types';
 
 interface StateGisData {
   state: string;
@@ -11,63 +11,110 @@ interface StateGisData {
   lng: number;
   x: number; // percentage X position on map canvas
   y: number; // percentage Y position on map canvas
+}
+
+interface LiveStateGisData extends StateGisData {
   riskLevel: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
   sanctionedCr: number;
-  auditCases: number;
+  duplicateCandidatePairs: number;
+  totalWorks: number;
+  hasLiveData: boolean;
 }
 
 const STATE_GIS_NODES: StateGisData[] = [
   // Northern Region
-  { state: 'Ladakh', code: 'LA', lat: 34.1526, lng: 77.5771, x: 35.5, y: 10, riskLevel: 'LOW', sanctionedCr: 45.20, auditCases: 28 },
-  { state: 'Jammu & Kashmir', code: 'JK', lat: 33.7782, lng: 76.5762, x: 28.5, y: 14, riskLevel: 'HIGH', sanctionedCr: 112.40, auditCases: 195 },
-  { state: 'Himachal Pradesh', code: 'HP', lat: 31.1048, lng: 77.1734, x: 33, y: 19, riskLevel: 'LOW', sanctionedCr: 88.60, auditCases: 64 },
-  { state: 'Punjab', code: 'PB', lat: 31.1471, lng: 75.3412, x: 28, y: 22, riskLevel: 'LOW', sanctionedCr: 140.50, auditCases: 112 },
-  { state: 'Chandigarh', code: 'CH', lat: 30.7333, lng: 76.7794, x: 31, y: 22, riskLevel: 'LOW', sanctionedCr: 24.10, auditCases: 12 },
-  { state: 'Haryana', code: 'HR', lat: 29.0588, lng: 76.0856, x: 30, y: 26, riskLevel: 'MEDIUM', sanctionedCr: 165.20, auditCases: 184 },
-  { state: 'Uttarakhand', code: 'UK', lat: 30.0668, lng: 79.0193, x: 37, y: 23, riskLevel: 'MEDIUM', sanctionedCr: 94.80, auditCases: 82 },
-  { state: 'Delhi', code: 'DL', lat: 28.7041, lng: 77.1025, x: 33.8, y: 28.5, riskLevel: 'CRITICAL', sanctionedCr: 128.90, auditCases: 305 },
+  { state: 'Ladakh', code: 'LA', lat: 34.1526, lng: 77.5771, x: 35.5, y: 10 },
+  { state: 'Jammu & Kashmir', code: 'JK', lat: 33.7782, lng: 76.5762, x: 28.5, y: 14 },
+  { state: 'Himachal Pradesh', code: 'HP', lat: 31.1048, lng: 77.1734, x: 33, y: 19 },
+  { state: 'Punjab', code: 'PB', lat: 31.1471, lng: 75.3412, x: 28, y: 22 },
+  { state: 'Chandigarh', code: 'CH', lat: 30.7333, lng: 76.7794, x: 31, y: 22 },
+  { state: 'Haryana', code: 'HR', lat: 29.0588, lng: 76.0856, x: 30, y: 26 },
+  { state: 'Uttarakhand', code: 'UK', lat: 30.0668, lng: 79.0193, x: 37, y: 23 },
+  { state: 'Delhi', code: 'DL', lat: 28.7041, lng: 77.1025, x: 33.8, y: 28.5 },
   
   // Western & Central Region
-  { state: 'Rajasthan', code: 'RJ', lat: 27.0238, lng: 74.2179, x: 23, y: 36, riskLevel: 'HIGH', sanctionedCr: 215.30, auditCases: 410 },
-  { state: 'Uttar Pradesh', code: 'UP', lat: 26.8467, lng: 80.9462, x: 44, y: 34, riskLevel: 'CRITICAL', sanctionedCr: 384.50, auditCases: 892 },
-  { state: 'Gujarat', code: 'GJ', lat: 22.2587, lng: 71.1924, x: 17, y: 46, riskLevel: 'MEDIUM', sanctionedCr: 198.70, auditCases: 215 },
-  { state: 'Dadra & Nagar Haveli', code: 'DN', lat: 20.3974, lng: 72.8328, x: 18.5, y: 54, riskLevel: 'LOW', sanctionedCr: 18.40, auditCases: 8 },
-  { state: 'Madhya Pradesh', code: 'MP', lat: 22.9734, lng: 78.6569, x: 37, y: 46, riskLevel: 'HIGH', sanctionedCr: 260.20, auditCases: 488 },
-  { state: 'Chhattisgarh', code: 'CG', lat: 21.2787, lng: 81.8661, x: 49, y: 50, riskLevel: 'HIGH', sanctionedCr: 154.60, auditCases: 280 },
+  { state: 'Rajasthan', code: 'RJ', lat: 27.0238, lng: 74.2179, x: 23, y: 36 },
+  { state: 'Uttar Pradesh', code: 'UP', lat: 26.8467, lng: 80.9462, x: 44, y: 34 },
+  { state: 'Gujarat', code: 'GJ', lat: 22.2587, lng: 71.1924, x: 17, y: 46 },
+  { state: 'Dadra & Nagar Haveli', code: 'DN', lat: 20.3974, lng: 72.8328, x: 18.5, y: 54 },
+  { state: 'Madhya Pradesh', code: 'MP', lat: 22.9734, lng: 78.6569, x: 37, y: 46 },
+  { state: 'Chhattisgarh', code: 'CG', lat: 21.2787, lng: 81.8661, x: 49, y: 50 },
 
   // Eastern Region
-  { state: 'Bihar', code: 'BR', lat: 25.0961, lng: 85.3131, x: 60, y: 37, riskLevel: 'CRITICAL', sanctionedCr: 295.80, auditCases: 712 },
-  { state: 'Jharkhand', code: 'JH', lat: 23.6102, lng: 85.2799, x: 59, y: 44, riskLevel: 'HIGH', sanctionedCr: 178.20, auditCases: 342 },
-  { state: 'West Bengal', code: 'WB', lat: 22.9868, lng: 87.8550, x: 66, y: 46, riskLevel: 'HIGH', sanctionedCr: 278.40, auditCases: 540 },
-  { state: 'Odisha', code: 'OD', lat: 20.9517, lng: 85.0985, x: 57, y: 54, riskLevel: 'MEDIUM', sanctionedCr: 162.10, auditCases: 260 },
+  { state: 'Bihar', code: 'BR', lat: 25.0961, lng: 85.3131, x: 60, y: 37 },
+  { state: 'Jharkhand', code: 'JH', lat: 23.6102, lng: 85.2799, x: 59, y: 44 },
+  { state: 'West Bengal', code: 'WB', lat: 22.9868, lng: 87.8550, x: 66, y: 46 },
+  { state: 'Odisha', code: 'OD', lat: 20.9517, lng: 85.0985, x: 57, y: 54 },
 
   // North-Eastern Region
-  { state: 'Sikkim', code: 'SK', lat: 27.5330, lng: 88.5122, x: 69.5, y: 32, riskLevel: 'LOW', sanctionedCr: 32.40, auditCases: 16 },
-  { state: 'Assam', code: 'AS', lat: 26.2006, lng: 92.9376, x: 84, y: 35, riskLevel: 'HIGH', sanctionedCr: 175.40, auditCases: 340 },
-  { state: 'Arunachal Pradesh', code: 'AR', lat: 28.2180, lng: 94.7278, x: 91, y: 29, riskLevel: 'MEDIUM', sanctionedCr: 68.20, auditCases: 48 },
-  { state: 'Nagaland', code: 'NL', lat: 26.1584, lng: 94.5624, x: 89.5, y: 36, riskLevel: 'MEDIUM', sanctionedCr: 42.10, auditCases: 34 },
-  { state: 'Manipur', code: 'MN', lat: 24.6637, lng: 93.9063, x: 87.5, y: 41, riskLevel: 'HIGH', sanctionedCr: 54.80, auditCases: 76 },
-  { state: 'Mizoram', code: 'MZ', lat: 23.1645, lng: 92.9376, x: 84, y: 45, riskLevel: 'LOW', sanctionedCr: 38.60, auditCases: 22 },
-  { state: 'Tripura', code: 'TR', lat: 23.9408, lng: 91.9882, x: 80, y: 43, riskLevel: 'MEDIUM', sanctionedCr: 48.90, auditCases: 38 },
-  { state: 'Meghalaya', code: 'ML', lat: 25.5788, lng: 91.8933, x: 78, y: 37, riskLevel: 'LOW', sanctionedCr: 52.30, auditCases: 30 },
+  { state: 'Sikkim', code: 'SK', lat: 27.5330, lng: 88.5122, x: 69.5, y: 32 },
+  { state: 'Assam', code: 'AS', lat: 26.2006, lng: 92.9376, x: 84, y: 35 },
+  { state: 'Arunachal Pradesh', code: 'AR', lat: 28.2180, lng: 94.7278, x: 91, y: 29 },
+  { state: 'Nagaland', code: 'NL', lat: 26.1584, lng: 94.5624, x: 89.5, y: 36 },
+  { state: 'Manipur', code: 'MN', lat: 24.6637, lng: 93.9063, x: 87.5, y: 41 },
+  { state: 'Mizoram', code: 'MZ', lat: 23.1645, lng: 92.9376, x: 84, y: 45 },
+  { state: 'Tripura', code: 'TR', lat: 23.9408, lng: 91.9882, x: 80, y: 43 },
+  { state: 'Meghalaya', code: 'ML', lat: 25.5788, lng: 91.8933, x: 78, y: 37 },
 
   // Southern & Island Region
-  { state: 'Maharashtra', code: 'MH', lat: 19.7515, lng: 75.7139, x: 31, y: 58, riskLevel: 'HIGH', sanctionedCr: 342.10, auditCases: 654 },
-  { state: 'Goa', code: 'GA', lat: 15.2993, lng: 74.1240, x: 25, y: 70, riskLevel: 'LOW', sanctionedCr: 28.50, auditCases: 14 },
-  { state: 'Karnataka', code: 'KA', lat: 15.3173, lng: 75.7139, x: 29, y: 74, riskLevel: 'MEDIUM', sanctionedCr: 230.60, auditCases: 298 },
-  { state: 'Telangana', code: 'TG', lat: 18.1124, lng: 79.0193, x: 41, y: 62, riskLevel: 'HIGH', sanctionedCr: 189.40, auditCases: 362 },
-  { state: 'Andhra Pradesh', code: 'AP', lat: 15.9129, lng: 79.7400, x: 41, y: 72, riskLevel: 'HIGH', sanctionedCr: 242.80, auditCases: 420 },
-  { state: 'Tamil Nadu', code: 'TN', lat: 11.1271, lng: 78.6569, x: 37, y: 86, riskLevel: 'MEDIUM', sanctionedCr: 245.90, auditCases: 320 },
-  { state: 'Kerala', code: 'KL', lat: 10.8505, lng: 76.2711, x: 32.5, y: 88, riskLevel: 'LOW', sanctionedCr: 115.00, auditCases: 94 },
-  { state: 'Puducherry', code: 'PY', lat: 11.9416, lng: 79.8083, x: 40.5, y: 82.5, riskLevel: 'LOW', sanctionedCr: 22.30, auditCases: 18 },
-  { state: 'Andaman & Nicobar', code: 'AN', lat: 11.7401, lng: 92.6586, x: 83, y: 82, riskLevel: 'LOW', sanctionedCr: 36.40, auditCases: 19 },
-  { state: 'Lakshadweep', code: 'LD', lat: 10.5667, lng: 72.6417, x: 8.5, y: 89, riskLevel: 'LOW', sanctionedCr: 14.80, auditCases: 6 },
+  { state: 'Maharashtra', code: 'MH', lat: 19.7515, lng: 75.7139, x: 31, y: 58 },
+  { state: 'Goa', code: 'GA', lat: 15.2993, lng: 74.1240, x: 25, y: 70 },
+  { state: 'Karnataka', code: 'KA', lat: 15.3173, lng: 75.7139, x: 29, y: 74 },
+  { state: 'Telangana', code: 'TG', lat: 18.1124, lng: 79.0193, x: 41, y: 62 },
+  { state: 'Andhra Pradesh', code: 'AP', lat: 15.9129, lng: 79.7400, x: 41, y: 72 },
+  { state: 'Tamil Nadu', code: 'TN', lat: 11.1271, lng: 78.6569, x: 37, y: 86 },
+  { state: 'Kerala', code: 'KL', lat: 10.8505, lng: 76.2711, x: 32.5, y: 88 },
+  { state: 'Puducherry', code: 'PY', lat: 11.9416, lng: 79.8083, x: 40.5, y: 82.5 },
+  { state: 'Andaman & Nicobar', code: 'AN', lat: 11.7401, lng: 92.6586, x: 83, y: 82 },
+  { state: 'Lakshadweep', code: 'LD', lat: 10.5667, lng: 72.6417, x: 8.5, y: 89 },
 ];
 
 export const IndiaGisHeatmap: React.FC = () => {
   const [selectedNode, setSelectedNode] = useState<StateGisData>(STATE_GIS_NODES[9]); // UP default
   const [filterLevel, setFilterLevel] = useState<string>('ALL');
   const [stateRiskSummary, setStateRiskSummary] = useState<StateRiskSummary | null>(null);
+  const [overview, setOverview] = useState<NationalOverviewResponse | null>(null);
+  const [overviewStatus, setOverviewStatus] = useState<'loading' | 'ready' | 'unavailable'>('loading');
+
+  useEffect(() => {
+    fetchOverview()
+      .then((response) => {
+        setOverview(response);
+        setOverviewStatus('ready');
+      })
+      .catch(() => {
+        setOverview(null);
+        setOverviewStatus('unavailable');
+      });
+  }, []);
+
+  const normalizeStateName = (value: string) => {
+    const normalized = value
+      .toUpperCase()
+      .replace(/&/g, ' AND ')
+      .replace(/^THE\s+/, '')
+      .replace(/[^A-Z0-9]+/g, ' ')
+      .trim()
+      .replace(/\s+/g, ' ');
+    return normalized === 'DADRA AND NAGAR HAVELI'
+      ? 'DADRA AND NAGAR HAVELI AND DAMAN AND DIU'
+      : normalized;
+  };
+
+  const liveNodes: LiveStateGisData[] = STATE_GIS_NODES.map((node) => {
+    const metric = overview?.state_metrics?.find(
+      (item) => normalizeStateName(item.state) === normalizeStateName(node.state),
+    );
+    return {
+      ...node,
+      riskLevel: metric?.risk_level || 'LOW',
+      sanctionedCr: metric ? metric.total_sanctioned / 10000000 : 0,
+      duplicateCandidatePairs: metric?.duplicate_candidate_pairs || 0,
+      totalWorks: metric?.total_works || 0,
+      hasLiveData: Boolean(metric),
+    };
+  });
+  const selectedLiveNode = liveNodes.find((node) => node.state === selectedNode.state) || liveNodes[9];
 
   useEffect(() => {
     let active = true;
@@ -93,7 +140,8 @@ export const IndiaGisHeatmap: React.FC = () => {
     };
   }, [selectedNode.state]);
 
-  const filteredNodes = STATE_GIS_NODES.filter((n) => {
+  const filteredNodes = liveNodes.filter((n) => {
+    if (overviewStatus !== 'ready') return filterLevel === 'ALL';
     if (filterLevel === 'ALL') return true;
     return n.riskLevel === filterLevel;
   });
@@ -144,10 +192,10 @@ export const IndiaGisHeatmap: React.FC = () => {
         <div>
           <h3 className="text-base font-extrabold text-slate-100 flex items-center gap-2">
             <Navigation className="w-5 h-5 text-indigo-400 animate-pulse" />
-            <span>Geospatial Risk & Spatial Clustering Heatmap</span>
+            <span>Geospatial Risk Heatmap & Spatial Context</span>
           </h3>
           <p className="text-xs text-slate-400 mt-0.5 font-medium">
-            National GIS spatial density map covering 36 States & UTs for duplicate work candidates (&lt;200m spatial proximity)
+            Live state-level risk and duplicate-candidate metrics across 36 States & UTs. Exact &lt;200m clustering requires latitude/longitude fields in the source records.
           </p>
         </div>
 
@@ -178,11 +226,11 @@ export const IndiaGisHeatmap: React.FC = () => {
           <div className="flex justify-between items-center z-10">
             <div className="gis-map-header-chip flex items-center gap-2 bg-slate-900/90 border border-slate-800 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-200 shadow-md">
               <Layers className="w-3.5 h-3.5 text-indigo-400" />
-              <span>India Multi-Layer GIS View (36 States & UTs)</span>
+              <span>India State-Centre View (36 States & UTs)</span>
             </div>
 
             <div className="gis-map-live-chip text-[10px] text-slate-400 bg-slate-900/90 px-2.5 py-1 rounded-lg border border-slate-800 font-mono shadow-md">
-              Live Lat/Lng Engine
+              {overviewStatus === 'loading' ? 'Loading live metrics…' : overviewStatus === 'ready' ? 'Live risk metrics' : 'Live metrics unavailable'}
             </div>
           </div>
 
@@ -203,7 +251,7 @@ export const IndiaGisHeatmap: React.FC = () => {
 
               {/* Positioned Interactive State Nodes (36 States & UTs) */}
               {filteredNodes.map((node) => {
-                const isSelected = selectedNode.state === node.state;
+                const isSelected = selectedLiveNode.state === node.state;
                 return (
                   <div
                     key={node.code}
@@ -214,15 +262,13 @@ export const IndiaGisHeatmap: React.FC = () => {
                     }`}
                   >
                     {/* Pulse Effect for Critical States */}
-                    {node.riskLevel === 'CRITICAL' && (
+                    {overviewStatus === 'ready' && node.hasLiveData && node.riskLevel === 'CRITICAL' && (
                       <span className="absolute -inset-1.5 rounded-full bg-rose-500/50 animate-ping" />
                     )}
 
                     {/* Compact State Node Circle Badge (w-6 h-6) */}
                     <div
-                      className={`gis-node-badge w-6 h-6 rounded-full ${getNodeBg(
-                        node.riskLevel
-                      )} border-[1.5px] border-slate-950 flex items-center justify-center text-[9px] font-black text-slate-950 shadow-xl ${
+                      className={`gis-node-badge w-6 h-6 rounded-full ${overviewStatus === 'ready' && node.hasLiveData ? getNodeBg(node.riskLevel) : 'bg-slate-500'} border-[1.5px] border-slate-950 flex items-center justify-center text-[9px] font-black text-slate-950 shadow-xl ${
                         isSelected ? 'ring-2 ring-indigo-400 scale-110' : ''
                       }`}
                     >
@@ -232,7 +278,9 @@ export const IndiaGisHeatmap: React.FC = () => {
                     {/* Tooltip on Hover */}
                     <div className="gis-map-tooltip absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/node:flex flex-col bg-slate-900/95 border border-slate-700 text-slate-100 text-[10px] rounded-xl px-2.5 py-1 shadow-2xl whitespace-nowrap z-40 pointer-events-none">
                       <span className="font-extrabold">{node.state}</span>
-                      <span className="text-[9px] text-slate-400 font-mono">₹{node.sanctionedCr} Cr • {node.auditCases} Cases</span>
+                      <span className="text-[9px] text-slate-400 font-mono">
+                        {overviewStatus === 'ready' && node.hasLiveData ? `₹${node.sanctionedCr.toFixed(2)} Cr • ${node.duplicateCandidatePairs.toLocaleString()} Duplicate Pairs` : 'Live metrics unavailable'}
+                      </span>
                     </div>
                   </div>
                 );
@@ -248,7 +296,7 @@ export const IndiaGisHeatmap: React.FC = () => {
               <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-orange-500/50" /> Medium</span>
               <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-emerald-500/50" /> Low</span>
             </div>
-            <span className="text-[10px] text-slate-400 font-mono font-medium">Click node to inspect GIS spatial metrics</span>
+            <span className="text-[10px] text-slate-400 font-mono font-medium">Click a node to inspect live state metrics</span>
           </div>
         </div>
 
@@ -260,11 +308,11 @@ export const IndiaGisHeatmap: React.FC = () => {
                 <span className="text-[10px] font-extrabold uppercase text-slate-500 tracking-wider block">Selected Region</span>
                 <h4 className="text-lg font-black text-slate-100 flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-indigo-400" />
-                  <span>{selectedNode.state}</span>
+                  <span>{selectedLiveNode.state}</span>
                 </h4>
               </div>
-              <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold border ${getBadgeColor(selectedNode.riskLevel)}`}>
-                {selectedNode.riskLevel} RISK
+              <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold border ${overviewStatus === 'ready' && selectedLiveNode.hasLiveData ? getBadgeColor(selectedLiveNode.riskLevel) : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
+                {overviewStatus === 'loading' ? 'LOADING' : overviewStatus === 'unavailable' ? 'UNAVAILABLE' : selectedLiveNode.hasLiveData ? `${selectedLiveNode.riskLevel} RISK` : 'NO DATA'}
               </span>
             </div>
 
@@ -272,11 +320,15 @@ export const IndiaGisHeatmap: React.FC = () => {
             <div className="grid grid-cols-2 gap-2">
               <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-800">
                 <span className="text-[10px] font-bold text-slate-400 uppercase block">Sanction Volume</span>
-                <span className="text-base font-black text-slate-100 font-mono">₹{selectedNode.sanctionedCr} Cr</span>
+                <span className="text-base font-black text-slate-100 font-mono">
+                  {overviewStatus === 'ready' && selectedLiveNode.hasLiveData ? `₹${selectedLiveNode.sanctionedCr.toFixed(2)} Cr` : '—'}
+                </span>
               </div>
               <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-800">
-                <span className="text-[10px] font-bold text-slate-400 uppercase block">Audit Review Cases</span>
-                <span className="text-base font-black text-rose-400 font-mono">{selectedNode.auditCases.toLocaleString()}</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase block">Duplicate Candidate Pairs</span>
+                <span className="text-base font-black text-rose-400 font-mono">
+                  {overviewStatus === 'ready' && selectedLiveNode.hasLiveData ? selectedLiveNode.duplicateCandidatePairs.toLocaleString() : '—'}
+                </span>
               </div>
             </div>
 
@@ -298,10 +350,10 @@ export const IndiaGisHeatmap: React.FC = () => {
               </div>
               <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
                 {stateRiskSummary === null
-                  ? `Loading the four-engine risk profile for ${selectedNode.state}.`
+                  ? `Loading the four-engine risk profile for ${selectedLiveNode.state}.`
                   : stateRiskSummary.dominant_signal
                     ? `${stateRiskSummary.dominant_signal.label} is the strongest signal across ${stateRiskSummary.total_works.toLocaleString()} analysed works; ${stateRiskSummary.dominant_signal.flagged_works.toLocaleString()} works score 35 or above in this engine.`
-                    : `No analysed work records are available for ${selectedNode.state}.`}
+                    : `No analysed work records are available for ${selectedLiveNode.state}.`}
               </p>
               {stateRiskSummary && stateRiskSummary.signals.length > 0 && (
                 <div className="grid grid-cols-2 gap-2 pt-1">
@@ -322,15 +374,15 @@ export const IndiaGisHeatmap: React.FC = () => {
 
             {/* Lat/Lng Coordinates */}
             <div className="gis-coordinates text-[11px] font-mono text-slate-500 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/60 flex items-center justify-between">
-              <span>Geo Center:</span>
-              <span className="text-slate-300 font-bold">{selectedNode.lat.toFixed(4)}° N, {selectedNode.lng.toFixed(4)}° E</span>
+              <span>Representative State Centre:</span>
+              <span className="text-slate-300 font-bold">{selectedLiveNode.lat.toFixed(4)}° N, {selectedLiveNode.lng.toFixed(4)}° E</span>
             </div>
           </div>
 
           <div className="pt-2">
             <div className="gis-map-info p-3 bg-indigo-950/40 border border-indigo-800/50 rounded-xl text-[11px] text-indigo-300 font-medium flex items-center gap-2">
               <Info className="w-4 h-4 text-indigo-400 shrink-0" />
-              <span>GIS layers cross-reference district physical location data against MPLADS works registry.</span>
+              <span>State-centre positions are reference geometry; risk and duplicate-pair values come from the live MPLADS feature store. Exact spatial proximity is unavailable until source coordinates are provided.</span>
             </div>
           </div>
         </div>

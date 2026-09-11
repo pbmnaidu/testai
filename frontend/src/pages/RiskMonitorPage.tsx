@@ -7,6 +7,7 @@ import { Search, ChevronLeft, ChevronRight, Eye, ShieldAlert, PieChart, Copy, Ch
 interface RiskMonitorPageProps {
   initialSeverity?: string;
   initialDimension?: string;
+  totalWorks?: number;
   onSelectWork: (workId: string) => void;
 }
 
@@ -36,12 +37,14 @@ function readPersistedRiskFilters(): PersistedRiskFilters {
 export const RiskMonitorPage: React.FC<RiskMonitorPageProps> = ({
   initialSeverity,
   initialDimension = 'all',
+  totalWorks = 0,
   onSelectWork,
 }) => {
   const persisted = React.useMemo(readPersistedRiskFilters, []);
   const [records, setRecords] = useState<WorkRecord[]>([]);
   const [total, setTotal] = useState<number>(0);
   const [totalPages, setTotalPages] = useState<number>(1);
+  const [topScores, setTopScores] = useState({ financial: 0, duplicate: 0, compliance: 0, schedule: 0, composite: 0 });
   const [page, setPage] = useState<number>(persisted.page && persisted.page > 0 ? persisted.page : 1);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -113,6 +116,7 @@ export const RiskMonitorPage: React.FC<RiskMonitorPageProps> = ({
         setRecords(res.records || []);
         setTotal(res.total || 0);
         setTotalPages(res.total_pages || 1);
+        setTopScores(res.top_scores || { financial: 0, duplicate: 0, compliance: 0, schedule: 0, composite: 0 });
         setLoading(false);
       })
       .catch((err) => {
@@ -131,6 +135,14 @@ export const RiskMonitorPage: React.FC<RiskMonitorPageProps> = ({
     { id: 'duplicate', label: 'Candidate Duplicates', icon: Copy },
     { id: 'compliance', label: 'Compliance Gaps', icon: CheckSquare },
     { id: 'schedule', label: 'Schedule Delays', icon: Clock },
+  ];
+
+  const topScoreCards = [
+    { key: 'composite', label: 'Composite Risk', score: topScores.composite, tone: 'text-rose-300' },
+    { key: 'financial', label: 'Financial', score: topScores.financial, tone: 'text-indigo-300' },
+    { key: 'duplicate', label: 'Duplicate', score: topScores.duplicate, tone: 'text-amber-300' },
+    { key: 'compliance', label: 'Compliance', score: topScores.compliance, tone: 'text-fuchsia-300' },
+    { key: 'schedule', label: 'Schedule', score: topScores.schedule, tone: 'text-sky-300' },
   ];
 
   const sortedRecords = React.useMemo(() => {
@@ -157,7 +169,7 @@ export const RiskMonitorPage: React.FC<RiskMonitorPageProps> = ({
             <span>Risk Intelligence Audit Queue</span>
           </h2>
           <p className="text-xs text-slate-400 mt-0.5 font-medium">
-            Multi-dimensional risk classification across 79,068 works with ML score prioritization
+            Multi-dimensional risk classification across {totalWorks.toLocaleString()} works with ML score prioritization
           </p>
         </div>
 
@@ -191,6 +203,16 @@ export const RiskMonitorPage: React.FC<RiskMonitorPageProps> = ({
             </button>
           );
         })}
+      </div>
+
+      {/* Maximum score values for the current filtered queue. */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+        {topScoreCards.map((card) => (
+          <div key={card.key} className="card-panel px-3.5 py-3 border border-slate-800/80">
+            <div className="text-[10px] font-extrabold uppercase tracking-wide text-slate-500">Top {card.label} Score</div>
+            <div className={`mt-1 text-xl font-black font-mono ${card.tone}`}>{card.score.toFixed(1)}<span className="ml-1 text-xs text-slate-500">/100</span></div>
+          </div>
+        ))}
       </div>
 
       {/* Filter Control Bar */}

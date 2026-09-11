@@ -206,6 +206,22 @@ html:not(.dark) [class*="bg-slate-900"] { background-color: #1f3a63 !important; 
 html:not(.dark) [class*="border-slate-800"] { border-color: #dbe3ee !important; }
 html:not(.dark) .hover\:bg-slate-800:hover { background-color: #e2e8f0 !important; }
 
+/* Action buttons use dark utility classes in several pages. The daytime
+   palette remaps their hover background, so explicitly preserve a dark
+   button surface and white label/icon contrast in light mode. */
+html:not(.dark) button.bg-indigo-600,
+html:not(.dark) button.bg-emerald-600,
+html:not(.dark) button.bg-slate-900 {
+  color: #ffffff !important;
+}
+html:not(.dark) button.bg-indigo-600 { background-color: #4f46e5 !important; }
+html:not(.dark) button.bg-emerald-600 { background-color: #059669 !important; }
+html:not(.dark) button.bg-slate-900 { background-color: #1f3a63 !important; }
+html:not(.dark) button.hover\:bg-slate-800:hover {
+  background-color: #294b7d !important;
+  color: #ffffff !important;
+}
+
 /* Component-scoped daytime corrections. These rules deliberately live
    outside the dark-mode block so the existing night view is unchanged. */
 html:not(.dark) .risk-evidence-engine-summary {

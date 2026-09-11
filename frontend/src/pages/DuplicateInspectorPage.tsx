@@ -82,7 +82,7 @@ export const DuplicateInspectorPage: React.FC<DuplicateInspectorPageProps> = ({ 
             <Copy className="w-6 h-6 text-slate-900" /> Candidate Similar Work Inspector
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Pairwise textual and semantic similarity candidates evaluated within constituency blocks for human review.
+            Recommended work descriptions are compared first; sanctioned text is used only as a fallback. A pair must have the same explicit quantity/unit identity—generic notes such as “as per attachment” are excluded.
           </p>
         </div>
         <div className="text-xs font-mono text-slate-700 bg-white px-3.5 py-2 rounded-xl border border-slate-200/80 shadow-sm font-semibold">
@@ -190,7 +190,9 @@ export const DuplicateInspectorPage: React.FC<DuplicateInspectorPageProps> = ({ 
       ) : (
         <div className="space-y-6">
           {candidates.map((pair, idx) => (
-            <div key={idx} className="bg-white rounded-2xl border border-slate-200/80 p-6 space-y-4 shadow-sm">
+            (() => {
+              const probableWorkDivision = pair.review_classification === 'PROBABLE_WORK_DIVISION' || pair.possible_split_work === true;
+              return <div key={idx} className="bg-white rounded-2xl border border-slate-200/80 p-6 space-y-4 shadow-sm">
               {/* Header Banner */}
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">
@@ -198,8 +200,8 @@ export const DuplicateInspectorPage: React.FC<DuplicateInspectorPageProps> = ({ 
                     <MapPin className="w-3.5 h-3.5 text-emerald-600" /> {pair.state} • {pair.constituency}
                   </span>
                   {pair.duplicate_risk_level && (
-                    <span className={`px-3 py-1 rounded-full font-bold text-[10px] ${pair.duplicate_risk_level === 'HIGH' ? 'bg-rose-100 text-rose-800 border border-rose-200' : 'bg-amber-100 text-amber-800 border border-amber-200'}`}>
-                      {pair.duplicate_risk_level} OVERLAP RISK
+                    <span className={`px-3 py-1 rounded-full font-bold text-[10px] ${probableWorkDivision ? 'bg-violet-100 text-violet-800 border border-violet-200' : pair.duplicate_risk_level === 'HIGH' ? 'bg-rose-100 text-rose-800 border border-rose-200' : 'bg-amber-100 text-amber-800 border border-amber-200'}`}>
+                      {probableWorkDivision ? 'PROBABLE WORK DIVISION' : `${pair.duplicate_risk_level} OVERLAP RISK`}
                     </span>
                   )}
                 </div>
@@ -217,8 +219,8 @@ export const DuplicateInspectorPage: React.FC<DuplicateInspectorPageProps> = ({ 
                   <thead>
                     <tr className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold tracking-wider border-b border-slate-200">
                       <th className="py-3 px-4 w-1/5">Comparison Attribute</th>
-                      <th className="py-3 px-4 w-[40%] text-slate-900 bg-slate-100/70 font-bold">Work 1 ({pair.work_id_1})</th>
-                      <th className="py-3 px-4 w-[40%] text-slate-900 bg-slate-100/70 font-bold">Work 2 ({pair.work_id_2})</th>
+                      <th className="py-3 px-4 w-[40%] text-slate-900 bg-slate-100/70 font-bold">Work 1 ({pair.work_id_1})<div className="text-[9px] text-indigo-600 mt-1">{pair.source_dataset_1 || 'combined stages'}</div></th>
+                      <th className="py-3 px-4 w-[40%] text-slate-900 bg-slate-100/70 font-bold">Work 2 ({pair.work_id_2})<div className="text-[9px] text-indigo-600 mt-1">{pair.source_dataset_2 || 'combined stages'}</div></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-slate-800">
@@ -241,10 +243,21 @@ export const DuplicateInspectorPage: React.FC<DuplicateInspectorPageProps> = ({ 
                         <Calendar className="w-4 h-4 text-blue-600" /> Sanction Date
                       </td>
                       <td className="py-3 px-4 font-mono text-slate-700 font-medium">
-                        {pair.sanction_date_1 || '2024-03-15'}
+                        {pair.sanction_date_1 || 'Not available'}
                       </td>
                       <td className="py-3 px-4 font-mono text-slate-700 font-medium">
-                        {pair.sanction_date_2 || '2024-06-20'}
+                        {pair.sanction_date_2 || 'Not available'}
+                      </td>
+                    </tr>
+
+                    {/* Quantity / Unit Identity Row */}
+                    <tr className="hover:bg-slate-50/70 transition-colors">
+                      <td className="py-3 px-4 font-bold text-slate-500">Quantity / Unit Identity</td>
+                      <td className="py-3 px-4 font-mono text-slate-700 text-[11px]">
+                        {pair.quantity_signature_1 || 'No quantity detected'}
+                      </td>
+                      <td className="py-3 px-4 font-mono text-slate-700 text-[11px]">
+                        {pair.quantity_signature_2 || 'No quantity detected'}
                       </td>
                     </tr>
 
@@ -252,10 +265,12 @@ export const DuplicateInspectorPage: React.FC<DuplicateInspectorPageProps> = ({ 
                     <tr className="hover:bg-slate-50/70 transition-colors">
                       <td className="py-3 px-4 font-bold text-slate-500">Work Description</td>
                       <td className="py-3 px-4 leading-relaxed text-slate-800 bg-slate-50/50 font-medium">
-                        {pair.description_1}
+                        <div><span className="text-[10px] uppercase text-slate-500">Recommended:</span> {pair.recommended_description_1 || pair.description_1 || 'Not available'}</div>
+                        <div className="mt-2"><span className="text-[10px] uppercase text-slate-500">Sanctioned:</span> {pair.sanctioned_description_1 || pair.description_1 || 'Not available'}</div>
                       </td>
                       <td className="py-3 px-4 leading-relaxed text-slate-800 bg-slate-50/50 font-medium">
-                        {pair.description_2}
+                        <div><span className="text-[10px] uppercase text-slate-500">Recommended:</span> {pair.recommended_description_2 || pair.description_2 || 'Not available'}</div>
+                        <div className="mt-2"><span className="text-[10px] uppercase text-slate-500">Sanctioned:</span> {pair.sanctioned_description_2 || pair.description_2 || 'Not available'}</div>
                       </td>
                     </tr>
 
@@ -285,10 +300,13 @@ export const DuplicateInspectorPage: React.FC<DuplicateInspectorPageProps> = ({ 
 
               {/* Explanatory Footer */}
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 text-xs text-slate-700 font-medium">
-                <span className="font-bold text-slate-900 block mb-0.5">NLP Overlap Rationale:</span>
-                {pair.nlp_explanation || `High semantic text match (${pair.similarity_score.toFixed(1)}%) detected between Work 1 and Work 2 in ${pair.constituency}.`}
+                <span className="font-bold text-slate-900 block mb-0.5">{probableWorkDivision ? 'Duplicate Detection Assessment:' : 'NLP Overlap Rationale:'}</span>
+                {pair.nlp_explanation || (probableWorkDivision
+                  ? 'Probable work division/splitting pattern to reduce cost: identical recommended descriptions, matching quantity/unit identity, and work IDs within 10 records. Manual verification is required.'
+                  : `High semantic text match (${pair.similarity_score.toFixed(1)}%) detected between Work 1 and Work 2 in ${pair.constituency}.`)}
               </div>
-            </div>
+              </div>;
+            })()
           ))}
         </div>
       )}

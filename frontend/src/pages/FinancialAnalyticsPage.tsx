@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { fetchRiskQueue, fetchFilters } from '../services/api';
-import { WorkRecord, FilterOptions } from '../types';
+import { fetchOverview, fetchRiskQueue, fetchFilters } from '../services/api';
+import { NationalOverviewResponse, WorkRecord, FilterOptions } from '../types';
 import { PieChart, DollarSign, Eye, Filter, RotateCcw, MapPin, ArrowUpDown } from 'lucide-react';
 
 interface FinancialAnalyticsPageProps {
@@ -11,6 +11,7 @@ export const FinancialAnalyticsPage: React.FC<FinancialAnalyticsPageProps> = ({ 
   const [records, setRecords] = useState<WorkRecord[]>([]);
   const [total, setTotal] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
+  const [overview, setOverview] = useState<NationalOverviewResponse | null>(null);
 
   // Filters
   const [selectedState, setSelectedState] = useState<string>('');
@@ -45,6 +46,7 @@ export const FinancialAnalyticsPage: React.FC<FinancialAnalyticsPageProps> = ({ 
 
   useEffect(() => {
     fetchFilters().then(setFilterOpts).catch(console.error);
+    fetchOverview().then(setOverview).catch(console.error);
   }, []);
 
   const loadFinancialQueue = () => {
@@ -103,20 +105,20 @@ export const FinancialAnalyticsPage: React.FC<FinancialAnalyticsPageProps> = ({ 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <div className="bg-white rounded-2xl border border-slate-200/80 p-5 space-y-2 shadow-sm">
           <span className="text-[11px] text-slate-500 uppercase font-bold tracking-wider">Flagged Financial Outliers</span>
-          <div className="text-2xl font-black text-amber-600 font-mono tracking-tight">2,982 Works</div>
+          <div className="text-2xl font-black text-amber-600 font-mono tracking-tight">{(overview?.financial_summary?.flagged_financial_outliers ?? 0).toLocaleString()} Works</div>
           <p className="text-xs text-slate-500 font-medium">Financial Risk Score &ge; 50 / 100</p>
         </div>
 
         <div className="bg-white rounded-2xl border border-slate-200/80 p-5 space-y-2 shadow-sm">
           <span className="text-[11px] text-slate-500 uppercase font-bold tracking-wider">High Peer Ratio Works (&gt;3.0x)</span>
-          <div className="text-2xl font-black text-orange-600 font-mono tracking-tight">1,124 Works</div>
+          <div className="text-2xl font-black text-orange-600 font-mono tracking-tight">{(overview?.financial_summary?.high_peer_ratio_works ?? 0).toLocaleString()} Works</div>
           <p className="text-xs text-slate-500 font-medium">Exceed 3.0x Category Peer Median</p>
         </div>
 
         <div className="bg-white rounded-2xl border border-slate-200/80 p-5 space-y-2 shadow-sm">
           <span className="text-[11px] text-slate-500 uppercase font-bold tracking-wider">Isolation Forest Model</span>
-          <div className="text-2xl font-black text-slate-900 font-mono tracking-tight">5.0% Baseline</div>
-          <p className="text-xs text-slate-500 font-medium">Trained on 79,068 Historical Works</p>
+          <div className="text-2xl font-black text-slate-900 font-mono tracking-tight">{(overview?.financial_summary?.isolation_outlier_rate_pct ?? 0).toFixed(2)}% Baseline</div>
+          <p className="text-xs text-slate-500 font-medium">Trained on {(overview?.summary.total_works ?? 0).toLocaleString()} Historical Works</p>
         </div>
       </div>
 

@@ -1,0 +1,62 @@
+{
+  "run_id": "TRAIN-22150E7A8E41",
+  "status": "COMPLETED",
+  "progress": 100,
+  "message": "All risk models trained and promoted.",
+  "started_at": "2026-09-11T01:22:42.809263+00:00",
+  "snapshot_id": "VALIDATION-SNAPSHOT",
+  "delta": {
+    "new_count": 0,
+    "updated_count": 0,
+    "removed_count": 0
+  },
+  "completed_at": "2026-09-11T01:32:04.531926+00:00",
+  "validation": {
+    "rows": 79068,
+    "risk_columns": {
+      "financial_risk_score": 79068,
+      "duplicate_risk_score": 79068,
+      "compliance_risk_score": 79068,
+      "schedule_risk_score": 79068,
+      "composite_risk_score": 79068
+    }
+  },
+  "drift": {
+    "financial_risk_score": {
+      "old_mean": 14.274281631001163,
+      "new_mean": 14.274281631001163,
+      "mean_delta": 0.0,
+      "old_count": 79068,
+      "new_count": 79068
+    },
+    "duplicate_risk_score": {
+      "old_mean": 13.854124298072543,
+      "new_mean": 13.854124298072543,
+      "mean_delta": 0.0,
+      "old_count": 79068,
+      "new_count": 79068
+    },
+    "compliance_risk_score": {
+      "old_mean": 84.43662417159914,
+      "new_mean": 84.43662417159914,
+      "mean_delta": 0.0,
+      "old_count": 79068,
+      "new_count": 79068
+    },
+    "schedule_risk_score": {
+      "old_mean": 52.23636616583194,
+      "new_mean": 52.23636616583194,
+      "mean_delta": 0.0,
+      "old_count": 79068,
+      "new_count": 79068
+    },
+    "composite_risk_score": {
+      "old_mean": 72.1442075175798,
+      "new_mean": 72.1442075175798,
+      "mean_delta": 0.0,
+      "old_count": 79068,
+      "new_count": 79068
+    }
+  },
+  "artifact_dir": "P:\\SIH\\mplads_updated-main\\data\\training\\mlruns\\TRAIN-22150E7A8E41\\artifacts"
+}

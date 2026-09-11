@@ -78,6 +78,16 @@ export interface CandidateDuplicatePair {
   sanction_amount_2: number;
   description_1: string;
   description_2: string;
+  source_dataset_1?: string;
+  source_dataset_2?: string;
+  recommended_description_1?: string;
+  recommended_description_2?: string;
+  sanctioned_description_1?: string;
+  sanctioned_description_2?: string;
+  recommended_work_id_1?: string;
+  recommended_work_id_2?: string;
+  sanctioned_work_id_1?: string;
+  sanctioned_work_id_2?: string;
   sanction_date_1?: string;
   sanction_date_2?: string;
   recommended_date_1?: string;
@@ -87,9 +97,14 @@ export interface CandidateDuplicatePair {
   same_sanction_date?: boolean;
   work_id_numeric_distance?: number;
   within_10_ids?: boolean;
-  possible_split_work?: boolean;
-  split_work_investigation?: boolean;
-  duplicate_risk_level?: string;
+    possible_split_work?: boolean;
+    split_work_investigation?: boolean;
+    quantity_signature_1?: string;
+    quantity_signature_2?: string;
+    quantity_identity_match?: boolean;
+    quantity_identity_status?: string;
+    duplicate_risk_level?: string;
+    review_classification?: 'PROBABLE_WORK_DIVISION' | 'DUPLICATE_OVERLAP_REVIEW' | string;
   nlp_explanation?: string;
 }
 
@@ -102,6 +117,12 @@ export interface NationalOverviewResponse {
     completed_works: number;
     high_risk_works: number;
     critical_works: number;
+    overdue_works?: number;
+  };
+  financial_summary?: {
+    flagged_financial_outliers: number;
+    high_peer_ratio_works: number;
+    isolation_outlier_rate_pct: number;
   };
   risk_distribution: {
     LOW: number;
@@ -115,6 +136,17 @@ export interface NationalOverviewResponse {
     total_sanctioned: number;
     total_disbursed?: number;
     high_risk_works: number;
+  }>;
+  state_metrics?: Array<{
+    state: string;
+    total_works: number;
+    total_sanctioned: number;
+    total_disbursed?: number;
+    high_risk_works: number;
+    critical_works?: number;
+    average_risk_score?: number;
+    risk_level?: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+    duplicate_candidate_pairs?: number;
   }>;
   category_distribution: Array<{
     work_category: string;
@@ -163,13 +195,34 @@ export interface MpIntelligenceResponse {
 export interface SyncStatusResponse {
   operational_status: string;
   sync_frequency: string;
+  source_url?: string;
+  data_origin?: string;
   last_sync: string;
   next_scheduled_sync: string;
   current_snapshot_id: string;
   total_records_processed: number;
   new_records_since_last_sync: number;
   updated_records_since_last_sync: number;
+  removed_records_since_last_sync?: number;
   snapshot_count: number;
+  training?: TrainingStatus;
+}
+
+export interface TrainingStatus {
+  run_id?: string;
+  status: string;
+  progress?: number;
+  message?: string;
+  snapshot_id?: string;
+  completed_at?: string;
+  error?: string;
+}
+
+export interface SyncPreviewResponse {
+  success: boolean;
+  preview_token: string;
+  diff: { new_count: number; updated_count: number; removed_count: number; unchanged_count: number; total_changes: number; tables: Record<string, any> };
+  review: { total: number; page: number; limit: number; records: Array<any> };
 }
 
 export interface ModelStatusResponse {
@@ -200,6 +253,13 @@ export interface PaginatedResponse<T> {
   page: number;
   limit: number;
   total_pages?: number;
+  top_scores?: {
+    financial: number;
+    duplicate: number;
+    compliance: number;
+    schedule: number;
+    composite: number;
+  };
   records: T[];
 }
 

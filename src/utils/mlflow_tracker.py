@@ -21,12 +21,14 @@ class MLflowTracker:
         Logs ML training run parameters, dataset version, and metrics.
         Promotes the trained Isolation Forest run to 'Production v2'.
         """
-        run_id = f"RUN-{int(datetime.now().timestamp())}"
+        run_id = f"RUN-{int(datetime.now().timestamp())}-{os.getpid()}"
+        registry = self._load_registry()
+        version_number = len(registry.get("runs", [])) + 1
         run_data = {
             "run_id": run_id,
             "experiment_name": self.experiment_name,
             "model_name": self.registered_model_name,
-            "version": "v2",
+            "version": f"v{version_number}",
             "stage": "Production",
             "timestamp": datetime.now().isoformat(),
             "algorithm": "IsolationForest",
@@ -40,6 +42,7 @@ class MLflowTracker:
                 "max_samples": params.get("max_samples", "auto")
             },
             "metrics": {
+                **metrics,
                 "number_of_anomalies": metrics.get("anomalies_count", 3722),
                 "anomaly_percentage": metrics.get("anomaly_percentage", 4.7),
                 "critical_risk_count": metrics.get("critical_count", 1124),
@@ -48,11 +51,10 @@ class MLflowTracker:
         }
 
         # Store run into registry JSON
-        registry = self._load_registry()
         registry["runs"].insert(0, run_data)
         registry["production_model"] = {
             "model_name": self.registered_model_name,
-            "model_version": "v2",
+            "model_version": run_data["version"],
             "run_id": run_id,
             "stage": "Production",
             "dataset_version": dataset_version,
@@ -92,4 +94,3 @@ class MLflowTracker:
     def get_status() -> dict:
         tracker = MLflowTracker()
         return tracker._load_registry()
-

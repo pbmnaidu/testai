@@ -3,13 +3,77 @@
   "registered_model": "MPLADS_Financial_Anomaly_Model",
   "production_model": {
     "model_name": "MPLADS_Financial_Anomaly_Model",
-    "model_version": "v2",
-    "run_id": "RUN-1789051034",
+    "model_version": "v8",
+    "run_id": "RUN-1789090324-16000",
     "stage": "Production",
-    "dataset_version": "SNAP-2026-09-09",
-    "last_trained_at": "2026-09-10T20:07:14.581500"
+    "dataset_version": "VALIDATION-SNAPSHOT",
+    "last_trained_at": "2026-09-11T07:02:04.529195"
   },
   "runs": [
+    {
+      "run_id": "RUN-1789090324-16000",
+      "experiment_name": "MPLADS_Financial_Anomaly_Detection",
+      "model_name": "MPLADS_Financial_Anomaly_Model",
+      "version": "v8",
+      "stage": "Production",
+      "timestamp": "2026-09-11T07:02:04.529195",
+      "algorithm": "IsolationForest",
+      "dataset_version": "VALIDATION-SNAPSHOT",
+      "dataset_rows": 79068,
+      "feature_set_version": "financial_features_v2",
+      "parameters": {
+        "n_estimators": 100,
+        "contamination": 0.05,
+        "random_state": 42,
+        "max_samples": "auto"
+      },
+      "metrics": {
+        "total_works": 79068,
+        "delta_new": 0,
+        "delta_updated": 0,
+        "drift": {
+          "financial_risk_score": {
+            "old_mean": 14.274281631001163,
+            "new_mean": 14.274281631001163,
+            "mean_delta": 0.0,
+            "old_count": 79068,
+            "new_count": 79068
+          },
+          "duplicate_risk_score": {
+            "old_mean": 13.854124298072543,
+            "new_mean": 13.854124298072543,
+            "mean_delta": 0.0,
+            "old_count": 79068,
+            "new_count": 79068
+          },
+          "compliance_risk_score": {
+            "old_mean": 84.43662417159914,
+            "new_mean": 84.43662417159914,
+            "mean_delta": 0.0,
+            "old_count": 79068,
+            "new_count": 79068
+          },
+          "schedule_risk_score": {
+            "old_mean": 52.23636616583194,
+            "new_mean": 52.23636616583194,
+            "mean_delta": 0.0,
+            "old_count": 79068,
+            "new_count": 79068
+          },
+          "composite_risk_score": {
+            "old_mean": 72.1442075175798,
+            "new_mean": 72.1442075175798,
+            "mean_delta": 0.0,
+            "old_count": 79068,
+            "new_count": 79068
+          }
+        },
+        "number_of_anomalies": 3722,
+        "anomaly_percentage": 4.7,
+        "critical_risk_count": 1124,
+        "high_risk_count": 2598
+      }
+    },
     {
       "run_id": "RUN-1789051034",
       "experiment_name": "MPLADS_Financial_Anomaly_Detection",

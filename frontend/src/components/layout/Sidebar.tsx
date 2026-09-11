@@ -21,9 +21,10 @@ interface SidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
   collapsed?: boolean;
+  totalWorks?: number;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpen = false, onClose, collapsed = false }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpen = false, onClose, collapsed = false, totalWorks }) => {
   const sections = [
     {
       title: 'Core Portfolio',
@@ -121,7 +122,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
                 <h4 className="text-[11px] font-extrabold text-slate-900 dark:text-slate-100">MPLADS Risk DSS</h4>
               </div>
               <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium leading-tight mt-0.5">
-                79,068 Works Active
+                {totalWorks !== undefined ? `${totalWorks.toLocaleString()} Works Active` : 'Loading works…'}
               </p>
             </div>
           </div>

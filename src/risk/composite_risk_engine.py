@@ -4,7 +4,7 @@ import numpy as np
 
 def run_composite_risk_engine():
     root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-    features_dir = os.path.join(root_dir, "data", "features")
+    features_dir = os.environ.get("FEATURES_DIR", os.path.join(root_dir, "data", "features"))
     
     master_path = os.path.join(features_dir, "master_analytical.parquet")
     fin_path = os.path.join(features_dir, "financial_anomalies.parquet")

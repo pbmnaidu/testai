@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/layout/Sidebar';
 import { Topbar } from './components/layout/Topbar';
 import { AiAssistantModal } from './components/AiAssistantModal';
+import { fetchDuplicateCandidates, fetchOverview } from './services/api';
 
 import { OverviewPage } from './pages/OverviewPage';
 import { MpIntelligencePage } from './pages/MpIntelligencePage';
@@ -22,12 +23,27 @@ export function App() {
   const [isAiAssistantOpen, setIsAiAssistantOpen] = useState<boolean>(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
+  const [livePortfolio, setLivePortfolio] = useState({ totalWorks: 0, highRiskWorks: 0, financialOutlierWorks: 0, duplicateCandidates: 0 });
   const [isDark, setIsDark] = useState<boolean>(() => {
     try {
       const saved = window.localStorage.getItem('mplads-theme');
       return saved ? saved === 'dark' : true;
     } catch { return true; }
   });
+
+  useEffect(() => {
+    Promise.all([
+      fetchOverview(),
+      fetchDuplicateCandidates({ min_similarity: 85, page: 1, limit: 1 }),
+    ]).then(([overview, duplicates]) => {
+      setLivePortfolio({
+        totalWorks: overview.summary.total_works,
+        highRiskWorks: overview.summary.high_risk_works,
+        financialOutlierWorks: overview.financial_summary?.flagged_financial_outliers ?? 0,
+        duplicateCandidates: duplicates.total ?? 0,
+      });
+    }).catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDark);
@@ -66,6 +82,7 @@ export function App() {
         activeTab={selectedWorkId ? 'project-detail' : activeTab}
         isOpen={isSidebarOpen}
         collapsed={isSidebarCollapsed}
+        totalWorks={livePortfolio.totalWorks || undefined}
         onClose={() => setIsSidebarOpen(false)}
         setActiveTab={(tab) => {
         setSelectedWorkId(null);
@@ -96,11 +113,11 @@ export function App() {
             <>
               {activeTab === 'overview' && <OverviewPage onNavigateToRiskMonitor={handleNavigateToRiskMonitor} />}
               {activeTab === 'mp-intelligence' && <MpIntelligencePage onSelectWork={handleSelectWork} />}
-              {activeTab === 'risk-monitor' && <RiskMonitorPage initialSeverity={initialSeverity} initialDimension="all" onSelectWork={handleSelectWork} />}
+              {activeTab === 'risk-monitor' && <RiskMonitorPage initialSeverity={initialSeverity} initialDimension="all" totalWorks={livePortfolio.totalWorks} onSelectWork={handleSelectWork} />}
               {activeTab === 'duplicate-inspector' && <DuplicateInspectorPage onSelectWork={handleSelectWork} />}
-              {activeTab === 'financial-analytics' && <RiskMonitorPage initialDimension="financial" onSelectWork={handleSelectWork} />}
-              {activeTab === 'compliance-monitor' && <RiskMonitorPage initialDimension="compliance" onSelectWork={handleSelectWork} />}
-              {activeTab === 'schedule-progress' && <RiskMonitorPage initialDimension="schedule" onSelectWork={handleSelectWork} />}
+              {activeTab === 'financial-analytics' && <RiskMonitorPage initialDimension="financial" totalWorks={livePortfolio.totalWorks} onSelectWork={handleSelectWork} />}
+              {activeTab === 'compliance-monitor' && <RiskMonitorPage initialDimension="compliance" totalWorks={livePortfolio.totalWorks} onSelectWork={handleSelectWork} />}
+              {activeTab === 'schedule-progress' && <RiskMonitorPage initialDimension="schedule" totalWorks={livePortfolio.totalWorks} onSelectWork={handleSelectWork} />}
               {activeTab === 'data-sync' && <DataSyncPage />}
               {activeTab === 'model-monitoring' && <ModelMonitoringPage />}
 
@@ -118,6 +135,10 @@ export function App() {
           setSelectedWorkId(null);
           setActiveTab(tab);
         }}
+        totalWorks={livePortfolio.totalWorks}
+        highRiskWorks={livePortfolio.highRiskWorks}
+        financialOutlierWorks={livePortfolio.financialOutlierWorks}
+        duplicateCandidates={livePortfolio.duplicateCandidates}
       />
     </div>
   );

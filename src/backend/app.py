@@ -5,13 +5,15 @@ from datetime import date, datetime
 import pandas as pd
 import numpy as np
 from fastapi import FastAPI, Query, HTTPException
+from pydantic import BaseModel, Field
 from fastapi.middleware.cors import CORSMiddleware
 
 # Ensure workspace root is in sys.path
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__) + "/../.."))
 
 from src.data.sync.snapshot_manager import get_snapshot_history
-from src.data.sync.change_detector import detect_snapshot_deltas
+from src.data.sync.sync_runner import get_sync_status as get_automation_status, preview_diff, commit_preview, run_sync_job, start_scheduler
+from src.data.sync.training_manager import TRAINING_MANAGER
 from src.utils.mlflow_tracker import MLflowTracker
 from src.modules.material_context import analyze_material_context
 from src.modules.sector_classifier import classify_and_cost, MPLADS_SECTOR_MATRIX
@@ -32,6 +34,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.on_event("startup")
+def start_automatic_sync_scheduler():
+    start_scheduler()
+
 # Resolve paths dynamically so the backend works on any machine (including Vercel)
 _BACKEND_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 FEATURES_DIR = os.path.join(_BACKEND_ROOT, "data", "features")
@@ -41,24 +48,136 @@ DATA_DIR = os.path.join(_BACKEND_ROOT, "data")
 # Cache loaded dataframes in memory
 _DATA_CACHE = {}
 
+
+class LazyWorkIndex:
+    """Resolve work details on demand instead of serializing every row at startup."""
+
+    def __init__(self, frame: pd.DataFrame):
+        self.frame = frame
+        self.positions = {}
+        self.cache = {}
+        if not frame.empty and "work_id" in frame.columns:
+            for position, value in enumerate(frame["work_id"].tolist()):
+                work_id = str(value or "").strip()
+                if work_id:
+                    self.positions[work_id] = position
+
+    def get(self, work_id, default=None):
+        clean_id = str(work_id or "").strip()
+        if clean_id not in self.positions:
+            return default
+        if clean_id not in self.cache:
+            self.cache[clean_id] = clean_record_for_json(self.frame.iloc[self.positions[clean_id]].to_dict())
+        return self.cache[clean_id]
+
+    def items(self):
+        for work_id in self.positions:
+            yield work_id, self.get(work_id)
+
+    def __len__(self):
+        return len(self.positions)
+
+
+class LazyDuplicateIndex:
+    """Index duplicate candidates by work ID without cleaning all pair rows."""
+
+    def __init__(self, frame: pd.DataFrame):
+        self.frame = frame
+        self.positions = {}
+        if frame.empty:
+            return
+        for column in ("work_id_1", "work_id_2"):
+            if column not in frame.columns:
+                continue
+            for position, value in enumerate(frame[column].tolist()):
+                work_id = str(value or "").strip()
+                if work_id:
+                    self.positions.setdefault(work_id, set()).add(position)
+
+    def get(self, work_id, default=None):
+        clean_id = str(work_id or "").strip()
+        positions = self.positions.get(clean_id)
+        if not positions:
+            return default
+        return [clean_record_for_json(self.frame.iloc[position].to_dict()) for position in sorted(positions)]
+
+
+class LazyExpenditureIndex:
+    """Index expenditure rows by work ID and clean only requested trips."""
+
+    def __init__(self, frame: pd.DataFrame):
+        self.frame = frame
+        self.positions = {}
+        if not frame.empty and "work_id" in frame.columns:
+            for position, value in enumerate(frame["work_id"].tolist()):
+                work_id = str(value or "").strip()
+                if work_id:
+                    self.positions.setdefault(work_id, []).append(position)
+
+    def get(self, work_id, default=None):
+        clean_id = str(work_id or "").strip()
+        positions = self.positions.get(clean_id)
+        if not positions:
+            return default
+        trips = []
+        for position in positions:
+            row = self.frame.iloc[position].to_dict()
+            trips.append(clean_record_for_json({
+                "work_id": clean_id,
+                "expenditure_date": row.get("expenditure_date") or row.get("Expenditure Date"),
+                "expenditure_amount": row.get("expenditure_amount") if row.get("expenditure_amount") is not None else row.get("Fund Disbursed Amount ( ₹ )"),
+                "payment_status": row.get("payment_status") or row.get("Payment Status"),
+            }))
+        trips.sort(key=lambda item: str(item.get("expenditure_date") or ""))
+        for number, trip in enumerate(trips, start=1):
+            trip["trip_number"] = number
+        return trips
+
+
+def _read_master_frame(path: str) -> pd.DataFrame:
+    """Load the scalar analytical fields used by API/UI routes.
+
+    The master Parquet also contains large nested diagnostic arrays. Those
+    fields are not required by the API response contracts and loading them
+    makes the first request unnecessarily slow and memory-heavy.
+    """
+    try:
+        import pyarrow.parquet as parquet
+        import pyarrow.types as arrow_types
+        schema = parquet.ParquetFile(path).schema_arrow
+        columns = [
+            field.name for field in schema
+            if not arrow_types.is_nested(field.type) and not arrow_types.is_null(field.type)
+        ]
+        # The master retains raw export columns for offline analysis, but
+        # returning both ``State`` and canonical ``state`` (and similar pairs)
+        # creates ambiguous JSON objects for strict clients.
+        raw_aliases = {
+            "Sr. No.", "Work category", "Work", "State", "IDA",
+            "Hon'ble Members of Parliament", "Constituency", "Work description",
+            "Recommended date", "Sanction Date", "Sanction Amount ( ₹ )", "Work Status",
+        }
+        columns = [column for column in columns if column not in raw_aliases]
+        return pd.read_parquet(path, columns=columns)
+    except Exception:
+        return pd.read_parquet(path)
+
+
 def get_data():
     if "master" not in _DATA_CACHE:
         master_p = os.path.join(FEATURES_DIR, "master_project_risk_scores.parquet")
         try:
             if os.path.exists(master_p):
-                df = pd.read_parquet(master_p)
+                df = _read_master_frame(master_p)
             else:
                 df = pd.DataFrame()
         except Exception:
             df = pd.DataFrame()
         _DATA_CACHE["master"] = df
 
-        # Build O(1) hashmap index for work details
-        work_dict = {}
-        if not df.empty and "work_id" in df.columns:
-            for r in df.to_dict(orient="records"):
-                work_dict[str(r["work_id"]).strip()] = clean_record_for_json(r)
-        _DATA_CACHE["work_index"] = work_dict
+        # Build only a lightweight ID-to-row index. Individual records are
+        # cleaned when a detail endpoint actually requests them.
+        _DATA_CACHE["work_index"] = LazyWorkIndex(df)
 
     if "duplicates" not in _DATA_CACHE:
         dup_p = os.path.join(FEATURES_DIR, "duplicate_work_candidates.parquet")
@@ -71,14 +190,7 @@ def get_data():
             dups = pd.DataFrame()
         _DATA_CACHE["duplicates"] = dups
 
-        dup_index = {}
-        if not dups.empty and "work_id_1" in dups.columns:
-            for r in dups.to_dict(orient="records"):
-                clean_r = clean_record_for_json(r)
-                w1, w2 = str(r["work_id_1"]).strip(), str(r["work_id_2"]).strip()
-                dup_index.setdefault(w1, []).append(clean_r)
-                dup_index.setdefault(w2, []).append(clean_r)
-        _DATA_CACHE["dup_index"] = dup_index
+        _DATA_CACHE["dup_index"] = LazyDuplicateIndex(dups)
 
     if "t1" not in _DATA_CACHE:
         t1_p = os.path.join(PROCESSED_DIR, "t1_allocated_limits.parquet")
@@ -100,24 +212,7 @@ def get_data():
             t6 = pd.read_parquet(t6_p) if os.path.exists(t6_p) else pd.DataFrame()
         except Exception:
             t6 = pd.DataFrame()
-        trip_index = {}
-        if not t6.empty and "work_id" in t6.columns:
-            rows = t6.to_dict(orient="records")
-            for row in rows:
-                wid = str(row.get("work_id") or "").strip()
-                if not wid:
-                    continue
-                trip_index.setdefault(wid, []).append(clean_record_for_json({
-                    "work_id": wid,
-                    "expenditure_date": row.get("expenditure_date") or row.get("Expenditure Date"),
-                    "expenditure_amount": row.get("expenditure_amount") if row.get("expenditure_amount") is not None else row.get("Fund Disbursed Amount ( ₹ )"),
-                    "payment_status": row.get("payment_status") or row.get("Payment Status"),
-                }))
-            for wid, trips in trip_index.items():
-                trips.sort(key=lambda item: str(item.get("expenditure_date") or ""))
-                for number, trip in enumerate(trips, start=1):
-                    trip["trip_number"] = number
-        _DATA_CACHE["expenditure_trips_index"] = trip_index
+        _DATA_CACHE["expenditure_trips_index"] = LazyExpenditureIndex(t6)
 
     return _DATA_CACHE
 
@@ -166,10 +261,16 @@ def clean_record_for_json(record):
 
 @app.get("/api/health")
 def health_check():
-    data = get_data()
+    master_p = os.path.join(FEATURES_DIR, "master_project_risk_scores.parquet")
+    total_projects = 0
+    try:
+        if os.path.exists(master_p):
+            total_projects = len(pd.read_parquet(master_p, columns=["work_id"]))
+    except Exception:
+        total_projects = 0
     return {
         "status": "healthy",
-        "total_projects_loaded": len(data["master"])
+        "total_projects_loaded": total_projects
     }
 
 @app.get("/api/overview")
@@ -179,32 +280,55 @@ def get_national_overview():
     t1 = data["t1"]
     t7 = data["t7"]
     
-    total_allocation = float(t1["allocated_amount"].sum()) if len(t1) > 0 else 83336700000.0
+    total_allocation = float(t1["allocated_amount"].sum()) if len(t1) > 0 else 0.0
     total_sanctioned = float(master["sanction_amount"].fillna(0).sum())
     total_disbursed = float(master["effective_expenditure"].fillna(0).sum())
-    calamity_consents_total = float(t7["consent_amount"].sum()) if len(t7) > 0 else 40567400.0
+    calamity_consents_total = float(t7["consent_amount"].sum()) if len(t7) > 0 else 0.0
     
     total_works = len(master)
-    completed_works = int(master["completion_date"].notnull().sum()) if "completion_date" in master.columns else 11791
+    completed_works = int(master["completion_date"].notnull().sum()) if "completion_date" in master.columns else 0
     
     risk_counts = master["overall_risk_level"].value_counts().to_dict()
     med_cnt = int(risk_counts.get("MEDIUM", 0))
     high_cnt = int(risk_counts.get("HIGH", 0))
     crit_cnt = int(risk_counts.get("CRITICAL", 0))
-    if crit_cnt == 0:
-        crit_cnt = 18
-    if high_cnt == 0:
-        high_cnt = 42
+    overdue_works = int((pd.to_numeric(master["overdue_days"], errors="coerce").fillna(0) > 0).sum()) if "overdue_days" in master.columns else 0
         
     total_review_cases = med_cnt + high_cnt + crit_cnt
     
-    # State-level aggregation for audit review cases (score >= 35)
-    state_agg = master.groupby("state").agg(
+    # State-level aggregation for the GIS view.  Ignore blank source-state
+    # rows so the API represents the same 36 States/UTs as the map.
+    state_source = master[master["state"].fillna("").astype(str).str.strip().ne("")].copy()
+    state_agg = state_source.groupby("state").agg(
         total_works=("work_id", "count"),
         total_sanctioned=("sanction_amount", "sum"),
         total_disbursed=("effective_expenditure", "sum"),
-        high_risk_works=("overall_risk_level", lambda x: (x.isin(["MEDIUM", "HIGH", "CRITICAL"])).sum())
+        high_risk_works=("overall_risk_level", lambda x: (x.isin(["MEDIUM", "HIGH", "CRITICAL"])).sum()),
+        critical_works=("overall_risk_level", lambda x: (x == "CRITICAL").sum()),
+        average_risk_score=("overall_risk_score", "mean"),
     ).reset_index().sort_values("high_risk_works", ascending=False)
+
+    def state_risk_level(score):
+        if score >= 85:
+            return "CRITICAL"
+        if score >= 65:
+            return "HIGH"
+        if score >= 35:
+            return "MEDIUM"
+        return "LOW"
+
+    state_agg["risk_level"] = state_agg["average_risk_score"].fillna(0).map(state_risk_level)
+
+    # Duplicate candidates are the only duplicate-specific quantity available
+    # in the current feature store.  Do not label overall high-risk works as
+    # duplicate/audit cases in the GIS panel.
+    duplicate_counts = data["duplicates"]
+    if not duplicate_counts.empty and "state" in duplicate_counts.columns:
+        duplicate_counts = duplicate_counts[duplicate_counts["state"].fillna("").astype(str).str.strip().ne("")]
+        duplicate_counts = duplicate_counts.groupby("state").size()
+        state_agg["duplicate_candidate_pairs"] = state_agg["state"].map(duplicate_counts).fillna(0).astype(int)
+    else:
+        state_agg["duplicate_candidate_pairs"] = 0
     
     state_list = [clean_record_for_json(r) for r in state_agg.to_dict(orient="records")]
     
@@ -216,6 +340,15 @@ def get_national_overview():
     ).reset_index().sort_values("high_risk_works", ascending=False)
     
     cat_list = [clean_record_for_json(r) for r in cat_agg.to_dict(orient="records")]
+
+    financial_scores = pd.to_numeric(master.get("financial_risk_score", pd.Series(0, index=master.index)), errors="coerce").fillna(0)
+    peer_ratios = pd.to_numeric(master.get("amount_to_peer_ratio", pd.Series(0, index=master.index)), errors="coerce").fillna(0)
+    financial_outlier_mask = master.get("is_financial_outlier", pd.Series(False, index=master.index)).fillna(False).astype(bool)
+    financial_summary = {
+        "flagged_financial_outliers": int(financial_scores.ge(50).sum()),
+        "high_peer_ratio_works": int(peer_ratios.gt(3).sum()),
+        "isolation_outlier_rate_pct": round(float(financial_outlier_mask.mean() * 100), 2) if len(master) else 0.0,
+    }
     
     return {
         "summary": {
@@ -226,7 +359,8 @@ def get_national_overview():
             "total_works": total_works,
             "completed_works": completed_works,
             "high_risk_works": total_review_cases,
-            "critical_works": crit_cnt
+            "critical_works": crit_cnt,
+            "overdue_works": overdue_works
         },
         "risk_distribution": {
             "LOW": int(risk_counts.get("LOW", 0)),
@@ -235,6 +369,8 @@ def get_national_overview():
             "CRITICAL": crit_cnt
         },
         "top_states": state_list[:10],
+        "state_metrics": state_list,
+        "financial_summary": financial_summary,
         "category_distribution": cat_list[:8]
     }
 
@@ -405,31 +541,7 @@ def get_schedule_risk_analytics(
 
 @app.get("/api/sync/status")
 def get_sync_status():
-    history = get_snapshot_history()
-    deltas = detect_snapshot_deltas()
-    
-    log_file = os.path.join(DATA_DIR, "sync_history.json")
-    last_run = {}
-    if os.path.exists(log_file):
-        try:
-            with open(log_file, 'r') as f:
-                logs = json.load(f)
-                if logs:
-                    last_run = logs[0]
-        except Exception:
-            pass
-            
-    return {
-        "operational_status": "healthy",
-        "sync_frequency": "Once Every 7 Days (Weekly)",
-        "last_sync": last_run.get("timestamp", "2026-09-09T11:35:14"),
-        "next_scheduled_sync": last_run.get("next_scheduled_sync", "2026-09-16 11:35:14"),
-        "current_snapshot_id": last_run.get("snapshot_id", "SNAP-2026-09-09"),
-        "total_records_processed": deltas.get("unchanged_count", 79068) + deltas.get("new_count", 0),
-        "new_records_since_last_sync": deltas.get("new_count", 0),
-        "updated_records_since_last_sync": deltas.get("updated_count", 0),
-        "snapshot_count": len(history)
-    }
+    return get_automation_status()
 
 @app.get("/api/sync/history")
 def get_sync_history():
@@ -441,6 +553,78 @@ def get_sync_history():
         except Exception:
             pass
     return []
+
+
+class SyncPreviewRequest(BaseModel):
+    state: str | None = None
+    constituency: str | None = None
+    work_ids: list[str] = Field(default_factory=list)
+    page: int = Field(default=1, ge=1)
+    limit: int = Field(default=50, ge=1, le=200)
+
+
+def _review_rows(diff: dict, request: SyncPreviewRequest) -> list[dict]:
+    rows = []
+    for table_diff in diff.get("tables", {}).values():
+        for kind in ("new", "modified", "removed"):
+            for item in table_diff.get(kind, []):
+                item = dict(item)
+                item["change_type"] = kind.upper()
+                row = item.get("new") or item.get("old") or {}
+                state = str(row.get("state") or "").upper()
+                constituency = str(row.get("constituency") or "").upper()
+                key = str(item.get("composite_key") or "")
+                if request.state and request.state.upper() not in state:
+                    continue
+                if request.constituency and request.constituency.upper() not in constituency:
+                    continue
+                if request.work_ids and not any(work_id.strip() in key for work_id in request.work_ids):
+                    continue
+                rows.append(item)
+    return rows
+
+
+@app.post("/api/sync/preview-diff")
+def sync_preview(request: SyncPreviewRequest):
+    request_data = request.model_dump(exclude_none=True) if hasattr(request, "model_dump") else request.dict(exclude_none=True)
+    result = preview_diff(request_data)
+    if not result.get("success"):
+        fetch_error = result.get("fetch", {}).get("error") or "; ".join(result.get("fetch", {}).get("errors", []))
+        raise HTTPException(status_code=502, detail=fetch_error or "Official REST sync failed")
+    rows = _review_rows(result["diff"], request)
+    start = (request.page - 1) * request.limit
+    result["review"] = {"total": len(rows), "page": request.page, "limit": request.limit, "records": rows[start:start + request.limit]}
+    return result
+
+
+class SyncCommitRequest(BaseModel):
+    preview_token: str
+
+
+@app.post("/api/sync/commit-diff")
+def sync_commit(request: SyncCommitRequest):
+    try:
+        result = commit_preview(request.preview_token)
+        _DATA_CACHE.clear()
+        return result
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Sync commit failed safely: {exc}")
+
+
+@app.post("/api/sync/run-now")
+def sync_run_now():
+    result = run_sync_job()
+    if result.get("success"):
+        _DATA_CACHE.clear()
+        return result
+    raise HTTPException(status_code=502, detail=result.get("sync", {}).get("error", "Official REST sync failed"))
+
+
+@app.get("/api/sync/training-status")
+def sync_training_status():
+    return TRAINING_MANAGER.status()
 
 @app.get("/api/model/status")
 def get_model_status():
@@ -545,6 +729,17 @@ def get_risk_monitor_queue(
         ]
         
     total_records = len(df)
+    top_scores = {}
+    for key, column in {
+        "financial": "financial_risk_score",
+        "duplicate": "duplicate_risk_score",
+        "compliance": "compliance_risk_score",
+        "schedule": "schedule_risk_score",
+        "composite": "composite_risk_score",
+    }.items():
+        values = pd.to_numeric(df[column], errors="coerce").dropna() if column in df.columns else pd.Series(dtype=float)
+        top_scores[key] = round(float(values.max()), 1) if len(values) else 0.0
+
     sort_col = sort_by if (sort_by and sort_by in df.columns) else "composite_risk_score"
     df_sorted = df.sort_values(sort_col, ascending=False)
     
@@ -559,6 +754,7 @@ def get_risk_monitor_queue(
         "page": page,
         "limit": limit,
         "total_pages": int(np.ceil(total_records / limit)) if total_records > 0 else 0,
+        "top_scores": top_scores,
         "records": records
     }
 

@@ -24,7 +24,7 @@ def create_snapshot(snapshot_date: str = None) -> dict:
     and records SHA-256 file hashes and record counts.
     """
     if not snapshot_date:
-        snapshot_date = datetime.now().strftime("%Y-%m-%d")
+        snapshot_date = datetime.utcnow().strftime("%Y-%m-%dT%H%M%SZ")
         
     target_dir = os.path.join(SNAPSHOTS_DIR, snapshot_date)
     os.makedirs(target_dir, exist_ok=True)

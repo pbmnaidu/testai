@@ -43,8 +43,8 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onNavigateToRiskMoni
     let aVal: any = a[stateSortField as keyof typeof a];
     let bVal: any = b[stateSortField as keyof typeof b];
     if (stateSortField === 'high_risk_works') {
-      aVal = a.high_risk_works ?? (a.total_works > 5000 ? 542 : 184);
-      bVal = b.high_risk_works ?? (b.total_works > 5000 ? 542 : 184);
+      aVal = a.high_risk_works ?? 0;
+      bVal = b.high_risk_works ?? 0;
     }
     if (typeof aVal === 'string') {
       return stateSortOrder === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
@@ -67,14 +67,14 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onNavigateToRiskMoni
     },
     {
       name: 'HIGH RISK',
-      rawCount: risk_distribution.HIGH > 0 ? risk_distribution.HIGH : 42,
-      scaledValue: Math.round(Math.log10((risk_distribution.HIGH > 0 ? risk_distribution.HIGH : 42) + 1) * 35),
+      rawCount: risk_distribution.HIGH,
+      scaledValue: Math.round(Math.log10(risk_distribution.HIGH + 1) * 35),
       color: '#f97316',
     },
     {
       name: 'CRITICAL RISK',
-      rawCount: risk_distribution.CRITICAL > 0 ? risk_distribution.CRITICAL : 18,
-      scaledValue: Math.round(Math.log10((risk_distribution.CRITICAL > 0 ? risk_distribution.CRITICAL : 18) + 1) * 35),
+      rawCount: risk_distribution.CRITICAL,
+      scaledValue: Math.round(Math.log10(risk_distribution.CRITICAL + 1) * 35),
       color: '#f43f5e',
     },
   ];
@@ -186,7 +186,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onNavigateToRiskMoni
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-extrabold text-slate-100">Schedule & Execution Delay Monitor</h3>
               <span className="schedule-monitor-badge px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                12,410 Overdue Works
+                {(summary.overdue_works ?? 0).toLocaleString()} Overdue Works
               </span>
             </div>
             <p className="text-xs text-slate-400 mt-1 font-medium">
@@ -313,7 +313,7 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onNavigateToRiskMoni
                     <td className="py-3 px-4 text-right font-mono font-bold text-slate-100">₹{(st.total_sanctioned / 10000000).toFixed(2)} Cr</td>
                     <td className="py-3 px-4 text-right">
                       <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-extrabold bg-amber-950/80 text-amber-300 font-mono">
-                        {st.high_risk_works ? st.high_risk_works.toLocaleString() : (st.total_works > 5000 ? '542' : '184')}
+                        {(st.high_risk_works ?? 0).toLocaleString()}
                       </span>
                     </td>
                   </tr>
@@ -326,4 +326,3 @@ export const OverviewPage: React.FC<OverviewPageProps> = ({ onNavigateToRiskMoni
     </div>
   );
 };
-

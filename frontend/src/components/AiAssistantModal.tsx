@@ -6,6 +6,10 @@ interface AiAssistantModalProps {
   onClose: () => void;
   onSelectWork?: (workId: string) => void;
   onNavigateTab?: (tab: string) => void;
+  totalWorks: number;
+  highRiskWorks: number;
+  financialOutlierWorks: number;
+  duplicateCandidates: number;
 }
 
 interface Message {
@@ -22,18 +26,30 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
   onClose,
   onSelectWork,
   onNavigateTab,
+  totalWorks,
+  highRiskWorks,
+  financialOutlierWorks,
+  duplicateCandidates,
 }) => {
   const [inputQuery, setInputQuery] = useState('');
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       sender: 'assistant',
-      text: "Hello! I am your MPLADS AI Risk Copilot. I analyze real-time expenditure data, physical-financial progress gaps, duplicate work candidates, and compliance evidence gaps across 79,068 works.\n\nHow can I assist your review today?",
+      text: `Hello! I am your MPLADS AI Risk Copilot. I analyze real-time expenditure data, physical-financial progress gaps, duplicate work candidates, and compliance evidence gaps across ${totalWorks ? totalWorks.toLocaleString() : 'the current'} works.\n\nHow can I assist your review today?`,
       timestamp: 'Just now',
     },
   ]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!totalWorks) return;
+    setMessages((previous) => {
+      if (previous.length !== 1 || previous[0].id !== '1') return previous;
+      return [{ ...previous[0], text: `Hello! I am your MPLADS AI Risk Copilot. I analyze real-time expenditure data, physical-financial progress gaps, duplicate work candidates, and compliance evidence gaps across ${totalWorks.toLocaleString()} works.\n\nHow can I assist your review today?` }];
+    });
+  }, [totalWorks]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -94,12 +110,7 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
       const queryLower = textToSend.toLowerCase();
 
       if (queryLower.includes('high risk') || queryLower.includes('critical') || queryLower.includes('composite')) {
-        aiText = `Based on the latest ML Risk Model run, we identified **14,231 High Risk Works** out of 79,068 active projects.\n\nHere are top priority works requiring physical inspection:`;
-        works = [
-          { id: 'WS/2024/DEL/04821', title: 'Community Hall Construction & Solar Lighting', risk: 88, state: 'Delhi' },
-          { id: 'WS/2024/UP/08912', title: 'Primary Health Centre Ward Expansion', risk: 85, state: 'Uttar Pradesh' },
-          { id: 'WS/2024/MH/11043', title: 'Inter-village Concrete Road & Drainage Phase 2', risk: 82, state: 'Maharashtra' },
-        ];
+        aiText = `The latest ML Risk Model identifies **${highRiskWorks.toLocaleString()} review-priority works** out of **${totalWorks.toLocaleString()}** total works. Open the live queue to inspect the highest-priority records:`;
         actions = [
           {
             label: 'Go to Risk Intelligence Monitor',
@@ -110,10 +121,7 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
           },
         ];
       } else if (queryLower.includes('financial') || queryLower.includes('disbursal') || queryLower.includes('mismatch')) {
-        aiText = `Financial Anomaly detection flagged **11,860 works** where financial disbursal exceeds physical completion by >30%.\n\nExample anomaly: Work **WS/2024/UP/08912** has 90% funds disbursed but only 25% physical completion recorded.`;
-        works = [
-          { id: 'WS/2024/UP/08912', title: 'Primary Health Centre Ward Expansion', risk: 85, state: 'Uttar Pradesh' },
-        ];
+        aiText = `The live financial model currently flags **${financialOutlierWorks.toLocaleString()} works** for financial anomaly review. Open Financial Anomaly Analytics to inspect the current records and evidence.`;
         actions = [
           {
             label: 'Open Financial Anomaly Analytics',
@@ -124,7 +132,7 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
           },
         ];
       } else if (queryLower.includes('duplicate') || queryLower.includes('candidate')) {
-        aiText = `Our Vector Semantic Matcher detected **6,325 potential duplicate pairs** sharing high spatial (<200m), title, and agency similarity.\n\nTop match: **WS/2024/UP/08912** matched with existing work **WS/2023/UP/03411** (Similarity: 94.2%).`;
+        aiText = `The live duplicate engine currently contains **${duplicateCandidates.toLocaleString()} candidate pairs** after semantic similarity and identity checks. Open Candidate Duplicate Inspector for record-level review.`;
         actions = [
           {
             label: 'Launch Candidate Duplicate Inspector',

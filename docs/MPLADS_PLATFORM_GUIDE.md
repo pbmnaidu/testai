@@ -67,7 +67,7 @@ Provides portfolio-level work counts, expenditure totals, completion counts and 
 
 ### Data Sync & System Status
 
-Reports snapshot history, changes, last synchronization, next scheduled synchronization and operational status.
+Connects to the official MOSPI REST endpoint every 15 days for six tiles: allocated limits, recommended works, sanctioned works, completed works, expenditure, and calamity consent. It stages the responses concurrently, validates source columns, previews NEW/MODIFIED/REMOVED records by `WORK_ID + WORK_RECOMMENDATION_DTL_ID`, creates timestamped SHA-256 snapshots, and only then promotes data and queues background retraining. A direct full pipeline run over locally edited dataset files also creates a snapshot/history event with the same counters, so manual dataset changes are visible in Data Sync. Manual review uses `Sync Now & Compare`; failed or incomplete six-table fetches leave the active dataset untouched. The REST adapter bypasses inherited dead proxy variables by default; set `MPLADS_PROXY_URL` only when the deployment requires an explicit corporate proxy.
 
 ### Model Monitoring
 
@@ -194,7 +194,7 @@ Each rule produces a rule ID, name, source, condition, threshold, required field
 **Detection logic:**
 
 - Compare works within the same state/constituency/category block.
-- Normalize descriptions and calculate TF-IDF/cosine similarity.
+- Combine the recommended (T3) and sanctioned (T4) descriptions for each logical work, then calculate TF-IDF/cosine similarity over that combined corpus. The inspector retains both source descriptions for review.
 - Use the same sanctioned description as the primary trigger for stronger investigation.
 - Check same/compatible sector, timing within 180 days, numeric work-ID distance of up to 10 and surrounding record distance of up to 5 where available.
 - Avoid labeling every similar description as a duplicate.
@@ -231,6 +231,9 @@ The final wording always identifies the most important review reason first and p
 | `/api/compliance/rules` | Current 2023 guideline thresholds and prohibited categories |
 | `/api/sync/status` | Latest sync/snapshot status |
 | `/api/sync/history` | Historical synchronization records |
+| `/api/sync/preview-diff` | Stage official REST data and return paginated record-level deltas |
+| `/api/sync/commit-diff` | Promote a reviewed preview, snapshot it, and queue retraining |
+| `/api/sync/training-status` | Background training progress, validation, drift, and rollback status |
 | `/api/model/status` | Model registry and production status |
 | `/api/model/experiments` | Model run summaries |
 

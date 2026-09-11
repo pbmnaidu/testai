@@ -20,3 +20,9 @@ Thumbs.db
 
 # Large temporary outputs
 *.log
+
+# Data sync temporary staging & training runtime caches
+data/sync_previews/
+data/training/backups/
+data/training/staging/
+data/training/mlruns/
