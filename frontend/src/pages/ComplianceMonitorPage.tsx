@@ -69,6 +69,7 @@ export const ComplianceMonitorPage: React.FC<ComplianceMonitorPageProps> = ({ on
   const [filterOpts, setFilterOpts] = useState<FilterOptions | null>(null);
   const [sortField, setSortField] = useState('compliance_risk_score');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [gapFilter, setGapFilter] = useState<'all' | 'fraud' | 'stub' | 'missing_both'>('all');
 
   useEffect(() => {
     Promise.all([fetchFilters(), fetchComplianceSummary(), fetchComplianceRules()])
@@ -111,6 +112,34 @@ export const ComplianceMonitorPage: React.FC<ComplianceMonitorPageProps> = ({ on
     return sortOrder === 'asc' ? Number(a || 0) - Number(b || 0) : Number(b || 0) - Number(a || 0);
   }), [records, sortField, sortOrder]);
 
+  const filteredRecords = useMemo(() => {
+    return sortedRecords.filter((record) => {
+      const evidence = getGeotagEvidence(record.work_id);
+      if (gapFilter === 'fraud') {
+        return Boolean(
+          evidence?.fraudCollision?.isSuspectedFraud ||
+          record.compliance_findings?.some((f) => f.rule_id === 'C_FRAUD_DUPLICATE_EVIDENCE') ||
+          record.compliance_primary_rule_id === 'C_FRAUD_DUPLICATE_EVIDENCE'
+        );
+      }
+      if (gapFilter === 'stub') {
+        return Boolean(
+          evidence?.isStubDossier ||
+          record.compliance_findings?.some((f) => f.rule_id === 'C_EVIDENCE_STUB_DOSSIER') ||
+          record.compliance_primary_rule_id === 'C_EVIDENCE_STUB_DOSSIER'
+        );
+      }
+      if (gapFilter === 'missing_both') {
+        return Boolean(
+          (!evidence?.hasPhotoEvidence && !evidence?.hasBillProof) ||
+          record.compliance_findings?.some((f) => f.rule_id === 'C_EVIDENCE_NO_BILLS_TABLES' || f.rule_id === 'C_EVIDENCE_PHOTO_GAP') ||
+          record.compliance_primary_rule_id === 'C_EVIDENCE_NO_BILLS_TABLES'
+        );
+      }
+      return true;
+    });
+  }, [sortedRecords, gapFilter]);
+
   const handleSort = (field: string) => {
     if (sortField === field) setSortOrder((value) => value === 'asc' ? 'desc' : 'asc');
     else {
@@ -123,6 +152,7 @@ export const ComplianceMonitorPage: React.FC<ComplianceMonitorPageProps> = ({ on
     setSelectedState('');
     setSelectedCategory('');
     setMinScore(20);
+    setGapFilter('all');
   };
 
   return (
@@ -164,7 +194,7 @@ export const ComplianceMonitorPage: React.FC<ComplianceMonitorPageProps> = ({ on
       <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs font-bold text-slate-900"><Filter className="w-4 h-4" /> Filter work-level review order</div>
-          {(selectedState || selectedCategory || minScore !== 20) && (
+          {(selectedState || selectedCategory || minScore !== 20 || gapFilter !== 'all') && (
             <button onClick={clearFilters} className="text-xs text-slate-600 hover:text-slate-900 font-bold flex items-center gap-1"><RotateCcw className="w-3.5 h-3.5" /> Clear filters</button>
           )}
         </div>
@@ -190,14 +220,59 @@ export const ComplianceMonitorPage: React.FC<ComplianceMonitorPageProps> = ({ on
             </select>
           </label>
         </div>
+
+        {/* Evidence Gaps Quick-Filter Chips */}
+        <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100">
+          <span className="text-[10px] uppercase font-bold text-slate-500 mr-1">Evidence Gaps:</span>
+          <button
+            onClick={() => setGapFilter('all')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              gapFilter === 'all'
+                ? 'bg-slate-900 text-white shadow-sm'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            }`}
+          >
+            All Gaps
+          </button>
+          <button
+            onClick={() => setGapFilter('fraud')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+              gapFilter === 'fraud'
+                ? 'bg-rose-600 text-white shadow-sm shadow-rose-200'
+                : 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200'
+            }`}
+          >
+            <span>🚨 Fraud / Reused Files</span>
+          </button>
+          <button
+            onClick={() => setGapFilter('stub')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+              gapFilter === 'stub'
+                ? 'bg-red-600 text-white shadow-sm shadow-red-200'
+                : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
+            }`}
+          >
+            <span>🔴 Empty Stub Dossiers (≤ 2 pages)</span>
+          </button>
+          <button
+            onClick={() => setGapFilter('missing_both')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+              gapFilter === 'missing_both'
+                ? 'bg-amber-600 text-white shadow-sm shadow-amber-200'
+                : 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200'
+            }`}
+          >
+            <span>🟠 Missing Photos & Bills</span>
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4 shadow-sm">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2"><FileText className="w-4 h-4 text-indigo-600" /> Work Compliance Risk Order ({total.toLocaleString()} works)</h3>
+          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2"><FileText className="w-4 h-4 text-indigo-600" /> Work Compliance Risk Order ({filteredRecords.length.toLocaleString()} works)</h3>
           <span className="text-xs font-mono font-bold text-slate-500">Guideline findings only</span>
         </div>
-        {loading ? <div className="p-8 text-center text-xs text-slate-500">Loading work-level findings...</div> : sortedRecords.length === 0 ? <div className="p-8 text-center text-xs text-slate-500">No work-level findings match the selected filters.</div> : (
+        {loading ? <div className="p-8 text-center text-xs text-slate-500">Loading work-level findings...</div> : filteredRecords.length === 0 ? <div className="p-8 text-center text-xs text-slate-500">No work-level findings match the selected filters.</div> : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead><tr className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] font-bold tracking-wider">
@@ -209,7 +284,7 @@ export const ComplianceMonitorPage: React.FC<ComplianceMonitorPageProps> = ({ on
                 <th className="py-3 px-4">Action</th>
               </tr></thead>
               <tbody className="divide-y divide-slate-100 text-slate-800">
-                {sortedRecords.map((record) => {
+                {filteredRecords.map((record) => {
                   const finding = primaryFinding(record);
                   const evidence = getGeotagEvidence(record.work_id);
                   const previewImage = evidence?.gpsImages[0] || evidence?.images[0];
@@ -217,7 +292,30 @@ export const ComplianceMonitorPage: React.FC<ComplianceMonitorPageProps> = ({ on
                     <td className="py-3 px-4 font-mono font-bold text-slate-900">{record.work_id}</td>
                     <td className="py-3 px-4"><div className="font-bold text-slate-900">{record.state || record.State} · {record.constituency || record.Constituency}</div><div className="text-[11px] text-slate-500">{record.work_category}</div></td>
                     <td className="py-3 px-4 text-center"><span className="inline-flex items-center gap-1 rounded-full bg-rose-50 text-rose-800 border border-rose-200 px-2.5 py-1 font-bold">{record.compliance_risk_level} · {record.compliance_risk_score.toFixed(0)}</span><div className="text-[10px] text-slate-500 mt-1">{finding ? statusLabel(finding.status) : 'Review'}</div></td>
-                    <td className="py-3 px-4 max-w-md"><div className="font-semibold text-slate-900">{finding?.what_happened || record.compliance_explanation}</div><FindingDetails finding={finding} /></td>
+                    <td className="py-3 px-4 max-w-md">
+                      {evidence?.fraudCollision?.isSuspectedFraud ? (
+                        <div className="space-y-1">
+                          <div className="inline-flex items-center gap-1 rounded-md bg-rose-100 border border-rose-300 px-2 py-0.5 text-[10px] font-black text-rose-900">
+                            🚨 SUSPECTED FRAUD: RECYCLED EVIDENCE (SCORE 100)
+                          </div>
+                          <div className="text-xs font-semibold text-rose-950">
+                            {evidence.fraudCollision.fraudReason || `Exact duplicate evidence matching Work ${evidence.fraudCollision.matchedWorkId}`}
+                          </div>
+                        </div>
+                      ) : evidence?.isStubDossier ? (
+                        <div className="space-y-1">
+                          <div className="inline-flex items-center gap-1 rounded-md bg-red-100 border border-red-300 px-2 py-0.5 text-[10px] font-black text-red-900">
+                            🔴 CRITICAL: EMPTY STUB DOSSIER
+                          </div>
+                          <div className="text-xs font-semibold text-red-950">
+                            Uploaded dossier is only {evidence.pageCount} page(s) lacking physical progress, site photos, or itemized bills.
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="font-semibold text-slate-900">{finding?.what_happened || record.compliance_explanation}</div>
+                      )}
+                      <FindingDetails finding={finding} />
+                    </td>
                     <td className="py-3 px-4 min-w-[190px]">
                       {evidence?.gps ? <button onClick={() => onOpenEvidence?.(record.work_id, evidence.gpsImages[0]?.name)} className="text-left group"><span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 font-bold text-emerald-800 group-hover:bg-emerald-100"><MapPin className="h-3 w-3" /> 🟢 Geotagged</span><span className="mt-1 block font-mono text-[10px] text-emerald-700">{formatCoordinate(evidence.gps.latitude)} · {formatCoordinate(evidence.gps.longitude)}</span></button>
                         : evidence?.hasPhotoEvidence ? <button onClick={() => onOpenEvidence?.(record.work_id, previewImage?.name)} className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 font-bold text-sky-800 hover:bg-sky-100"><ImageIcon className="h-3 w-3" /> 🟢 Photo Attached (Untagged)</button>

@@ -1660,22 +1660,35 @@ def get_duplicate_clusters(
         "records": records,
     }
 
+def _unique_filter_values(series, *, skip_numeric: bool = False):
+    """Return stable, case-insensitive filter labels without source duplicates."""
+    values = {}
+    for raw_value in series.dropna().tolist():
+        value = " ".join(str(raw_value).strip().split())
+        if not value:
+            continue
+        if skip_numeric and re.fullmatch(r"[\d,\.\s₹$%-]+", value):
+            continue
+        values.setdefault(value.casefold(), value)
+    return sorted(values.values(), key=lambda value: value.casefold())
+
+
 @app.get("/api/filters")
 def get_filter_options(state: str = None, scope: str = "risk"):
     data = get_data()
     master = _all_records_frame(data) if scope.strip().lower() == "all" else data["master"]
-    
-    states = sorted([str(s) for s in master["state"].dropna().unique() if str(s).strip() != ""])
+
+    states = _unique_filter_values(master["state"])
     constituency_master = master
     if state and state.strip():
         constituency_master = master[master["state"].str.upper() == state.strip().upper()]
-    constituencies = sorted([str(c) for c in constituency_master["constituency"].dropna().unique() if str(c).strip() != ""])
-    statuses = sorted([str(s) for s in constituency_master["work_status"].dropna().unique() if str(s).strip() != ""])
-    mps = sorted([str(m) for m in master["mp_name"].dropna().unique() if str(m).strip() != ""])
-    categories = sorted([str(c) for c in master["work_category"].dropna().unique() if str(c).strip() != ""])
+    constituencies = _unique_filter_values(constituency_master["constituency"])
+    statuses = _unique_filter_values(constituency_master["work_status"], skip_numeric=True)
+    mps = _unique_filter_values(master["mp_name"])
+    categories = _unique_filter_values(master["work_category"])
     severities = ["CRITICAL", "HIGH", "MEDIUM", "LOW"]
-    
-    risk_levels = sorted([str(level) for level in master["overall_risk_level"].dropna().unique() if str(level).strip() != ""]) if "overall_risk_level" in master.columns else []
+
+    risk_levels = _unique_filter_values(master["overall_risk_level"]) if "overall_risk_level" in master.columns else []
     return {
         "states": states,
         "constituencies": constituencies,

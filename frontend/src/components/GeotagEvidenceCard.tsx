@@ -185,6 +185,56 @@ export const GeotagEvidenceCard: React.FC<GeotagEvidenceCardProps> = ({
             </div>
           </div>
 
+          {/* Evidence Completeness & Fraud Audit Grid */}
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="rounded-xl border border-slate-200/80 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/60">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">Dossier Page Count</span>
+              <div className="mt-1 flex items-center gap-1.5">
+                <span className="font-mono text-sm font-bold text-slate-900 dark:text-slate-100">{record.pageCount ? `${record.pageCount} page${record.pageCount === 1 ? '' : 's'}` : 'Standalone File'}</span>
+                {record.pageCount != null && record.pageCount > 0 && record.pageCount <= 2 && (
+                  <span className="rounded-md bg-rose-100 px-1.5 py-0.5 text-[9px] font-black text-rose-800 dark:bg-rose-950 dark:text-rose-300">Stub &lt;= 2p</span>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-slate-200/80 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/60">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">Photographic Proof</span>
+              <div className="mt-1 text-xs font-bold">
+                {record.hasPhotoEvidence ? (
+                  gps ? (
+                    <span className="text-emerald-700 dark:text-emerald-400">🟢 Verified Geotagged</span>
+                  ) : (
+                    <span className="text-sky-700 dark:text-sky-400">🟢 Scanned (Untagged)</span>
+                  )
+                ) : (
+                  <span className="text-rose-600 dark:text-rose-400">❌ Missing Photos</span>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-slate-200/80 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/60">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">Financial Proof</span>
+              <div className="mt-1 text-xs font-bold">
+                {record.hasBillProof ? (
+                  <span className="text-emerald-700 dark:text-emerald-400">🧾 Verified Bills / UC</span>
+                ) : (
+                  <span className="text-rose-600 dark:text-rose-400">❌ No Bills Attached</span>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-slate-200/80 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/60">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">Progress Tables</span>
+              <div className="mt-1 text-xs font-bold">
+                {record.hasProgressTables ? (
+                  <span className="text-emerald-700 dark:text-emerald-400">📊 Progress Tables Verified</span>
+                ) : (
+                  <span className="text-slate-500 dark:text-slate-400">❌ Missing Tables</span>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* Clean 'Missing From Submission' Box */}
           <div className="mt-4 rounded-xl border border-slate-200/80 bg-slate-50 p-3.5 text-xs dark:border-slate-800 dark:bg-slate-900/60">
             {missingItems.length > 0 ? (

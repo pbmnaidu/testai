@@ -107,7 +107,7 @@ export const RiskMonitorPage: React.FC<RiskMonitorPageProps> = ({
         if (cancelled) return;
         setFilterOpts(options);
         setConstituency((current) => (
-          state && current && !(options.constituencies || []).includes(current) ? '' : current
+          state && current && !(options.constituencies || []).some((item) => item.toLowerCase() === current.toLowerCase()) ? '' : current
         ));
         setWorkStatus((current) => {
           if (!current || current === NOT_COMPLETED_STATUS) return current;
@@ -318,7 +318,10 @@ export const RiskMonitorPage: React.FC<RiskMonitorPageProps> = ({
               type="text"
               placeholder="Search Work ID, Title, or Agency..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
               className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-100 font-medium placeholder-slate-500"
             />
           </div>
@@ -389,7 +392,10 @@ export const RiskMonitorPage: React.FC<RiskMonitorPageProps> = ({
         {/* Category Filter */}
         <select
           value={category}
-          onChange={(e) => setCategory(e.target.value)}
+          onChange={(e) => {
+            setCategory(e.target.value);
+            setPage(1);
+          }}
           className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 font-bold max-w-[160px] focus:outline-none focus:ring-2 focus:ring-slate-100"
         >
           <option value="">All Categories</option>

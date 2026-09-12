@@ -121,6 +121,13 @@ export interface GeotagEvidenceRecord {
   riskScore?: number;
   riskLevel?: string;
   workRiskDescription?: string;
+  isStubDossier?: boolean;
+  fraudCollision?: {
+    isSuspectedFraud: boolean;
+    matchedWorkId?: string;
+    fraudReason?: string;
+    collisionType?: string;
+  };
   attachedFiles: AuditAttachedFile[];
   images: EvidenceImage[];
   gpsImages: EvidenceImage[];
@@ -195,6 +202,20 @@ const buildEvidenceRecord = (audit: AuditRecord): GeotagEvidenceRecord => {
     pageCount: audit.pdf_audit?.page_count,
     isFraudSuspected: Boolean(audit.is_fraud_suspected),
     fraudDetails: audit.fraud_details,
+    fraudCollision: audit.is_fraud_suspected ? {
+      isSuspectedFraud: true,
+      matchedWorkId: audit.fraud_details?.fraud_matched_work_id,
+      fraudReason: audit.fraud_details?.reason,
+      collisionType: audit.fraud_details?.fraud_type,
+    } : undefined,
+    isStubDossier: Boolean(
+      audit.pdf_audit?.page_count != null
+      && audit.pdf_audit.page_count > 0
+      && audit.pdf_audit.page_count <= 2
+      && !audit.pdf_audit?.has_photo_evidence
+      && !images.length
+      && !audit.pdf_audit?.has_bill_proof,
+    ),
     missingItems: audit.missing_items || [],
     missingSummary: audit.missing_summary || '',
     riskScore: audit.risk_score,
