@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import re
 from datetime import date, datetime
 import pandas as pd
 import numpy as np
@@ -1083,10 +1084,204 @@ def get_compliance_summary():
         "constituency_observations": int(len(get_data().get("constituency_compliance", pd.DataFrame()))),
     }
 
+
+def _normalize_work_status(value):
+    return " ".join(str(value or "").strip().casefold().replace("_", " ").split())
+
+
+def _work_status_aliases(value):
+    normalized = _normalize_work_status(value)
+    aliases = {
+        "sanction": {"sanction", "sanctioned"},
+        "sanctioned": {"sanction", "sanctioned"},
+        "completed": {"completed", "work completed"},
+        "work completed": {"completed", "work completed"},
+        "partially completed": {"partially completed", "work partially completed"},
+        "work partially completed": {"partially completed", "work partially completed"},
+    }
+    return aliases.get(normalized, {normalized})
+
+
+def _canonical_source_work_id(value):
+    """Extract the complete work ID from the raw source activity text."""
+    text = str(value or "").strip()
+    if not text or text.casefold() in {"nan", "none", "nat"}:
+        return ""
+    match = re.search(
+        r"(WS\s*/\s*MP\d+\s*/\s*\d{4}-\d{4}\s*/\s*\d+)(?=\D|$)",
+        text,
+        flags=re.IGNORECASE,
+    )
+    if match:
+        return re.sub(r"\s+", "", match.group(1))
+    if text.upper().startswith("WS/"):
+        return re.sub(r"\s+", "", text.split("-", 1)[0])
+    return ""
+
+
+def _source_work_id(row):
+    for column in ("work_id", "WORK_ID", "ACTIVITY_NAME"):
+        if column in row.index:
+            value = _canonical_source_work_id(row.get(column))
+            if value:
+                return value
+    return ""
+
+
+def _source_column(frame, names, default=""):
+    for name in names:
+        if name in frame.columns:
+            return frame[name]
+    return pd.Series(default, index=frame.index)
+
+
+def _read_processed_source(data, cache_key, filename):
+    if cache_key not in data:
+        path = os.path.join(PROCESSED_DIR, filename)
+        try:
+            data[cache_key] = pd.read_parquet(path) if os.path.exists(path) else pd.DataFrame()
+        except Exception:
+            data[cache_key] = pd.DataFrame()
+    return data[cache_key]
+
+
+def _build_recommended_record_frame(source):
+    if source.empty:
+        return pd.DataFrame()
+    frame = source.copy()
+    frame["_canonical_work_id"] = frame.apply(_source_work_id, axis=1)
+    frame = frame[frame["_canonical_work_id"].ne("")].drop_duplicates("_canonical_work_id", keep="last")
+    if frame.empty:
+        return pd.DataFrame()
+    output = pd.DataFrame(index=frame.index)
+    output["work_id"] = frame["_canonical_work_id"]
+    output["work_category"] = _source_column(frame, ["work_category", "WORK_CATEGORY"])
+    output["state"] = _source_column(frame, ["state", "STATE_NAME"])
+    output["constituency"] = _source_column(frame, ["constituency", "CONSTITUENCY"])
+    output["mp_name"] = _source_column(frame, ["mp_name", "MP_NAME"])
+    output["description"] = _source_column(frame, ["description", "WORK_DESCRIPTION"])
+    output["recommended_date"] = _source_column(frame, ["recommended_date", "RECOMMENDATION_DATE"])
+    output["sanction_date"] = _source_column(frame, ["sanction_date", "SANCTION_DATE"])
+    output["sanction_amount"] = pd.to_numeric(_source_column(frame, ["sanction_amount", "SANCTION_AMOUNT"]), errors="coerce")
+    output["work_status"] = _source_column(frame, ["work_status", "WORK_STAGE"], "Unknown")
+    output["effective_expenditure"] = np.nan
+    output["expenditure_count"] = 0
+    output["record_source"] = "Recommended"
+    return output.reset_index(drop=True)
+
+
+def _build_expenditure_record_frame(source):
+    if source.empty:
+        return pd.DataFrame()
+    frame = source.copy()
+    frame["_canonical_work_id"] = frame.apply(_source_work_id, axis=1)
+    frame = frame[frame["_canonical_work_id"].ne("")].copy()
+    if frame.empty:
+        return pd.DataFrame()
+    frame["_amount"] = pd.to_numeric(_source_column(frame, ["expenditure_amount", "FUND_DISBURSED_AMT"]), errors="coerce").fillna(0)
+    summary = frame.groupby("_canonical_work_id", as_index=False).agg(
+        effective_expenditure=("_amount", "sum"),
+        expenditure_count=("_amount", "count"),
+    )
+    latest = frame.drop_duplicates("_canonical_work_id", keep="last").copy()
+    output = pd.DataFrame(index=latest.index)
+    output["work_id"] = latest["_canonical_work_id"]
+    output["work_category"] = "Expenditure"
+    output["state"] = _source_column(latest, ["state", "STATE_NAME"])
+    output["constituency"] = _source_column(latest, ["constituency", "CONSTITUENCY"])
+    output["mp_name"] = _source_column(latest, ["mp_name", "MP_NAME"])
+    output["description"] = _source_column(latest, ["description", "ACTIVITY_NAME"])
+    output["work_status"] = _source_column(latest, ["work_status", "WORK_STATUS"], "Expenditure")
+    output["sanction_amount"] = np.nan
+    output["recommended_date"] = pd.NaT
+    output["sanction_date"] = pd.NaT
+    output = output.reset_index(drop=True).merge(summary, left_on="work_id", right_on="_canonical_work_id", how="left")
+    output = output.drop(columns=["_canonical_work_id"])
+    output["record_source"] = "Expenditure"
+    return output
+
+
+def _all_records_frame(data):
+    if "all_records" in data:
+        return data["all_records"]
+
+    master = data["master"].copy()
+    master["work_id"] = master["work_id"].fillna("").astype(str).str.strip()
+    master_ids = set(master["work_id"].loc[master["work_id"].ne("")])
+    master["record_source"] = "Risk master / sanctioned"
+    if "effective_expenditure" in master.columns:
+        master["has_expenditure_record"] = pd.to_numeric(master["effective_expenditure"], errors="coerce").notna()
+    else:
+        master["has_expenditure_record"] = False
+
+    recommended = _build_recommended_record_frame(
+        _read_processed_source(data, "recommended_records_source", "t3_works_recommended.parquet")
+    )
+    expenditure = _build_expenditure_record_frame(
+        _read_processed_source(data, "expenditure_records_source", "t6_expenditure.parquet")
+    )
+
+    recommended = recommended[~recommended["work_id"].isin(master_ids)] if not recommended.empty else recommended
+    expenditure = expenditure[~expenditure["work_id"].isin(master_ids)] if not expenditure.empty else expenditure
+    if not recommended.empty or not expenditure.empty:
+        auxiliary = recommended.merge(expenditure, on="work_id", how="outer", suffixes=("", "_expenditure"))
+        for column in ["work_category", "state", "constituency", "mp_name", "description", "work_status", "sanction_amount", "recommended_date", "sanction_date"]:
+            expenditure_column = f"{column}_expenditure"
+            if expenditure_column in auxiliary.columns:
+                left = auxiliary[column]
+                missing = left.isna() | left.astype(str).str.strip().isin({"", "nan", "None", "NaT"})
+                auxiliary.loc[missing, column] = auxiliary.loc[missing, expenditure_column]
+                auxiliary = auxiliary.drop(columns=[expenditure_column])
+        for column in ["effective_expenditure", "expenditure_count"]:
+            expenditure_column = f"{column}_expenditure"
+            if expenditure_column in auxiliary.columns:
+                left = auxiliary[column]
+                missing = left.isna() | (pd.to_numeric(left, errors="coerce").fillna(0).eq(0) if column == "expenditure_count" else left.isna())
+                auxiliary.loc[missing, column] = auxiliary.loc[missing, expenditure_column]
+                auxiliary = auxiliary.drop(columns=[expenditure_column])
+        has_expenditure = pd.to_numeric(auxiliary.get("effective_expenditure", pd.Series(index=auxiliary.index)), errors="coerce").notna()
+        has_expenditure |= pd.to_numeric(auxiliary.get("expenditure_count", pd.Series(index=auxiliary.index)), errors="coerce").fillna(0).gt(0)
+        auxiliary["has_expenditure_record"] = has_expenditure
+        has_recommended = auxiliary["record_source"].eq("Recommended") if "record_source" in auxiliary else pd.Series(False, index=auxiliary.index)
+        has_exp_source = auxiliary["record_source_expenditure"].notna() if "record_source_expenditure" in auxiliary else has_expenditure
+        auxiliary["record_source"] = np.select(
+            [has_recommended & has_exp_source, has_recommended, has_exp_source],
+            ["Recommended + Expenditure", "Recommended", "Expenditure"],
+            default="All-record source",
+        )
+        auxiliary = auxiliary.drop(columns=["record_source_expenditure"], errors="ignore")
+        all_records = pd.concat([master, auxiliary], ignore_index=True, sort=False)
+    else:
+        all_records = master
+
+    numeric_defaults = {
+        "sanction_amount": 0,
+        "effective_expenditure": 0,
+        "financial_risk_score": 0,
+        "duplicate_risk_score": 0,
+        "compliance_risk_score": 0,
+        "schedule_risk_score": 0,
+        "composite_risk_score": 0,
+    }
+    for column, default in numeric_defaults.items():
+        if column not in all_records.columns:
+            all_records[column] = default
+        all_records[column] = pd.to_numeric(all_records[column], errors="coerce").fillna(default)
+    for column in ["state", "constituency", "work_category", "work_status", "description", "mp_name"]:
+        if column not in all_records.columns:
+            all_records[column] = ""
+        all_records[column] = all_records[column].fillna("").astype(str)
+    all_records["overall_risk_level"] = all_records.get("overall_risk_level", "UNASSESSED").fillna("UNASSESSED").astype(str).replace({"": "UNASSESSED"})
+    all_records["has_expenditure_record"] = all_records.get("has_expenditure_record", False).fillna(False).astype(bool)
+    data["all_records"] = all_records
+    data["all_work_index"] = LazyWorkIndex(all_records)
+    return all_records
+
 @app.get("/api/risk-monitor")
 def get_risk_monitor_queue(
     state: str = None,
     constituency: str = None,
+    work_status: str = None,
     category: str = None,
     severity: str = None,
     search: str = None,
@@ -1104,6 +1299,12 @@ def get_risk_monitor_queue(
         df = df[df["state"].str.upper() == state.strip().upper()]
     if constituency and constituency.strip():
         df = df[df["constituency"].str.upper() == constituency.strip().upper()]
+    if work_status and work_status.strip():
+        status_series = df["work_status"].fillna("").map(_normalize_work_status)
+        if _normalize_work_status(work_status) in {"not completed", "not completed / in progress"}:
+            df = df[~status_series.isin({"work completed", "completed", "work partially completed", "partially completed"})]
+        else:
+            df = df[status_series.isin(_work_status_aliases(work_status))]
     if category and category.strip():
         df = df[df["work_category"].str.lower() == category.strip().lower()]
     if severity and severity.strip():
@@ -1152,6 +1353,85 @@ def get_risk_monitor_queue(
         "page": page,
         "limit": limit,
         "total_pages": int(np.ceil(total_records / limit)) if total_records > 0 else 0,
+        "top_scores": top_scores,
+        "records": records,
+        "metadata": _analytics_metadata(),
+    }
+
+
+@app.get("/api/all-records")
+def get_all_records(
+    state: str = None,
+    constituency: str = None,
+    work_status: str = None,
+    category: str = None,
+    risk_level: str = None,
+    expenditure: str = None,
+    search: str = None,
+    sort_by: str = None,
+    page: int = Query(1, ge=1),
+    limit: int = Query(50, ge=1, le=200),
+):
+    """Return the union of sanctioned/risk, recommended and expenditure records."""
+    df = _all_records_frame(get_data()).copy()
+
+    if state and state.strip():
+        df = df[df["state"].str.upper().eq(state.strip().upper())]
+    if constituency and constituency.strip():
+        df = df[df["constituency"].str.upper().eq(constituency.strip().upper())]
+    if work_status and work_status.strip():
+        status_series = df["work_status"].map(_normalize_work_status)
+        if _normalize_work_status(work_status) in {"not completed", "not completed / in progress"}:
+            completed_statuses = {"work completed", "completed", "work partially completed", "partially completed"}
+            df = df[~status_series.isin(completed_statuses)]
+        else:
+            df = df[status_series.isin(_work_status_aliases(work_status))]
+    if category and category.strip():
+        df = df[df["work_category"].str.casefold().eq(category.strip().casefold())]
+    if risk_level and risk_level.strip():
+        requested_level = risk_level.strip().upper()
+        levels = df["overall_risk_level"].fillna("UNASSESSED").astype(str).str.upper()
+        if requested_level in {"UNASSESSED", "NOT ASSESSED", "UNKNOWN"}:
+            df = df[levels.isin({"UNASSESSED", "NOT ASSESSED", "UNKNOWN", ""})]
+        else:
+            df = df[levels.eq(requested_level)]
+    if expenditure and expenditure.strip():
+        has_expenditure = df["has_expenditure_record"].fillna(False).astype(bool)
+        if expenditure.strip().casefold() in {"with", "yes", "true", "present"}:
+            df = df[has_expenditure]
+        elif expenditure.strip().casefold() in {"without", "no", "false", "missing"}:
+            df = df[~has_expenditure]
+    if search and search.strip():
+        query = search.strip().casefold()
+        searchable = (
+            df["work_id"].fillna("").astype(str)
+            + " " + df["description"].fillna("").astype(str)
+            + " " + df["mp_name"].fillna("").astype(str)
+            + " " + df["work_category"].fillna("").astype(str)
+        ).str.casefold()
+        df = df[searchable.str.contains(query, regex=False)]
+
+    total_records = len(df)
+    top_scores = {}
+    for key, column in {
+        "financial": "financial_risk_score",
+        "duplicate": "duplicate_risk_score",
+        "compliance": "compliance_risk_score",
+        "schedule": "schedule_risk_score",
+        "composite": "composite_risk_score",
+    }.items():
+        values = pd.to_numeric(df[column], errors="coerce").dropna() if column in df.columns else pd.Series(dtype=float)
+        top_scores[key] = round(float(values.max()), 1) if len(values) else 0.0
+
+    requested_sort = sort_by if sort_by in df.columns else "work_id"
+    df = df.sort_values(requested_sort, ascending=True, na_position="last")
+    start, end = (page - 1) * limit, page * limit
+    records = [clean_record_for_json(row) for row in df.iloc[start:end].to_dict(orient="records")]
+    return {
+        "total": total_records,
+        "page": page,
+        "limit": limit,
+        "total_pages": int(np.ceil(total_records / limit)) if total_records else 0,
         "top_scores": top_scores,
         "records": records,
         "metadata": _analytics_metadata(),
@@ -1299,12 +1579,16 @@ def get_duplicate_clusters(
     }
 
 @app.get("/api/filters")
-def get_filter_options():
+def get_filter_options(state: str = None):
     data = get_data()
     master = data["master"]
     
     states = sorted([str(s) for s in master["state"].dropna().unique() if str(s).strip() != ""])
-    constituencies = sorted([str(c) for c in master["constituency"].dropna().unique() if str(c).strip() != ""])
+    constituency_master = master
+    if state and state.strip():
+        constituency_master = master[master["state"].str.upper() == state.strip().upper()]
+    constituencies = sorted([str(c) for c in constituency_master["constituency"].dropna().unique() if str(c).strip() != ""])
+    statuses = sorted([str(s) for s in constituency_master["work_status"].dropna().unique() if str(s).strip() != ""])
     mps = sorted([str(m) for m in master["mp_name"].dropna().unique() if str(m).strip() != ""])
     categories = sorted([str(c) for c in master["work_category"].dropna().unique() if str(c).strip() != ""])
     severities = ["CRITICAL", "HIGH", "MEDIUM", "LOW"]
@@ -1314,7 +1598,8 @@ def get_filter_options():
         "constituencies": constituencies,
         "mps": mps,
         "categories": categories,
-        "severities": severities
+        "severities": severities,
+        "statuses": statuses,
     }
 
 if __name__ == "__main__":

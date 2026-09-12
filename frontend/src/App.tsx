@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/layout/Sidebar';
 import { Topbar } from './components/layout/Topbar';
 import { AiAssistantModal } from './components/AiAssistantModal';
+import { GeotagEvidenceModal } from './components/GeotagEvidenceModal';
 import { fetchDuplicateCandidates, fetchOverview } from './services/api';
 
 import { OverviewPage } from './pages/OverviewPage';
@@ -15,6 +16,8 @@ import { DataSyncPage } from './pages/DataSyncPage';
 import { ModelMonitoringPage } from './pages/ModelMonitoringPage';
 import { StateRiskAnalyticsPage } from './pages/StateRiskAnalyticsPage';
 import { FinancialBenchmarkPage } from './pages/FinancialBenchmarkPage';
+import { GeotagEvidenceAuditPage } from './pages/GeotagEvidenceAuditPage';
+import { ComplianceMonitorPage } from './pages/ComplianceMonitorPage';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<string>('overview');
@@ -24,6 +27,7 @@ export function App() {
   const [isAiAssistantOpen, setIsAiAssistantOpen] = useState<boolean>(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
+  const [evidencePreview, setEvidencePreview] = useState<{ workId: string; imageName?: string } | null>(null);
   const [livePortfolio, setLivePortfolio] = useState({ totalWorks: 0, highRiskWorks: 0, financialOutlierWorks: 0, duplicateCandidates: 0 });
   const [isDark, setIsDark] = useState<boolean>(() => {
     try {
@@ -58,7 +62,12 @@ export function App() {
   };
 
   const handleSelectWork = (workId: string) => {
+    setEvidencePreview(null);
     setSelectedWorkId(workId);
+  };
+
+  const handleOpenEvidence = (workId: string, imageName?: string) => {
+    setEvidencePreview({ workId, imageName });
   };
 
   const handleBackToMonitor = () => {
@@ -109,9 +118,10 @@ export function App() {
 
         <main className={`shell-main ${isSidebarCollapsed ? 'shell-main--collapsed' : ''} flex-1 overflow-y-auto pt-16 min-w-0 overflow-x-hidden`}>
           {selectedWorkId ? (
-            <ProjectDetailPage workId={selectedWorkId} onBack={handleBackToMonitor} onSelectWork={handleSelectWork} />
+            <ProjectDetailPage workId={selectedWorkId} onBack={handleBackToMonitor} onSelectWork={handleSelectWork} onOpenEvidence={handleOpenEvidence} />
           ) : (
             <>
+              {activeTab === 'geotag-evidence' && <GeotagEvidenceAuditPage onSelectWork={handleSelectWork} onOpenEvidence={handleOpenEvidence} />}
               {activeTab === 'overview' && <OverviewPage onNavigateToRiskMonitor={handleNavigateToRiskMonitor} />}
               {activeTab === 'mp-intelligence' && <MpIntelligencePage onSelectWork={handleSelectWork} />}
               {activeTab === 'risk-monitor' && <RiskMonitorPage initialSeverity={initialSeverity} initialDimension="all" totalWorks={livePortfolio.totalWorks} onSelectWork={handleSelectWork} />}
@@ -119,7 +129,7 @@ export function App() {
               {activeTab === 'duplicate-inspector' && <DuplicateInspectorPage onSelectWork={handleSelectWork} />}
               {activeTab === 'financial-analytics' && <FinancialAnalyticsPage onSelectWork={handleSelectWork} onOpenBenchmarks={() => setActiveTab('financial-benchmarks')} />}
               {activeTab === 'financial-benchmarks' && <FinancialBenchmarkPage />}
-              {activeTab === 'compliance-monitor' && <RiskMonitorPage initialDimension="compliance" totalWorks={livePortfolio.totalWorks} onSelectWork={handleSelectWork} />}
+              {activeTab === 'compliance-monitor' && <ComplianceMonitorPage onSelectWork={handleSelectWork} onOpenEvidence={handleOpenEvidence} />}
               {activeTab === 'schedule-progress' && <RiskMonitorPage initialDimension="schedule" totalWorks={livePortfolio.totalWorks} onSelectWork={handleSelectWork} />}
               {activeTab === 'data-sync' && <DataSyncPage />}
               {activeTab === 'model-monitoring' && <ModelMonitoringPage />}
@@ -142,6 +152,12 @@ export function App() {
         highRiskWorks={livePortfolio.highRiskWorks}
         financialOutlierWorks={livePortfolio.financialOutlierWorks}
         duplicateCandidates={livePortfolio.duplicateCandidates}
+      />
+      <GeotagEvidenceModal
+        isOpen={Boolean(evidencePreview)}
+        workId={evidencePreview?.workId || null}
+        initialImageName={evidencePreview?.imageName}
+        onClose={() => setEvidencePreview(null)}
       />
     </div>
   );

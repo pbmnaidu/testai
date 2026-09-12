@@ -1,0 +1,366 @@
+[
+  {
+    "work_id": "221411",
+    "title": "Supply of erection of 2300 HP VT Pump and motor -1 No  and electrical and Mechanical works at Vedadri - kanchala lift irrigation scheme on Krishna river in Jaggaiahpeta mandal of NTR District",
+    "description": "Supply of erection of 2300 HP VT Pump and motor -1 No  and electrical and Mechanical works at Vedadri - kanchala lift irrigation scheme on Krishna river in Jaggaiahpeta mandal of NTR District",
+    "category": "Normal/Others",
+    "amount_disbursed": 3290032.0,
+    "completion_date": "29-Jan-2026",
+    "mandal": "Jaggaiahpeta",
+    "constituency": "Vijayawada",
+    "state": "Andhra Pradesh",
+    "work_status": "Completed",
+    "has_real_gps": false,
+    "pdf_audit": {
+      "file_name": null,
+      "file_size_kb": 0,
+      "page_count": 0,
+      "total_images": 5,
+      "has_photo_evidence": true,
+      "geotag_status": "PHOTO_PRESENT_UNTAGGED",
+      "gps": null,
+      "sections": [
+        "MoSPI Physical Inspection Photos (5 Uploaded)"
+      ],
+      "sample_images": [
+        {
+          "name": "WORK_221411_WSMP1801620252026221411A.jpg",
+          "is_photo": true,
+          "has_exif_gps": false
+        },
+        {
+          "name": "WORK_221411_WSMP1801620252026221411B.jpg",
+          "is_photo": true,
+          "has_exif_gps": false
+        },
+        {
+          "name": "WORK_221411_WSMP1801620252026221411C.jpg",
+          "is_photo": true,
+          "has_exif_gps": false
+        },
+        {
+          "name": "WORK_221411_WSMP1801620252026221411D.jpg",
+          "is_photo": true,
+          "has_exif_gps": false
+        },
+        {
+          "name": "WORK_221411_WSMP1801620252026221411E.jpg",
+          "is_photo": true,
+          "has_exif_gps": false
+        }
+      ]
+    }
+  },
+  {
+    "work_id": "251879",
+    "title": "construction of community hall at 31st division, vijayawada central constituency",
+    "description": "construction of community hall at 31st division, vijayawada central constituency",
+    "category": "Normal/Others",
+    "amount_disbursed": 7500000.0,
+    "completion_date": "27-Dec-2025",
+    "mandal": "Vijayawada West (Div 31)",
+    "constituency": "Vijayawada",
+    "state": "Andhra Pradesh",
+    "work_status": "Sanction",
+    "has_real_gps": false,
+    "pdf_audit": {
+      "file_name": null,
+      "file_size_kb": 0,
+      "page_count": 0,
+      "total_images": 0,
+      "has_photo_evidence": false,
+      "geotag_status": "NO_DOCUMENT_UPLOADED",
+      "gps": null,
+      "sections": [],
+      "sample_images": []
+    }
+  },
+  {
+    "work_id": "251880",
+    "title": "construction of community hall at60th Division , vambay colony",
+    "description": "construction of community hall at60th Division , vambay colony",
+    "category": "Normal/Others",
+    "amount_disbursed": 7500000.0,
+    "completion_date": "27-Dec-2025",
+    "mandal": "Vijayawada Central (Div 60)",
+    "constituency": "Vijayawada",
+    "state": "Andhra Pradesh",
+    "work_status": "Sanction",
+    "has_real_gps": false,
+    "pdf_audit": {
+      "file_name": null,
+      "file_size_kb": 0,
+      "page_count": 0,
+      "total_images": 0,
+      "has_photo_evidence": false,
+      "geotag_status": "NO_DOCUMENT_UPLOADED",
+      "gps": null,
+      "sections": [],
+      "sample_images": []
+    }
+  },
+  {
+    "work_id": "251882",
+    "title": "Providing gravity main pipeline and 40 kl sump well",
+    "description": "Providing gravity main pipeline and 40 kl sump well",
+    "category": "Normal/Others",
+    "amount_disbursed": 4000000.0,
+    "completion_date": "03-Jan-2026",
+    "mandal": "Vijayawada Urban",
+    "constituency": "Vijayawada",
+    "state": "Andhra Pradesh",
+    "work_status": "Time Estimation",
+    "has_real_gps": false,
+    "pdf_audit": {
+      "file_name": null,
+      "file_size_kb": 0,
+      "page_count": 0,
+      "total_images": 0,
+      "has_photo_evidence": false,
+      "geotag_status": "NO_DOCUMENT_UPLOADED",
+      "gps": null,
+      "sections": [],
+      "sample_images": []
+    }
+  },
+  {
+    "work_id": "251883",
+    "title": "Construction of culvert and retaining wall across Mangala vagu",
+    "description": "Construction of culvert and retaining wall across Mangala vagu",
+    "category": "Normal/Others",
+    "amount_disbursed": 2000000.0,
+    "completion_date": "27-Dec-2025",
+    "mandal": "Vijayawada Urban",
+    "constituency": "Vijayawada",
+    "state": "Andhra Pradesh",
+    "work_status": "Work partially Completed",
+    "has_real_gps": false,
+    "pdf_audit": {
+      "file_name": null,
+      "file_size_kb": 0,
+      "page_count": 0,
+      "total_images": 0,
+      "has_photo_evidence": false,
+      "geotag_status": "NO_DOCUMENT_UPLOADED",
+      "gps": null,
+      "sections": [],
+      "sample_images": []
+    }
+  },
+  {
+    "work_id": "251884",
+    "title": "Providing 150mm Di pipeline from p and T colony ELSR pumping line",
+    "description": "Providing 150mm Di pipeline from p and T colony ELSR pumping line",
+    "category": "Normal/Others",
+    "amount_disbursed": 5488000.0,
+    "completion_date": "27-Dec-2025",
+    "mandal": "Vijayawada Central (P&T)",
+    "constituency": "Vijayawada",
+    "state": "Andhra Pradesh",
+    "work_status": "Vendor Identification",
+    "has_real_gps": false,
+    "pdf_audit": {
+      "file_name": null,
+      "file_size_kb": 0,
+      "page_count": 0,
+      "total_images": 0,
+      "has_photo_evidence": false,
+      "geotag_status": "NO_DOCUMENT_UPLOADED",
+      "gps": null,
+      "sections": [],
+      "sample_images": []
+    }
+  },
+  {
+    "work_id": "252028",
+    "title": "Providing 160mm Di pipeline from autonagar ESLR to Gurunanak colony road",
+    "description": "Providing 160mm Di pipeline from autonagar ESLR to Gurunanak colony road",
+    "category": "Normal/Others",
+    "amount_disbursed": 975000.0,
+    "completion_date": "27-Dec-2025",
+    "mandal": "Vijayawada East (Autonagar)",
+    "constituency": "Vijayawada",
+    "state": "Andhra Pradesh",
+    "work_status": "Sanction",
+    "has_real_gps": false,
+    "pdf_audit": {
+      "file_name": null,
+      "file_size_kb": 0,
+      "page_count": 0,
+      "total_images": 0,
+      "has_photo_evidence": false,
+      "geotag_status": "NO_DOCUMENT_UPLOADED",
+      "gps": null,
+      "sections": [],
+      "sample_images": []
+    }
+  },
+  {
+    "work_id": "273575",
+    "title": "construction of MS Grills, placing of Glass interior, celing decor, floor, and wall tiles at community hall",
+    "description": "construction of MS Grills, placing of Glass interior, celing decor, floor, and wall tiles at community hall",
+    "category": "Repair and Renovation",
+    "amount_disbursed": 1869000.0,
+    "completion_date": "01-Apr-2026",
+    "mandal": "Vijayawada Urban",
+    "constituency": "Vijayawada",
+    "state": "Andhra Pradesh",
+    "work_status": "Sanction",
+    "has_real_gps": false,
+    "pdf_audit": {
+      "file_name": null,
+      "file_size_kb": 0,
+      "page_count": 0,
+      "total_images": 0,
+      "has_photo_evidence": false,
+      "geotag_status": "NO_DOCUMENT_UPLOADED",
+      "gps": null,
+      "sections": [],
+      "sample_images": []
+    }
+  },
+  {
+    "work_id": "277854",
+    "title": "Additional bore, pump sets and pumping main to Drinking water scheme of Keesara village, knachikacharla mandal",
+    "description": "Additional bore, pump sets and pumping main to Drinking water scheme of Keesara village, knachikacharla mandal",
+    "category": "Repair and Renovation",
+    "amount_disbursed": 1300000.0,
+    "completion_date": "10-Jun-2026",
+    "mandal": "Vijayawada Urban",
+    "constituency": "Vijayawada",
+    "state": "Andhra Pradesh",
+    "work_status": "Time Estimation",
+    "has_real_gps": false,
+    "pdf_audit": {
+      "file_name": null,
+      "file_size_kb": 0,
+      "page_count": 0,
+      "total_images": 0,
+      "has_photo_evidence": false,
+      "geotag_status": "NO_DOCUMENT_UPLOADED",
+      "gps": null,
+      "sections": [],
+      "sample_images": []
+    }
+  },
+  {
+    "work_id": "279535",
+    "title": "Development of experience center and artisan promotion for community benefit to kondapalli toys street",
+    "description": "Development of experience center and artisan promotion for community benefit to kondapalli toys street",
+    "category": "Repair and Renovation",
+    "amount_disbursed": 3000000.0,
+    "completion_date": "13-May-2026",
+    "mandal": "Vijayawada Urban",
+    "constituency": "Vijayawada",
+    "state": "Andhra Pradesh",
+    "work_status": "Sanction",
+    "has_real_gps": false,
+    "pdf_audit": {
+      "file_name": null,
+      "file_size_kb": 0,
+      "page_count": 0,
+      "total_images": 0,
+      "has_photo_evidence": false,
+      "geotag_status": "NO_DOCUMENT_UPLOADED",
+      "gps": null,
+      "sections": [],
+      "sample_images": []
+    }
+  },
+  {
+    "work_id": "285880",
+    "title": "construction of two vents 1000 mm dia.pipe culvert on Manilla Vagu of gollamandala village, A.Kondur Mandal,",
+    "description": "construction of two vents 1000 mm dia.pipe culvert on Manilla Vagu of gollamandala village, A.Kondur Mandal,",
+    "category": "Normal/Others",
+    "amount_disbursed": 500000.0,
+    "completion_date": "29-Aug-2026",
+    "mandal": "Vijayawada Urban",
+    "constituency": "Vijayawada",
+    "state": "Andhra Pradesh",
+    "work_status": "Sanction",
+    "has_real_gps": false,
+    "pdf_audit": {
+      "file_name": null,
+      "file_size_kb": 0,
+      "page_count": 0,
+      "total_images": 0,
+      "has_photo_evidence": false,
+      "geotag_status": "NO_DOCUMENT_UPLOADED",
+      "gps": null,
+      "sections": [],
+      "sample_images": []
+    }
+  },
+  {
+    "work_id": "292111",
+    "title": "providing pre fab shed for patient attendants and extension of shed in front of mch entrance at old government general hospital vijayawada",
+    "description": "providing pre fab shed for patient attendants and extension of shed in front of mch entrance at old government general hospital vijayawada",
+    "category": "Normal/Others",
+    "amount_disbursed": 1550000.0,
+    "completion_date": "06-Aug-2026",
+    "mandal": "Vijayawada Urban",
+    "constituency": "Vijayawada",
+    "state": "Andhra Pradesh",
+    "work_status": "Sanction",
+    "has_real_gps": false,
+    "pdf_audit": {
+      "file_name": null,
+      "file_size_kb": 0,
+      "page_count": 0,
+      "total_images": 0,
+      "has_photo_evidence": false,
+      "geotag_status": "NO_DOCUMENT_UPLOADED",
+      "gps": null,
+      "sections": [],
+      "sample_images": []
+    }
+  },
+  {
+    "work_id": "292113",
+    "title": "providing pre fab shed for patient attendants and extension of shed in front of forensic department at new government general hospital  vijayawada",
+    "description": "providing pre fab shed for patient attendants and extension of shed in front of forensic department at new government general hospital  vijayawada",
+    "category": "Normal/Others",
+    "amount_disbursed": 720000.0,
+    "completion_date": "06-Aug-2026",
+    "mandal": "Vijayawada Urban",
+    "constituency": "Vijayawada",
+    "state": "Andhra Pradesh",
+    "work_status": "Sanction",
+    "has_real_gps": false,
+    "pdf_audit": {
+      "file_name": null,
+      "file_size_kb": 0,
+      "page_count": 0,
+      "total_images": 0,
+      "has_photo_evidence": false,
+      "geotag_status": "NO_DOCUMENT_UPLOADED",
+      "gps": null,
+      "sections": [],
+      "sample_images": []
+    }
+  },
+  {
+    "work_id": "301023",
+    "title": "construction of mahila bar association building at the bezawada bar association",
+    "description": "construction of mahila bar association building at the bezawada bar association",
+    "category": "Normal/Others",
+    "amount_disbursed": 3000000.0,
+    "completion_date": "29-Aug-2026",
+    "mandal": "Vijayawada Urban",
+    "constituency": "Vijayawada",
+    "state": "Andhra Pradesh",
+    "work_status": "Sanction",
+    "has_real_gps": false,
+    "pdf_audit": {
+      "file_name": null,
+      "file_size_kb": 0,
+      "page_count": 0,
+      "total_images": 0,
+      "has_photo_evidence": false,
+      "geotag_status": "NO_DOCUMENT_UPLOADED",
+      "gps": null,
+      "sections": [],
+      "sample_images": []
+    }
+  }
+]

@@ -5,6 +5,7 @@ export interface WorkRecord {
   Constituency: string;
   state: string;
   constituency: string;
+  work_status?: string;
   mp_name?: string;
   description: string;
   sanction_amount: number;
@@ -467,6 +468,7 @@ export interface FilterOptions {
   mps?: string[];
   categories: string[];
   severities: string[];
+  statuses?: string[];
 }
 
 export interface FinancialBenchmarkRecord {

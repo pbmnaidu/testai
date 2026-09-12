@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { fetchComplianceRules, fetchComplianceSummary, fetchConstituencyCompliance, fetchFilters, fetchRiskQueue } from '../services/api';
 import { ComplianceFinding, ConstituencyComplianceRecord, FilterOptions, WorkRecord } from '../types';
-import { AlertCircle, ArrowUpDown, CheckSquare, Eye, FileText, Filter, RotateCcw, ShieldCheck } from 'lucide-react';
+import { AlertCircle, ArrowUpDown, CheckSquare, Eye, FileText, Filter, Image as ImageIcon, MapPin, RotateCcw, ShieldCheck } from 'lucide-react';
 import { usePersistentState } from '../hooks/usePersistentState';
+import { formatCoordinate, getGeotagEvidence } from '../lib/geotagEvidence';
 
 interface ComplianceMonitorPageProps {
   onSelectWork?: (workId: string) => void;
+  onOpenEvidence?: (workId: string, imageName?: string) => void;
 }
 
 const statusLabel = (value?: string) => (value || '').replace(/_/g, ' ').toLowerCase().replace(/(^|\s)\S/g, (letter: string) => letter.toUpperCase());
@@ -54,7 +56,7 @@ const FindingDetails: React.FC<{ finding?: ComplianceFinding }> = ({ finding }) 
   );
 };
 
-export const ComplianceMonitorPage: React.FC<ComplianceMonitorPageProps> = ({ onSelectWork }) => {
+export const ComplianceMonitorPage: React.FC<ComplianceMonitorPageProps> = ({ onSelectWork, onOpenEvidence }) => {
   const [records, setRecords] = useState<WorkRecord[]>([]);
   const [constituencyRecords, setConstituencyRecords] = useState<ConstituencyComplianceRecord[]>([]);
   const [total, setTotal] = useState(0);
@@ -203,16 +205,25 @@ export const ComplianceMonitorPage: React.FC<ComplianceMonitorPageProps> = ({ on
                 <th className="py-3 px-4">Work / location</th>
                 <th className="py-3 px-4 text-center cursor-pointer" onClick={() => handleSort('compliance_risk_score')}>Review priority <ArrowUpDown className="inline w-3 h-3" /></th>
                 <th className="py-3 px-4">What happened?</th>
+                <th className="py-3 px-4">Site photo / geotag evidence</th>
                 <th className="py-3 px-4">Action</th>
               </tr></thead>
               <tbody className="divide-y divide-slate-100 text-slate-800">
                 {sortedRecords.map((record) => {
                   const finding = primaryFinding(record);
+                  const evidence = getGeotagEvidence(record.work_id);
+                  const previewImage = evidence?.gpsImages[0] || evidence?.images[0];
                   return <tr key={record.work_id} className="align-top hover:bg-slate-50/70">
                     <td className="py-3 px-4 font-mono font-bold text-slate-900">{record.work_id}</td>
                     <td className="py-3 px-4"><div className="font-bold text-slate-900">{record.state || record.State} · {record.constituency || record.Constituency}</div><div className="text-[11px] text-slate-500">{record.work_category}</div></td>
                     <td className="py-3 px-4 text-center"><span className="inline-flex items-center gap-1 rounded-full bg-rose-50 text-rose-800 border border-rose-200 px-2.5 py-1 font-bold">{record.compliance_risk_level} · {record.compliance_risk_score.toFixed(0)}</span><div className="text-[10px] text-slate-500 mt-1">{finding ? statusLabel(finding.status) : 'Review'}</div></td>
                     <td className="py-3 px-4 max-w-md"><div className="font-semibold text-slate-900">{finding?.what_happened || record.compliance_explanation}</div><FindingDetails finding={finding} /></td>
+                    <td className="py-3 px-4 min-w-[190px]">
+                      {evidence?.gps ? <button onClick={() => onOpenEvidence?.(record.work_id, evidence.gpsImages[0]?.name)} className="text-left group"><span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 font-bold text-emerald-800 group-hover:bg-emerald-100"><MapPin className="h-3 w-3" /> 🟢 Geotagged</span><span className="mt-1 block font-mono text-[10px] text-emerald-700">{formatCoordinate(evidence.gps.latitude)} · {formatCoordinate(evidence.gps.longitude)}</span></button>
+                        : evidence?.hasPhotoEvidence ? <button onClick={() => onOpenEvidence?.(record.work_id, previewImage?.name)} className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 font-bold text-sky-800 hover:bg-sky-100"><ImageIcon className="h-3 w-3" /> 🟢 Photo Attached (Untagged)</button>
+                          : evidence?.hasBillProof ? <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 font-bold text-amber-800">📄 Text/Bill Only</span>
+                            : <span className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 font-bold text-rose-800">🔴 Missing Evidence</span>}
+                    </td>
                     <td className="py-3 px-4">{onSelectWork && <button onClick={() => onSelectWork(record.work_id)} className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[11px] font-bold inline-flex items-center gap-1.5"><Eye className="w-3.5 h-3.5" /> Inspect</button>}</td>
                   </tr>;
                 })}

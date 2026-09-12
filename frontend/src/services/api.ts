@@ -179,6 +179,7 @@ export async function fetchModelStatus(): Promise<ModelStatusResponse> {
 export async function fetchRiskQueue(params: {
   state?: string;
   constituency?: string;
+  work_status?: string;
   category?: string;
   severity?: string;
   search?: string;
@@ -192,6 +193,7 @@ export async function fetchRiskQueue(params: {
   const query = new URLSearchParams();
   if (params.state) query.append('state', params.state);
   if (params.constituency) query.append('constituency', params.constituency);
+  if (params.work_status) query.append('work_status', params.work_status);
   if (params.category) query.append('category', params.category);
   if (params.severity) query.append('severity', params.severity);
   if (params.search) query.append('search', params.search);
@@ -263,13 +265,17 @@ export async function fetchDuplicateClusters(params: { state?: string; constitue
   });
 }
 
-export async function fetchFilters(): Promise<FilterOptions> {
+export async function fetchFilters(params: { state?: string } = {}): Promise<FilterOptions> {
   const fallback: FilterOptions = {
     states: [],
     categories: [],
     severities: [],
+    statuses: [],
   };
-  return safeFetchJson<FilterOptions>(`${API_BASE}/filters`, fallback);
+  const query = new URLSearchParams();
+  if (params.state) query.append('state', params.state);
+  const suffix = query.toString();
+  return safeFetchJson<FilterOptions>(`${API_BASE}/filters${suffix ? `?${suffix}` : ''}`, fallback);
 }
 
 export async function fetchComplianceRules(): Promise<any> {

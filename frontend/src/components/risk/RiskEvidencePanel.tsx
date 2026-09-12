@@ -1,12 +1,14 @@
 import React from 'react';
 import { WorkRecord } from '../../types';
 import { ShieldCheck } from 'lucide-react';
+import { GeotagEvidenceCard } from '../GeotagEvidenceCard';
 
 interface RiskEvidencePanelProps {
   work: WorkRecord;
+  onOpenEvidence?: (workId: string, imageName?: string) => void;
 }
 
-export const RiskEvidencePanel: React.FC<RiskEvidencePanelProps> = ({ work }) => {
+export const RiskEvidencePanel: React.FC<RiskEvidencePanelProps> = ({ work, onOpenEvidence }) => {
   const amount = work.sanction_amount || 0;
   const nestedComplianceFinding = (work.compliance_findings || work.compliance_rule_results || [])
     .find((finding) => finding.status === 'FAIL' || finding.status === 'NEEDS_REVIEW');
@@ -97,6 +99,8 @@ export const RiskEvidencePanel: React.FC<RiskEvidencePanelProps> = ({ work }) =>
           {recommendedAction || 'Perform standard periodic monitoring.'}
         </p>
       </div>
+
+      <GeotagEvidenceCard workId={work.work_id} onOpenEvidence={onOpenEvidence} />
 
       {/* 5 Risk Sub-Engine Cards */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">

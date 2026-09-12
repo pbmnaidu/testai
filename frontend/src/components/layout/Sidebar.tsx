@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   Sparkles,
   Map,
+  MapPin,
   X
 } from 'lucide-react';
 
@@ -39,6 +40,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
     {
       title: 'Anomaly & Audits',
       items: [
+        { id: 'geotag-evidence', label: 'Field Photographic Evidence', icon: MapPin },
         { id: 'duplicate-inspector', label: 'Candidate Duplicate Inspector', icon: Copy },
         { id: 'financial-analytics', label: 'Financial Anomaly Analytics', icon: PieChart },
         { id: 'compliance-monitor', label: 'Compliance Evidence Gaps', icon: CheckSquare },

@@ -16,6 +16,8 @@ const RISK_FILTER_STORAGE_KEY = 'mplads-risk-monitor-filters-v1';
 interface PersistedRiskFilters {
   dimension?: string;
   state?: string;
+  constituency?: string;
+  workStatus?: string;
   category?: string;
   severity?: string;
   search?: string;
@@ -23,6 +25,31 @@ interface PersistedRiskFilters {
   sortOrder?: 'asc' | 'desc';
   page?: number;
 }
+
+const NOT_COMPLETED_STATUS = 'NOT_COMPLETED';
+
+const normalizeWorkStatus = (value: string) => value
+  .trim()
+  .toLowerCase()
+  .replace(/_/g, ' ')
+  .replace(/\s+/g, ' ');
+
+const workStatusFilterKey = (value: string) => {
+  const normalized = normalizeWorkStatus(value);
+  if (normalized === 'sanctioned') return 'sanction';
+  if (normalized === 'completed' || normalized === 'work completed') return 'completed';
+  if (normalized === 'partially completed' || normalized === 'work partially completed') return 'partially completed';
+  return normalized;
+};
+
+const formatWorkStatus = (value: string) => {
+  const labels: Record<string, string> = {
+    Sanction: 'Sanctioned',
+    'Work Completed': 'Completed',
+    'Work partially Completed': 'Partially Completed',
+  };
+  return labels[value] || value;
+};
 
 function readPersistedRiskFilters(): PersistedRiskFilters {
   if (typeof window === 'undefined') return {};
@@ -50,6 +77,8 @@ export const RiskMonitorPage: React.FC<RiskMonitorPageProps> = ({
 
   const [dimension, setDimension] = useState<string>(initialDimension === 'all' ? (persisted.dimension || initialDimension) : initialDimension);
   const [state, setState] = useState<string>(persisted.state || '');
+  const [constituency, setConstituency] = useState<string>(persisted.constituency || '');
+  const [workStatus, setWorkStatus] = useState<string>(persisted.workStatus || '');
   const [category, setCategory] = useState<string>(persisted.category || '');
   const [severity, setSeverity] = useState<string>(initialSeverity || persisted.severity || '');
   const [search, setSearch] = useState<string>(persisted.search || '');
@@ -67,8 +96,30 @@ export const RiskMonitorPage: React.FC<RiskMonitorPageProps> = ({
   };
 
   useEffect(() => {
-    fetchFilters().then(setFilterOpts).catch(console.error);
-  }, []);
+    let cancelled = false;
+    setFilterOpts((current) => current ? { ...current, constituencies: [], statuses: [] } : current);
+    fetchFilters({ state: state || undefined })
+      .then((options) => {
+        if (cancelled) return;
+        setFilterOpts(options);
+        setConstituency((current) => (
+          state && current && !(options.constituencies || []).includes(current) ? '' : current
+        ));
+        setWorkStatus((current) => {
+          if (!current || current === NOT_COMPLETED_STATUS) return current;
+          const matchingStatus = (options.statuses || []).find((item) => (
+            workStatusFilterKey(item) === workStatusFilterKey(current)
+          ));
+          return matchingStatus || '';
+        });
+      })
+      .catch((error) => {
+        if (!cancelled) console.error(error);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [state]);
 
   // Folder 2 keeps the queue state while moving between the risk list and a
   // work detail view. Persist the same preference locally so the existing
@@ -76,12 +127,12 @@ export const RiskMonitorPage: React.FC<RiskMonitorPageProps> = ({
   useEffect(() => {
     try {
       window.sessionStorage.setItem(RISK_FILTER_STORAGE_KEY, JSON.stringify({
-        dimension, state, category, severity, search, sortBy, sortOrder, page,
+        dimension, state, constituency, workStatus, category, severity, search, sortBy, sortOrder, page,
       } satisfies PersistedRiskFilters));
     } catch {
       // Storage can be unavailable in private/browser-restricted contexts.
     }
-  }, [dimension, state, category, severity, search, sortBy, sortOrder, page]);
+  }, [dimension, state, constituency, workStatus, category, severity, search, sortBy, sortOrder, page]);
 
   const loadQueue = () => {
     setLoading(true);
@@ -105,6 +156,8 @@ export const RiskMonitorPage: React.FC<RiskMonitorPageProps> = ({
 
     fetchRiskQueue({
       state,
+      constituency,
+      work_status: workStatus,
       category,
       severity,
       search,
@@ -130,7 +183,7 @@ export const RiskMonitorPage: React.FC<RiskMonitorPageProps> = ({
 
   useEffect(() => {
     loadQueue();
-  }, [state, category, severity, search, page, dimension, sortBy]);
+  }, [state, constituency, workStatus, category, severity, search, page, dimension, sortBy]);
 
   const dimensionTabs = [
     { id: 'all', label: 'All Signals', icon: ShieldAlert },
@@ -236,12 +289,47 @@ export const RiskMonitorPage: React.FC<RiskMonitorPageProps> = ({
         {/* State Filter */}
         <select
           value={state}
-          onChange={(e) => setState(e.target.value)}
+          onChange={(e) => {
+            setState(e.target.value);
+            setConstituency('');
+            setPage(1);
+          }}
           className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 font-bold max-w-[180px] focus:outline-none focus:ring-2 focus:ring-slate-100"
         >
           <option value="">All States / UTs</option>
           {filterOpts?.states.map((st) => (
             <option key={st} value={st}>{st}</option>
+          ))}
+        </select>
+
+        {/* Constituency Filter */}
+        <select
+          value={constituency}
+          onChange={(e) => {
+            setConstituency(e.target.value);
+            setPage(1);
+          }}
+          className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 font-bold max-w-[220px] focus:outline-none focus:ring-2 focus:ring-slate-100"
+        >
+          <option value="">All Constituencies</option>
+          {filterOpts?.constituencies?.map((item) => (
+            <option key={item} value={item}>{item}</option>
+          ))}
+        </select>
+
+        {/* Work Status Filter */}
+        <select
+          value={workStatus}
+          onChange={(e) => {
+            setWorkStatus(e.target.value);
+            setPage(1);
+          }}
+          className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 font-bold max-w-[220px] focus:outline-none focus:ring-2 focus:ring-slate-100"
+        >
+          <option value="">All Statuses</option>
+          <option value={NOT_COMPLETED_STATUS}>Not Completed / In Progress</option>
+          {filterOpts?.statuses?.map((item) => (
+            <option key={item} value={item}>{formatWorkStatus(item)}</option>
           ))}
         </select>
 
@@ -260,6 +348,8 @@ export const RiskMonitorPage: React.FC<RiskMonitorPageProps> = ({
         <button
           onClick={() => {
             setState('');
+            setConstituency('');
+            setWorkStatus('');
             setCategory('');
             setSeverity('');
             setSearch('');
@@ -306,6 +396,7 @@ export const RiskMonitorPage: React.FC<RiskMonitorPageProps> = ({
                       Category <ArrowUpDown className={`w-3 h-3 ${sortBy === 'work_category' ? 'text-amber-400 opacity-100' : 'opacity-50'}`} />
                     </span>
                   </th>
+                  <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4 text-right cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => handleColumnSort('sanction_amount')}>
                     <span className="flex items-center justify-end gap-1">
                       Sanction Budget <ArrowUpDown className={`w-3 h-3 ${sortBy === 'sanction_amount' ? 'text-amber-400 opacity-100' : 'opacity-50'}`} />
@@ -349,6 +440,7 @@ export const RiskMonitorPage: React.FC<RiskMonitorPageProps> = ({
                       <div className="text-[11px] text-slate-500 dark:text-slate-400">{r.constituency || r.Constituency}</div>
                     </td>
                     <td className="py-3 px-4 truncate max-w-[140px] text-slate-600 dark:text-slate-400 font-medium">{r.work_category}</td>
+                    <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-semibold">{formatWorkStatus(r.work_status || 'Not available')}</td>
                     <td className="py-3 px-4 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
                       ₹{(r.sanction_amount / 100000).toFixed(2)} L
                     </td>
@@ -379,6 +471,7 @@ export const RiskMonitorPage: React.FC<RiskMonitorPageProps> = ({
                   <div className="min-w-0">
                     <div className="font-mono text-xs font-bold text-slate-100 break-all">{r.work_id}</div>
                     <div className="mt-1 text-xs font-bold text-slate-300">{r.state || r.State} · {r.constituency || r.Constituency}</div>
+                    <div className="mt-1 text-[11px] font-semibold text-amber-300">{formatWorkStatus(r.work_status || 'Not available')}</div>
                   </div>
                   <RiskBadge level={r.overall_risk_level} score={r.composite_risk_score} />
                 </div>

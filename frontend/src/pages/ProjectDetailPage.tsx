@@ -4,6 +4,7 @@ import { WorkRecord, CandidateDuplicatePair } from '../types';
 import { RiskBadge } from '../components/cards/RiskBadge';
 import { RiskEvidencePanel } from '../components/risk/RiskEvidencePanel';
 import { WorkInfoCards } from '../components/risk/WorkInfoCards';
+import { GeotagEvidenceCard } from '../components/GeotagEvidenceCard';
 import { 
   ArrowLeft, 
   DollarSign, 
@@ -25,9 +26,10 @@ interface ProjectDetailPageProps {
   workId: string;
   onBack: () => void;
   onSelectWork?: (workId: string) => void;
+  onOpenEvidence?: (workId: string, imageName?: string) => void;
 }
 
-export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({ workId, onBack, onSelectWork }) => {
+export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({ workId, onBack, onSelectWork, onOpenEvidence }) => {
   const [data, setData] = useState<{ work: WorkRecord; candidate_duplicates: CandidateDuplicatePair[] } | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -274,10 +276,11 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({ workId, on
             </div>
           </div>
           <WorkInfoCards work={work} />
+          <GeotagEvidenceCard workId={work.work_id} onOpenEvidence={onOpenEvidence} />
         </div>
       )}
 
-      {activeSubTab === 'evidence' && <RiskEvidencePanel work={work} />}
+      {activeSubTab === 'evidence' && <RiskEvidencePanel work={work} onOpenEvidence={onOpenEvidence} />}
 
       {activeSubTab === 'duplicates' && (
         <div className="space-y-4">
