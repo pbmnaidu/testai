@@ -213,6 +213,40 @@ export async function fetchRiskQueue(params: {
   });
 }
 
+export async function fetchAllRecords(params: {
+  state?: string;
+  constituency?: string;
+  work_status?: string;
+  category?: string;
+  risk_level?: string;
+  expenditure?: string;
+  search?: string;
+  sort_by?: string;
+  page?: number;
+  limit?: number;
+}): Promise<PaginatedResponse<WorkRecord>> {
+  const query = new URLSearchParams();
+  if (params.state) query.append('state', params.state);
+  if (params.constituency) query.append('constituency', params.constituency);
+  if (params.work_status) query.append('work_status', params.work_status);
+  if (params.category) query.append('category', params.category);
+  if (params.risk_level) query.append('risk_level', params.risk_level);
+  if (params.expenditure) query.append('expenditure', params.expenditure);
+  if (params.search) query.append('search', params.search);
+  if (params.sort_by) query.append('sort_by', params.sort_by);
+  if (params.page) query.append('page', params.page.toString());
+  if (params.limit) query.append('limit', params.limit.toString());
+
+  return safeFetchJson<PaginatedResponse<WorkRecord>>(`${API_BASE}/all-records?${query.toString()}`, {
+    total: 0,
+    page: 1,
+    limit: 50,
+    total_pages: 0,
+    top_scores: { financial: 0, duplicate: 0, compliance: 0, schedule: 0, composite: 0 },
+    records: [],
+  });
+}
+
 export async function fetchFinancialBenchmarks(params: { scope?: string; state?: string; constituency?: string; main_sector?: string; subsector?: string; page?: number; limit?: number } = {}): Promise<FinancialBenchmarkResponse> {
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
@@ -265,7 +299,7 @@ export async function fetchDuplicateClusters(params: { state?: string; constitue
   });
 }
 
-export async function fetchFilters(params: { state?: string } = {}): Promise<FilterOptions> {
+export async function fetchFilters(params: { state?: string; scope?: 'risk' | 'all' } = {}): Promise<FilterOptions> {
   const fallback: FilterOptions = {
     states: [],
     categories: [],
@@ -274,8 +308,15 @@ export async function fetchFilters(params: { state?: string } = {}): Promise<Fil
   };
   const query = new URLSearchParams();
   if (params.state) query.append('state', params.state);
+  if (params.scope) query.append('scope', params.scope);
   const suffix = query.toString();
   return safeFetchJson<FilterOptions>(`${API_BASE}/filters${suffix ? `?${suffix}` : ''}`, fallback);
+}
+
+export async function fetchWorkIdMap(workIds: string[]): Promise<Record<string, string>> {
+  if (!workIds.length) return {};
+  const query = new URLSearchParams({ work_ids: workIds.join(',') });
+  return safeFetchJson<Record<string, string>>(`${API_BASE}/work-id-map?${query.toString()}`, {});
 }
 
 export async function fetchComplianceRules(): Promise<any> {

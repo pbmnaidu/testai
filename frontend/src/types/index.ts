@@ -119,6 +119,9 @@ export interface WorkRecord {
   first_payment_date?: string;
   last_payment_date?: string;
   recommended_date?: string;
+  record_source?: string;
+  has_expenditure_record?: boolean;
+  expenditure_count?: number;
   expenditure_trips?: ExpenditureTrip[];
 }
 
@@ -469,6 +472,8 @@ export interface FilterOptions {
   categories: string[];
   severities: string[];
   statuses?: string[];
+  risk_levels?: string[];
+  expenditure_options?: string[];
 }
 
 export interface FinancialBenchmarkRecord {

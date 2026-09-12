@@ -14,15 +14,13 @@
       "file_name": "WORK_197316_work_completion.pdf",
       "file_size_kb": 53.4,
       "page_count": 1,
+      "has_progress_tables": false,
       "total_images": 1,
       "has_photo_evidence": true,
       "has_bill_proof": false,
       "bill_proof_keywords": [],
       "geotag_status": "PHOTO_PRESENT_UNTAGGED",
       "gps": null,
-      "sections": [
-        "Photographic Evidence"
-      ],
       "sample_images": [
         {
           "name": "WORK_197316_page1_Im19.jpg",
@@ -33,19 +31,31 @@
       ]
     },
     "audit_classification": "GREEN",
-    "audit_badge_text": "\ud83d\udfe2 Scanned Image / Picture Present",
-    "audit_reason": "1 authentic scanned image(s) / photographic picture(s) present (GPS coordinates not stamped on photo).",
+    "audit_badge_text": "\ud83d\udfe2 Scanned Picture Present (Untagged)",
+    "audit_reason": "1 authentic scanned photographic picture(s) present (GPS coordinates not stamped on photo).",
     "attached_files": [
       {
         "name": "WORK_197316_work_completion.pdf",
         "type": "PDF Document",
         "size_kb": 53.4,
-        "path": "downloads/pdfs/WORK_197316_work_completion.pdf"
+        "path": "downloads/pdfs/WORK_197316_work_completion.pdf",
+        "sha256": "331dd0e63e4a9667701c229c263d1011661f225fd0f5faa8410fc04e664ef6ac"
       }
     ],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 30.0,
+    "risk_level": "LOW",
+    "work_risk_description": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "missing_items": [
+      "GPS watermark coordinates on photo (photo is untagged)",
+      "Contractor bills, invoices, and financial vouchers",
+      "Physical execution progress status tables"
+    ],
+    "missing_summary": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "219744",
@@ -62,6 +72,7 @@
       "file_name": "WORK_219744_community.pdf",
       "file_size_kb": 5699.8,
       "page_count": 23,
+      "has_progress_tables": false,
       "total_images": 23,
       "has_photo_evidence": true,
       "has_bill_proof": true,
@@ -70,9 +81,6 @@
       ],
       "geotag_status": "PHOTO_PRESENT_UNTAGGED",
       "gps": null,
-      "sections": [
-        "Photographic Evidence"
-      ],
       "sample_images": [
         {
           "name": "WORK_219744_page10_X1.jpg",
@@ -215,157 +223,191 @@
       ]
     },
     "audit_classification": "GREEN",
-    "audit_badge_text": "\ud83d\udfe2 Scanned Image / Picture Present",
-    "audit_reason": "23 authentic scanned image(s) / photographic picture(s) present (GPS coordinates not stamped on photo).",
+    "audit_badge_text": "\ud83d\udfe2 Scanned Picture Present (Untagged)",
+    "audit_reason": "23 authentic scanned photographic picture(s) present (GPS coordinates not stamped on photo).",
     "attached_files": [
       {
         "name": "WORK_219744_community.pdf",
         "type": "PDF Document",
         "size_kb": 5699.8,
-        "path": "downloads/pdfs/WORK_219744_community.pdf"
+        "path": "downloads/pdfs/WORK_219744_community.pdf",
+        "sha256": "ff99a0003f2b36b0a464ee5cad5c23c1a4b8fad9e9eebcf88f1e740954b02da4"
       },
       {
         "name": "WORK_219744_page10_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 215.2,
-        "path": "downloads/images/WORK_219744_page10_X1.jpg"
+        "path": "downloads/images/WORK_219744_page10_X1.jpg",
+        "sha256": "dd1954c3d622fa0e45eb67a706653339beefe3681b43f61d9a8399c3ed905a3c"
       },
       {
         "name": "WORK_219744_page11_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 174.4,
-        "path": "downloads/images/WORK_219744_page11_X1.jpg"
+        "path": "downloads/images/WORK_219744_page11_X1.jpg",
+        "sha256": "f280ca6627ae3e7b36251cabd1a046507c09d3476edce4d9e815b0ea81b894be"
       },
       {
         "name": "WORK_219744_page12_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 260.5,
-        "path": "downloads/images/WORK_219744_page12_X1.jpg"
+        "path": "downloads/images/WORK_219744_page12_X1.jpg",
+        "sha256": "9ea9e5561d4becd6facdcd29641fd512fda6c94d1028b1abd331dea82090a99e"
       },
       {
         "name": "WORK_219744_page13_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 304.0,
-        "path": "downloads/images/WORK_219744_page13_X1.jpg"
+        "path": "downloads/images/WORK_219744_page13_X1.jpg",
+        "sha256": "4e9e4ef167eb35fff674a345120d90fa6bcdae1edfbf24db88f627dc045bd51c"
       },
       {
         "name": "WORK_219744_page14_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 357.8,
-        "path": "downloads/images/WORK_219744_page14_X1.jpg"
+        "path": "downloads/images/WORK_219744_page14_X1.jpg",
+        "sha256": "2b1545cd931ca573185dbbd4b5f26fe26edb3ff54c51db28283e2810ade81fe2"
       },
       {
         "name": "WORK_219744_page15_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 376.3,
-        "path": "downloads/images/WORK_219744_page15_X1.jpg"
+        "path": "downloads/images/WORK_219744_page15_X1.jpg",
+        "sha256": "805c88e4ffc802848d845e67888fc2cb7bdaf5e7acca879886540ae1a3a4c6aa"
       },
       {
         "name": "WORK_219744_page16_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 349.8,
-        "path": "downloads/images/WORK_219744_page16_X1.jpg"
+        "path": "downloads/images/WORK_219744_page16_X1.jpg",
+        "sha256": "8b908969189ff8cffde086adf477df28e60077e4c0d8291e4a31a1bfadff7201"
       },
       {
         "name": "WORK_219744_page17_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 389.1,
-        "path": "downloads/images/WORK_219744_page17_X1.jpg"
+        "path": "downloads/images/WORK_219744_page17_X1.jpg",
+        "sha256": "759aa3f71db867c4b41a533b8b536e3700e883cfeb77f25ba703380cc3f51a06"
       },
       {
         "name": "WORK_219744_page18_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 319.0,
-        "path": "downloads/images/WORK_219744_page18_X1.jpg"
+        "path": "downloads/images/WORK_219744_page18_X1.jpg",
+        "sha256": "acb639960e2ae6ce780bbc0733580fc814f530938b15706405dbd9b8c9c242ad"
       },
       {
         "name": "WORK_219744_page19_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 345.1,
-        "path": "downloads/images/WORK_219744_page19_X1.jpg"
+        "path": "downloads/images/WORK_219744_page19_X1.jpg",
+        "sha256": "ac0d99a0619f2a10ff34407f4cc2d78979bdf98e084298bbb9c4cc6c0a31cd0b"
       },
       {
         "name": "WORK_219744_page1_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 191.1,
-        "path": "downloads/images/WORK_219744_page1_X1.jpg"
+        "path": "downloads/images/WORK_219744_page1_X1.jpg",
+        "sha256": "3a6327278b181e6fbd7fd8534b357f964d25986a48a8e5ccb1c9b44c28b168fb"
       },
       {
         "name": "WORK_219744_page20_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 303.1,
-        "path": "downloads/images/WORK_219744_page20_X1.jpg"
+        "path": "downloads/images/WORK_219744_page20_X1.jpg",
+        "sha256": "ce0fe15c6133a60d09b43dd7d54b79f9300d219f69dd0b1fcc61df4e9b6828d6"
       },
       {
         "name": "WORK_219744_page21_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 185.9,
-        "path": "downloads/images/WORK_219744_page21_X1.jpg"
+        "path": "downloads/images/WORK_219744_page21_X1.jpg",
+        "sha256": "72ea4de5c8eabadc893354a38d446e6e0c9519f1ae2c1caa2708f0404ff1adf2"
       },
       {
         "name": "WORK_219744_page22_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 164.3,
-        "path": "downloads/images/WORK_219744_page22_X1.jpg"
+        "path": "downloads/images/WORK_219744_page22_X1.jpg",
+        "sha256": "313b3a74fe8eb2ee340550c3e474555d60a51a3c9ceec11430ad1aa5c0b04c25"
       },
       {
         "name": "WORK_219744_page23_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 119.6,
-        "path": "downloads/images/WORK_219744_page23_X1.jpg"
+        "path": "downloads/images/WORK_219744_page23_X1.jpg",
+        "sha256": "3a52a3e173178d48d0091d6abe34aa42878af0a73e15d0341c6c48860b4ac7b5"
       },
       {
         "name": "WORK_219744_page2_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 139.6,
-        "path": "downloads/images/WORK_219744_page2_X1.jpg"
+        "path": "downloads/images/WORK_219744_page2_X1.jpg",
+        "sha256": "63cf9227e26c9de95795b9f795d716c1a86d710553424ea5e5d1cd5f5cb6b7c3"
       },
       {
         "name": "WORK_219744_page3_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 286.7,
-        "path": "downloads/images/WORK_219744_page3_X1.jpg"
+        "path": "downloads/images/WORK_219744_page3_X1.jpg",
+        "sha256": "efc41c6f0d26f534c2d7c5d4db0d04131321f90d3b66fe4867029c3b2166a99a"
       },
       {
         "name": "WORK_219744_page4_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 244.5,
-        "path": "downloads/images/WORK_219744_page4_X1.jpg"
+        "path": "downloads/images/WORK_219744_page4_X1.jpg",
+        "sha256": "d8317681f211ab623637bf169a8d69438f16e86e15e7d43575fd14de9dcc3929"
       },
       {
         "name": "WORK_219744_page5_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 253.0,
-        "path": "downloads/images/WORK_219744_page5_X1.jpg"
+        "path": "downloads/images/WORK_219744_page5_X1.jpg",
+        "sha256": "79b01b9850d891a30b6cdc2325875511f783d88f52359a9c630db27b83ea5cdb"
       },
       {
         "name": "WORK_219744_page6_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 144.1,
-        "path": "downloads/images/WORK_219744_page6_X1.jpg"
+        "path": "downloads/images/WORK_219744_page6_X1.jpg",
+        "sha256": "b6ef06d2c6dd82af1cccd4bde151391a4ef0a4cd494cb50af0d3dd5d64ef8ee9"
       },
       {
         "name": "WORK_219744_page7_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 372.9,
-        "path": "downloads/images/WORK_219744_page7_X1.jpg"
+        "path": "downloads/images/WORK_219744_page7_X1.jpg",
+        "sha256": "67bca02757690a18d18f1fbe1137e64bcd248a9f598ae32e5b7bf190f0fea92c"
       },
       {
         "name": "WORK_219744_page8_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 363.9,
-        "path": "downloads/images/WORK_219744_page8_X1.jpg"
+        "path": "downloads/images/WORK_219744_page8_X1.jpg",
+        "sha256": "6e8b7b8ededa18a0efc6bd3311d03118d3ccff2d63aa6e2122b4d94c83f748ef"
       },
       {
         "name": "WORK_219744_page9_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 304.0,
-        "path": "downloads/images/WORK_219744_page9_X1.jpg"
+        "path": "downloads/images/WORK_219744_page9_X1.jpg",
+        "sha256": "434c8a8958bd72777ae12f6cc564da56e5313ffc3f6c91b93d0881e4505c757c"
       }
     ],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 30.0,
+    "risk_level": "LOW",
+    "work_risk_description": "Missing: GPS watermark coordinates on photo (photo is untagged); Physical execution progress status tables",
+    "missing_items": [
+      "GPS watermark coordinates on photo (photo is untagged)",
+      "Physical execution progress status tables"
+    ],
+    "missing_summary": "Missing: GPS watermark coordinates on photo (photo is untagged); Physical execution progress status tables",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "212960",
@@ -382,15 +424,13 @@
       "file_name": "WORK_212960_WC_2_UC_QC_Bill.pdf",
       "file_size_kb": 6592.2,
       "page_count": 23,
+      "has_progress_tables": false,
       "total_images": 23,
       "has_photo_evidence": true,
       "has_bill_proof": false,
       "bill_proof_keywords": [],
       "geotag_status": "PHOTO_PRESENT_UNTAGGED",
       "gps": null,
-      "sections": [
-        "Photographic Evidence"
-      ],
       "sample_images": [
         {
           "name": "WORK_212960_page10_X1.jpg",
@@ -533,157 +573,192 @@
       ]
     },
     "audit_classification": "GREEN",
-    "audit_badge_text": "\ud83d\udfe2 Scanned Image / Picture Present",
-    "audit_reason": "23 authentic scanned image(s) / photographic picture(s) present (GPS coordinates not stamped on photo).",
+    "audit_badge_text": "\ud83d\udfe2 Scanned Picture Present (Untagged)",
+    "audit_reason": "23 authentic scanned photographic picture(s) present (GPS coordinates not stamped on photo).",
     "attached_files": [
       {
         "name": "WORK_212960_WC_2_UC_QC_Bill.pdf",
         "type": "PDF Document",
         "size_kb": 6592.2,
-        "path": "downloads/pdfs/WORK_212960_WC_2_UC_QC_Bill.pdf"
+        "path": "downloads/pdfs/WORK_212960_WC_2_UC_QC_Bill.pdf",
+        "sha256": "439e517304b46837ebae664691366fb6f21b547181722032e006673f821bed3f"
       },
       {
         "name": "WORK_212960_page10_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 365.4,
-        "path": "downloads/images/WORK_212960_page10_X1.jpg"
+        "path": "downloads/images/WORK_212960_page10_X1.jpg",
+        "sha256": "a6aeffd12a43f3079f686260d2fbe417c1b48e127b61064c1c1b8e7c13ab023b"
       },
       {
         "name": "WORK_212960_page11_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 361.9,
-        "path": "downloads/images/WORK_212960_page11_X1.jpg"
+        "path": "downloads/images/WORK_212960_page11_X1.jpg",
+        "sha256": "cd60114be3f5839b5ccc56f12dde612e9447c9f78a844349bff3fafcf7beb8fb"
       },
       {
         "name": "WORK_212960_page12_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 340.9,
-        "path": "downloads/images/WORK_212960_page12_X1.jpg"
+        "path": "downloads/images/WORK_212960_page12_X1.jpg",
+        "sha256": "ac559fb703746501d4d65e963087e66b93ae479ef79614238cb8170ab2e1c0ca"
       },
       {
         "name": "WORK_212960_page13_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 310.3,
-        "path": "downloads/images/WORK_212960_page13_X1.jpg"
+        "path": "downloads/images/WORK_212960_page13_X1.jpg",
+        "sha256": "df4c05a88076efda7a92d84707bda38d8ba850991faf4c8c449a242ea7fc14cc"
       },
       {
         "name": "WORK_212960_page14_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 304.9,
-        "path": "downloads/images/WORK_212960_page14_X1.jpg"
+        "path": "downloads/images/WORK_212960_page14_X1.jpg",
+        "sha256": "730d5a5c2c39538978cbf595a3210c82004535e1ef4d57eabe5b7c8b79244538"
       },
       {
         "name": "WORK_212960_page15_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 328.7,
-        "path": "downloads/images/WORK_212960_page15_X1.jpg"
+        "path": "downloads/images/WORK_212960_page15_X1.jpg",
+        "sha256": "8545002c65ff7750a7ae2a4c9ab713e69bbb7c017da8a209025a644313d92aa5"
       },
       {
         "name": "WORK_212960_page16_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 336.4,
-        "path": "downloads/images/WORK_212960_page16_X1.jpg"
+        "path": "downloads/images/WORK_212960_page16_X1.jpg",
+        "sha256": "c05e2c71a63150b0a2fc6ffd6c971631b988a16d57be41b7329c1eb030070754"
       },
       {
         "name": "WORK_212960_page17_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 239.2,
-        "path": "downloads/images/WORK_212960_page17_X1.jpg"
+        "path": "downloads/images/WORK_212960_page17_X1.jpg",
+        "sha256": "ecbd471af2cd9a2661a28e74a37512724ca1a05d938377075c6ff9d40950d1e7"
       },
       {
         "name": "WORK_212960_page18_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 144.7,
-        "path": "downloads/images/WORK_212960_page18_X1.jpg"
+        "path": "downloads/images/WORK_212960_page18_X1.jpg",
+        "sha256": "40efd3e127c6cc6e2e25e048ab2144728ea5ff2dae07af7e75f0acf4215c4503"
       },
       {
         "name": "WORK_212960_page19_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 267.8,
-        "path": "downloads/images/WORK_212960_page19_X1.jpg"
+        "path": "downloads/images/WORK_212960_page19_X1.jpg",
+        "sha256": "759092a11fe5c99da387253a0dafa2668ac1b1246dc5961d4fabe92c7afa1daf"
       },
       {
         "name": "WORK_212960_page1_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 356.2,
-        "path": "downloads/images/WORK_212960_page1_X1.jpg"
+        "path": "downloads/images/WORK_212960_page1_X1.jpg",
+        "sha256": "3b2f68161c6feb03e37bd4425c6d51f4cddaf9e3ca9b6050c5c7f7ac073369db"
       },
       {
         "name": "WORK_212960_page20_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 201.2,
-        "path": "downloads/images/WORK_212960_page20_X1.jpg"
+        "path": "downloads/images/WORK_212960_page20_X1.jpg",
+        "sha256": "7f601e39f26d9e14905afdfb0c6aed9fd048cd5cc2718cc15463aa00e88b8dd1"
       },
       {
         "name": "WORK_212960_page21_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 200.0,
-        "path": "downloads/images/WORK_212960_page21_X1.jpg"
+        "path": "downloads/images/WORK_212960_page21_X1.jpg",
+        "sha256": "25e51898d0f8bc5c9c6dafcfa8eff2c2398fddf789bc04ce63f34760d600825d"
       },
       {
         "name": "WORK_212960_page22_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 236.5,
-        "path": "downloads/images/WORK_212960_page22_X1.jpg"
+        "path": "downloads/images/WORK_212960_page22_X1.jpg",
+        "sha256": "1772d63d921cea0de75038b8544e0d7331f6256f16151ab0196d6331ca27ff72"
       },
       {
         "name": "WORK_212960_page23_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 357.1,
-        "path": "downloads/images/WORK_212960_page23_X1.jpg"
+        "path": "downloads/images/WORK_212960_page23_X1.jpg",
+        "sha256": "da8bb440342dc531ada5053655838d53146817091f6762fcb9e0049085934a0e"
       },
       {
         "name": "WORK_212960_page2_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 338.6,
-        "path": "downloads/images/WORK_212960_page2_X1.jpg"
+        "path": "downloads/images/WORK_212960_page2_X1.jpg",
+        "sha256": "e84a9c57162ea923e31f4e3893c742411627daf775fc82c99f2c2960ad60f20b"
       },
       {
         "name": "WORK_212960_page3_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 413.2,
-        "path": "downloads/images/WORK_212960_page3_X1.jpg"
+        "path": "downloads/images/WORK_212960_page3_X1.jpg",
+        "sha256": "8e133a1bac117cb15ef0ffffa7830045674e72a007a5cf4de35184734a5b9c77"
       },
       {
         "name": "WORK_212960_page4_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 160.2,
-        "path": "downloads/images/WORK_212960_page4_X1.jpg"
+        "path": "downloads/images/WORK_212960_page4_X1.jpg",
+        "sha256": "d8c34ab00bf1fe7463450de62f1852bdffba1279d4cfe8b50fb4560f0a0bf958"
       },
       {
         "name": "WORK_212960_page5_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 278.4,
-        "path": "downloads/images/WORK_212960_page5_X1.jpg"
+        "path": "downloads/images/WORK_212960_page5_X1.jpg",
+        "sha256": "2c9b74b07dce9535408f8137ac1119a41b725ef5160736069b70effc6f3bd1bb"
       },
       {
         "name": "WORK_212960_page6_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 297.5,
-        "path": "downloads/images/WORK_212960_page6_X1.jpg"
+        "path": "downloads/images/WORK_212960_page6_X1.jpg",
+        "sha256": "b18eecdccdddcc510723c526585a99639ea814243b6c071ee94d48373e0a2a4c"
       },
       {
         "name": "WORK_212960_page7_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 407.6,
-        "path": "downloads/images/WORK_212960_page7_X1.jpg"
+        "path": "downloads/images/WORK_212960_page7_X1.jpg",
+        "sha256": "644ee254de471a7c8a9cb66fff412a37a1da0adf805b44ff34a908035dd3098f"
       },
       {
         "name": "WORK_212960_page8_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 357.6,
-        "path": "downloads/images/WORK_212960_page8_X1.jpg"
+        "path": "downloads/images/WORK_212960_page8_X1.jpg",
+        "sha256": "ca3b93fb79074163e971d64463f194796f20965afe09aa71a45d78cfb665f234"
       },
       {
         "name": "WORK_212960_page9_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 370.9,
-        "path": "downloads/images/WORK_212960_page9_X1.jpg"
+        "path": "downloads/images/WORK_212960_page9_X1.jpg",
+        "sha256": "1a0f87e7bd2ef15367ffa74c41bc384782de67b1d49506e130a8752975f38b26"
       }
     ],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 30.0,
+    "risk_level": "LOW",
+    "work_risk_description": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "missing_items": [
+      "GPS watermark coordinates on photo (photo is untagged)",
+      "Contractor bills, invoices, and financial vouchers",
+      "Physical execution progress status tables"
+    ],
+    "missing_summary": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "219710",
@@ -700,15 +775,13 @@
       "file_name": "WORK_219710_6Final_bill.pdf",
       "file_size_kb": 2882.2,
       "page_count": 19,
+      "has_progress_tables": false,
       "total_images": 19,
       "has_photo_evidence": true,
       "has_bill_proof": false,
       "bill_proof_keywords": [],
       "geotag_status": "PHOTO_PRESENT_UNTAGGED",
       "gps": null,
-      "sections": [
-        "Photographic Evidence"
-      ],
       "sample_images": [
         {
           "name": "WORK_219710_page10_X1.jpg",
@@ -827,133 +900,164 @@
       ]
     },
     "audit_classification": "GREEN",
-    "audit_badge_text": "\ud83d\udfe2 Scanned Image / Picture Present",
-    "audit_reason": "19 authentic scanned image(s) / photographic picture(s) present (GPS coordinates not stamped on photo).",
+    "audit_badge_text": "\ud83d\udfe2 Scanned Picture Present (Untagged)",
+    "audit_reason": "19 authentic scanned photographic picture(s) present (GPS coordinates not stamped on photo).",
     "attached_files": [
       {
         "name": "WORK_219710_6Final_bill.pdf",
         "type": "PDF Document",
         "size_kb": 2882.2,
-        "path": "downloads/pdfs/WORK_219710_6Final_bill.pdf"
+        "path": "downloads/pdfs/WORK_219710_6Final_bill.pdf",
+        "sha256": "50b34f30740278bd749645470adea65aed1c0dde436886794d3386eb5d09ec5d"
       },
       {
         "name": "WORK_219710_page10_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 222.7,
-        "path": "downloads/images/WORK_219710_page10_X1.jpg"
+        "path": "downloads/images/WORK_219710_page10_X1.jpg",
+        "sha256": "2e6424df439c0c406d09b05001e51cac258004fe2500f84d74c834607be1caf2"
       },
       {
         "name": "WORK_219710_page11_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 90.1,
-        "path": "downloads/images/WORK_219710_page11_X1.jpg"
+        "path": "downloads/images/WORK_219710_page11_X1.jpg",
+        "sha256": "aba08fcad6cfd06ba898b6147fad2312e8bae674e257cc42bc0065f1f9931538"
       },
       {
         "name": "WORK_219710_page12_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 132.6,
-        "path": "downloads/images/WORK_219710_page12_X1.jpg"
+        "path": "downloads/images/WORK_219710_page12_X1.jpg",
+        "sha256": "adc5770e64aaedab6f65d0a860defcf662c6fb9f782c66d69ca26bc132696246"
       },
       {
         "name": "WORK_219710_page13_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 151.6,
-        "path": "downloads/images/WORK_219710_page13_X1.jpg"
+        "path": "downloads/images/WORK_219710_page13_X1.jpg",
+        "sha256": "b4523c286e92d115e259829b4940e0f788995a52977a643f046c209120f32122"
       },
       {
         "name": "WORK_219710_page14_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 203.1,
-        "path": "downloads/images/WORK_219710_page14_X1.jpg"
+        "path": "downloads/images/WORK_219710_page14_X1.jpg",
+        "sha256": "d0d9171b3b645e03852d2b7299e179239486222da136d77f37c8ded59f61f8a4"
       },
       {
         "name": "WORK_219710_page15_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 246.6,
-        "path": "downloads/images/WORK_219710_page15_X1.jpg"
+        "path": "downloads/images/WORK_219710_page15_X1.jpg",
+        "sha256": "6731c3891f6083a29c41bc23aaa5f2f40607c40db65023f7f7ecaf494a853ebe"
       },
       {
         "name": "WORK_219710_page16_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 219.4,
-        "path": "downloads/images/WORK_219710_page16_X1.jpg"
+        "path": "downloads/images/WORK_219710_page16_X1.jpg",
+        "sha256": "9cafa18208335fd8551f1b016d3ec2c3cb70f2d7cb8254e82d90c1ee5a7f9a2f"
       },
       {
         "name": "WORK_219710_page17_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 227.5,
-        "path": "downloads/images/WORK_219710_page17_X1.jpg"
+        "path": "downloads/images/WORK_219710_page17_X1.jpg",
+        "sha256": "17729ef4940eda4cc5d06dd05c0b4f80900ab3ffa21dae8abc8c5ff10856a6a4"
       },
       {
         "name": "WORK_219710_page18_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 179.9,
-        "path": "downloads/images/WORK_219710_page18_X1.jpg"
+        "path": "downloads/images/WORK_219710_page18_X1.jpg",
+        "sha256": "a9eed409f9550f68743e681542e0f4d127a6021a8430e20412b6961639a41691"
       },
       {
         "name": "WORK_219710_page19_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 156.0,
-        "path": "downloads/images/WORK_219710_page19_X1.jpg"
+        "path": "downloads/images/WORK_219710_page19_X1.jpg",
+        "sha256": "0aa7ffd7e8a683f3b4b7854722e5fe9edff8f9ab880e6dbbb3bee47a7ba83b5b"
       },
       {
         "name": "WORK_219710_page1_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 162.1,
-        "path": "downloads/images/WORK_219710_page1_X1.jpg"
+        "path": "downloads/images/WORK_219710_page1_X1.jpg",
+        "sha256": "aaa7a1354fccb24fa92791c583f25ccfe55aba41efcfa70be4d821fb124d15be"
       },
       {
         "name": "WORK_219710_page2_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 93.8,
-        "path": "downloads/images/WORK_219710_page2_X1.jpg"
+        "path": "downloads/images/WORK_219710_page2_X1.jpg",
+        "sha256": "d088d827194f19e0e007d9eb8115e8f6f604b2519186e1a7bbaa67c00997a0b2"
       },
       {
         "name": "WORK_219710_page3_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 199.4,
-        "path": "downloads/images/WORK_219710_page3_X1.jpg"
+        "path": "downloads/images/WORK_219710_page3_X1.jpg",
+        "sha256": "66400302dfe040311c9c640a548ad2ca3adbccc0a6fb56cff076655610ee993a"
       },
       {
         "name": "WORK_219710_page4_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 162.5,
-        "path": "downloads/images/WORK_219710_page4_X1.jpg"
+        "path": "downloads/images/WORK_219710_page4_X1.jpg",
+        "sha256": "b61a322da5ed38d3e475309761a4f83a9d364fd5f35440807c563675f711ce6d"
       },
       {
         "name": "WORK_219710_page5_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 135.4,
-        "path": "downloads/images/WORK_219710_page5_X1.jpg"
+        "path": "downloads/images/WORK_219710_page5_X1.jpg",
+        "sha256": "5581a69a1ccb1cd342b75659b49427dc9081f6a5e506a5b92391b3d94fb4492d"
       },
       {
         "name": "WORK_219710_page6_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 99.1,
-        "path": "downloads/images/WORK_219710_page6_X1.jpg"
+        "path": "downloads/images/WORK_219710_page6_X1.jpg",
+        "sha256": "416af6465369f6e3a870d1f8fead179a08040e7b7e37ee7beede11160f781da6"
       },
       {
         "name": "WORK_219710_page7_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 106.6,
-        "path": "downloads/images/WORK_219710_page7_X1.jpg"
+        "path": "downloads/images/WORK_219710_page7_X1.jpg",
+        "sha256": "fd0dcaf805a6168004368bff99ee1fdd88b63cb552eaf3528d5a4f696c86a9ad"
       },
       {
         "name": "WORK_219710_page8_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 101.0,
-        "path": "downloads/images/WORK_219710_page8_X1.jpg"
+        "path": "downloads/images/WORK_219710_page8_X1.jpg",
+        "sha256": "974b0b0fb9f0ce3f946d169a17b4853a2b159c1099e7a98884875fed611c1015"
       },
       {
         "name": "WORK_219710_page9_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 229.3,
-        "path": "downloads/images/WORK_219710_page9_X1.jpg"
+        "path": "downloads/images/WORK_219710_page9_X1.jpg",
+        "sha256": "c041ae2bd3a53d97eb883a54261bd291f0bf19fd93319bfbaff49ddbadbc19de"
       }
     ],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 30.0,
+    "risk_level": "LOW",
+    "work_risk_description": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "missing_items": [
+      "GPS watermark coordinates on photo (photo is untagged)",
+      "Contractor bills, invoices, and financial vouchers",
+      "Physical execution progress status tables"
+    ],
+    "missing_summary": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "243785",
@@ -970,15 +1074,13 @@
       "file_name": "WORK_243785_21uc.pdf",
       "file_size_kb": 2273.3,
       "page_count": 12,
+      "has_progress_tables": false,
       "total_images": 12,
       "has_photo_evidence": true,
       "has_bill_proof": false,
       "bill_proof_keywords": [],
       "geotag_status": "PHOTO_PRESENT_UNTAGGED",
       "gps": null,
-      "sections": [
-        "Photographic Evidence"
-      ],
       "sample_images": [
         {
           "name": "WORK_243785_page10_X1.jpg",
@@ -1055,91 +1157,115 @@
       ]
     },
     "audit_classification": "GREEN",
-    "audit_badge_text": "\ud83d\udfe2 Scanned Image / Picture Present",
-    "audit_reason": "12 authentic scanned image(s) / photographic picture(s) present (GPS coordinates not stamped on photo).",
+    "audit_badge_text": "\ud83d\udfe2 Scanned Picture Present (Untagged)",
+    "audit_reason": "12 authentic scanned photographic picture(s) present (GPS coordinates not stamped on photo).",
     "attached_files": [
       {
         "name": "WORK_243785_21uc.pdf",
         "type": "PDF Document",
         "size_kb": 2273.3,
-        "path": "downloads/pdfs/WORK_243785_21uc.pdf"
+        "path": "downloads/pdfs/WORK_243785_21uc.pdf",
+        "sha256": "42d52653d76e03a46beee1d0b65868cbd140857206b41901541b577422e0d325"
       },
       {
         "name": "WORK_243785_page10_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 196.8,
-        "path": "downloads/images/WORK_243785_page10_X1.jpg"
+        "path": "downloads/images/WORK_243785_page10_X1.jpg",
+        "sha256": "26fdb3d91dae6e03231b01be629e482c8ed7df3926ff5cca7c5ffc7c5181b158"
       },
       {
         "name": "WORK_243785_page11_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 203.7,
-        "path": "downloads/images/WORK_243785_page11_X1.jpg"
+        "path": "downloads/images/WORK_243785_page11_X1.jpg",
+        "sha256": "1fab2bc433ab5d64ec3cbc1bff8fa4c6d7e310688dea07183d4cceb605019e1f"
       },
       {
         "name": "WORK_243785_page12_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 179.7,
-        "path": "downloads/images/WORK_243785_page12_X1.jpg"
+        "path": "downloads/images/WORK_243785_page12_X1.jpg",
+        "sha256": "d0bbbca7a75526fa54fed50e2a743257a451d86d784e426b0b3334e31dfdab2f"
       },
       {
         "name": "WORK_243785_page1_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 235.6,
-        "path": "downloads/images/WORK_243785_page1_X1.jpg"
+        "path": "downloads/images/WORK_243785_page1_X1.jpg",
+        "sha256": "5456a713895054d8c608afb3d8d6093764ca77fd02042f35cb66e556d4137427"
       },
       {
         "name": "WORK_243785_page2_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 110.6,
-        "path": "downloads/images/WORK_243785_page2_X1.jpg"
+        "path": "downloads/images/WORK_243785_page2_X1.jpg",
+        "sha256": "1ea9e44712e33c34658b87da797a7a3aa2184e6f0139d8ab25f91f5c420694ee"
       },
       {
         "name": "WORK_243785_page3_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 192.5,
-        "path": "downloads/images/WORK_243785_page3_X1.jpg"
+        "path": "downloads/images/WORK_243785_page3_X1.jpg",
+        "sha256": "b50b01e13fa003cfef4cccb0fe50fcc2ad196d0ca91c055b596a4ee363543f45"
       },
       {
         "name": "WORK_243785_page4_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 223.4,
-        "path": "downloads/images/WORK_243785_page4_X1.jpg"
+        "path": "downloads/images/WORK_243785_page4_X1.jpg",
+        "sha256": "aa830295588c0f2760f74cf8c07cdf621ac59dbfc9629bda45d1499f85fa37db"
       },
       {
         "name": "WORK_243785_page5_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 175.9,
-        "path": "downloads/images/WORK_243785_page5_X1.jpg"
+        "path": "downloads/images/WORK_243785_page5_X1.jpg",
+        "sha256": "1a7456f37ae953806918c17b13be30d44601cd006a160e0b879dc86354661a4a"
       },
       {
         "name": "WORK_243785_page6_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 221.7,
-        "path": "downloads/images/WORK_243785_page6_X1.jpg"
+        "path": "downloads/images/WORK_243785_page6_X1.jpg",
+        "sha256": "a489e9fb0c4b2a78aed58ca75a6fdf54a1b0ea552bc084ee1732941d8d8e3041"
       },
       {
         "name": "WORK_243785_page7_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 260.0,
-        "path": "downloads/images/WORK_243785_page7_X1.jpg"
+        "path": "downloads/images/WORK_243785_page7_X1.jpg",
+        "sha256": "7d6fe35ab5c4488ca64cee1c2bce80f39d7aafb916e2627cf1616a4326f6f136"
       },
       {
         "name": "WORK_243785_page8_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 313.2,
-        "path": "downloads/images/WORK_243785_page8_X1.jpg"
+        "path": "downloads/images/WORK_243785_page8_X1.jpg",
+        "sha256": "143572028b39f8d171211be891a0cf600416367e95fe994c7cb3f30da2701b38"
       },
       {
         "name": "WORK_243785_page9_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 166.8,
-        "path": "downloads/images/WORK_243785_page9_X1.jpg"
+        "path": "downloads/images/WORK_243785_page9_X1.jpg",
+        "sha256": "9b0a25452fb59a4e95088ad7126abb135a27667735513a938e9d7658dd38934c"
       }
     ],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 30.0,
+    "risk_level": "LOW",
+    "work_risk_description": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "missing_items": [
+      "GPS watermark coordinates on photo (photo is untagged)",
+      "Contractor bills, invoices, and financial vouchers",
+      "Physical execution progress status tables"
+    ],
+    "missing_summary": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "232408",
@@ -1156,15 +1282,13 @@
       "file_name": "WORK_232408_14uc.pdf",
       "file_size_kb": 2132.5,
       "page_count": 11,
+      "has_progress_tables": false,
       "total_images": 11,
       "has_photo_evidence": true,
       "has_bill_proof": false,
       "bill_proof_keywords": [],
       "geotag_status": "PHOTO_PRESENT_UNTAGGED",
       "gps": null,
-      "sections": [
-        "Photographic Evidence"
-      ],
       "sample_images": [
         {
           "name": "WORK_232408_page10_X1.jpg",
@@ -1235,85 +1359,108 @@
       ]
     },
     "audit_classification": "GREEN",
-    "audit_badge_text": "\ud83d\udfe2 Scanned Image / Picture Present",
-    "audit_reason": "11 authentic scanned image(s) / photographic picture(s) present (GPS coordinates not stamped on photo).",
+    "audit_badge_text": "\ud83d\udfe2 Scanned Picture Present (Untagged)",
+    "audit_reason": "11 authentic scanned photographic picture(s) present (GPS coordinates not stamped on photo).",
     "attached_files": [
       {
         "name": "WORK_232408_14uc.pdf",
         "type": "PDF Document",
         "size_kb": 2132.5,
-        "path": "downloads/pdfs/WORK_232408_14uc.pdf"
+        "path": "downloads/pdfs/WORK_232408_14uc.pdf",
+        "sha256": "3e60cef2d1af8ed0d61904bb786c97fc617ea920927f9d17e98230ddc59f42cb"
       },
       {
         "name": "WORK_232408_page10_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 183.7,
-        "path": "downloads/images/WORK_232408_page10_X1.jpg"
+        "path": "downloads/images/WORK_232408_page10_X1.jpg",
+        "sha256": "86b6248665bb0ef0f7cee71f49346b1e4f4c6380e513be750b4dc36b706a6d49"
       },
       {
         "name": "WORK_232408_page11_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 106.1,
-        "path": "downloads/images/WORK_232408_page11_X1.jpg"
+        "path": "downloads/images/WORK_232408_page11_X1.jpg",
+        "sha256": "73a1b3d297ceefe1c5369660843bc75e5d08ea61f13430bc2935a5eb402a2dc2"
       },
       {
         "name": "WORK_232408_page1_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 180.9,
-        "path": "downloads/images/WORK_232408_page1_X1.jpg"
+        "path": "downloads/images/WORK_232408_page1_X1.jpg",
+        "sha256": "208dd1d9e8b6e353932aa1b47266c749b2d17706de6a558648a1a984d2764404"
       },
       {
         "name": "WORK_232408_page2_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 113.3,
-        "path": "downloads/images/WORK_232408_page2_X1.jpg"
+        "path": "downloads/images/WORK_232408_page2_X1.jpg",
+        "sha256": "98cc6cd6bc5e119a13a5d8cc0f741b8576c4047b9b9c9068254f79fe2d67a51e"
       },
       {
         "name": "WORK_232408_page3_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 272.1,
-        "path": "downloads/images/WORK_232408_page3_X1.jpg"
+        "path": "downloads/images/WORK_232408_page3_X1.jpg",
+        "sha256": "6ef6ff88a20f0d65316cbd88207dbeb9273008868e3ab6d1fd82cb98ca41e14e"
       },
       {
         "name": "WORK_232408_page4_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 199.5,
-        "path": "downloads/images/WORK_232408_page4_X1.jpg"
+        "path": "downloads/images/WORK_232408_page4_X1.jpg",
+        "sha256": "af24adfd27ed71472d36ebeaf8842ea760d7803a6c8190eef6a0525dea22ab27"
       },
       {
         "name": "WORK_232408_page5_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 189.5,
-        "path": "downloads/images/WORK_232408_page5_X1.jpg"
+        "path": "downloads/images/WORK_232408_page5_X1.jpg",
+        "sha256": "5e7b968eac837cdc13a6cce7b3276c9fe01cc60452441870a51bff91f04aaa7b"
       },
       {
         "name": "WORK_232408_page6_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 278.3,
-        "path": "downloads/images/WORK_232408_page6_X1.jpg"
+        "path": "downloads/images/WORK_232408_page6_X1.jpg",
+        "sha256": "4424a1f196d5f0b2757a554c6fb6cd6160ceda05de6a6cbe90e2c8a861aa94a7"
       },
       {
         "name": "WORK_232408_page7_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 372.7,
-        "path": "downloads/images/WORK_232408_page7_X1.jpg"
+        "path": "downloads/images/WORK_232408_page7_X1.jpg",
+        "sha256": "a81adafcf4eda94f5ab111507ddd6bd205564a36236d75206f7ce4e97b4a28c1"
       },
       {
         "name": "WORK_232408_page8_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 267.7,
-        "path": "downloads/images/WORK_232408_page8_X1.jpg"
+        "path": "downloads/images/WORK_232408_page8_X1.jpg",
+        "sha256": "d5cebb511ccee035232f2d948697a28a8b9ce7be33b4f5fe3da5867e36ede684"
       },
       {
         "name": "WORK_232408_page9_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 137.8,
-        "path": "downloads/images/WORK_232408_page9_X1.jpg"
+        "path": "downloads/images/WORK_232408_page9_X1.jpg",
+        "sha256": "75077124a2575393e684582501325f12e0c068108885ca5dc7cd8821bc688980"
       }
     ],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 30.0,
+    "risk_level": "LOW",
+    "work_risk_description": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "missing_items": [
+      "GPS watermark coordinates on photo (photo is untagged)",
+      "Contractor bills, invoices, and financial vouchers",
+      "Physical execution progress status tables"
+    ],
+    "missing_summary": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "232412",
@@ -1330,15 +1477,13 @@
       "file_name": "WORK_232412_15uc.pdf",
       "file_size_kb": 2247.1,
       "page_count": 9,
+      "has_progress_tables": false,
       "total_images": 9,
       "has_photo_evidence": true,
       "has_bill_proof": false,
       "bill_proof_keywords": [],
       "geotag_status": "PHOTO_PRESENT_UNTAGGED",
       "gps": null,
-      "sections": [
-        "Photographic Evidence"
-      ],
       "sample_images": [
         {
           "name": "WORK_232412_page1_X1.jpg",
@@ -1397,73 +1542,94 @@
       ]
     },
     "audit_classification": "GREEN",
-    "audit_badge_text": "\ud83d\udfe2 Scanned Image / Picture Present",
-    "audit_reason": "9 authentic scanned image(s) / photographic picture(s) present (GPS coordinates not stamped on photo).",
+    "audit_badge_text": "\ud83d\udfe2 Scanned Picture Present (Untagged)",
+    "audit_reason": "9 authentic scanned photographic picture(s) present (GPS coordinates not stamped on photo).",
     "attached_files": [
       {
         "name": "WORK_232412_15uc.pdf",
         "type": "PDF Document",
         "size_kb": 2247.1,
-        "path": "downloads/pdfs/WORK_232412_15uc.pdf"
+        "path": "downloads/pdfs/WORK_232412_15uc.pdf",
+        "sha256": "bcc2eb1f4308291ea5c512464ee3c472ce83fcfcf6d2ca6d8c0ae2dd2dc41a62"
       },
       {
         "name": "WORK_232412_page1_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 228.7,
-        "path": "downloads/images/WORK_232412_page1_X1.jpg"
+        "path": "downloads/images/WORK_232412_page1_X1.jpg",
+        "sha256": "e1180e6ed9d2d8206c59f016017f43ca116d5027d7fef4136bcabae549edc150"
       },
       {
         "name": "WORK_232412_page2_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 132.1,
-        "path": "downloads/images/WORK_232412_page2_X1.jpg"
+        "path": "downloads/images/WORK_232412_page2_X1.jpg",
+        "sha256": "35d99053a3e2216395fe867e3c701785b31e43d35fe4188a92d9332120d636fc"
       },
       {
         "name": "WORK_232412_page3_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 318.1,
-        "path": "downloads/images/WORK_232412_page3_X1.jpg"
+        "path": "downloads/images/WORK_232412_page3_X1.jpg",
+        "sha256": "6710465fca8f19f16c31215ebbb62728bd51e6c29f73aee34377ce50f5420eec"
       },
       {
         "name": "WORK_232412_page4_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 267.8,
-        "path": "downloads/images/WORK_232412_page4_X1.jpg"
+        "path": "downloads/images/WORK_232412_page4_X1.jpg",
+        "sha256": "97c2ee424abbfa0a1c9cda4a318475b0410c7251e1d45dec6afc466ceb6ad922"
       },
       {
         "name": "WORK_232412_page5_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 244.3,
-        "path": "downloads/images/WORK_232412_page5_X1.jpg"
+        "path": "downloads/images/WORK_232412_page5_X1.jpg",
+        "sha256": "aa42ad649983dcdb02acad00e0198bd5ac5eadf41d64e47015b3682270adfb41"
       },
       {
         "name": "WORK_232412_page6_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 187.2,
-        "path": "downloads/images/WORK_232412_page6_X1.jpg"
+        "path": "downloads/images/WORK_232412_page6_X1.jpg",
+        "sha256": "edb1086a6216066731e6e614d5a013e5421f5172074f53ae1f9f7c2b9f713222"
       },
       {
         "name": "WORK_232412_page7_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 283.3,
-        "path": "downloads/images/WORK_232412_page7_X1.jpg"
+        "path": "downloads/images/WORK_232412_page7_X1.jpg",
+        "sha256": "a6a91e901ff9bd09971eacce7f749973388c079f574759a45157bf55dfa003dd"
       },
       {
         "name": "WORK_232412_page8_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 442.9,
-        "path": "downloads/images/WORK_232412_page8_X1.jpg"
+        "path": "downloads/images/WORK_232412_page8_X1.jpg",
+        "sha256": "e3fc0446279ae53fbad3d239a9f4d17233703f2d6c0c62b3630d5e546e24aa76"
       },
       {
         "name": "WORK_232412_page9_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 333.6,
-        "path": "downloads/images/WORK_232412_page9_X1.jpg"
+        "path": "downloads/images/WORK_232412_page9_X1.jpg",
+        "sha256": "7d32b898773641d5c968a4638a4526f261bb4092ccdc623d5a789b43052bd6f3"
       }
     ],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 30.0,
+    "risk_level": "LOW",
+    "work_risk_description": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "missing_items": [
+      "GPS watermark coordinates on photo (photo is untagged)",
+      "Contractor bills, invoices, and financial vouchers",
+      "Physical execution progress status tables"
+    ],
+    "missing_summary": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "219766",
@@ -1480,6 +1646,7 @@
       "file_name": "WORK_219766_9uc.pdf",
       "file_size_kb": 1915.7,
       "page_count": 8,
+      "has_progress_tables": false,
       "total_images": 8,
       "has_photo_evidence": true,
       "has_bill_proof": true,
@@ -1488,9 +1655,6 @@
       ],
       "geotag_status": "PHOTO_PRESENT_UNTAGGED",
       "gps": null,
-      "sections": [
-        "Photographic Evidence"
-      ],
       "sample_images": [
         {
           "name": "WORK_219766_page1_X1.jpg",
@@ -1543,67 +1707,86 @@
       ]
     },
     "audit_classification": "GREEN",
-    "audit_badge_text": "\ud83d\udfe2 Scanned Image / Picture Present",
-    "audit_reason": "8 authentic scanned image(s) / photographic picture(s) present (GPS coordinates not stamped on photo).",
+    "audit_badge_text": "\ud83d\udfe2 Scanned Picture Present (Untagged)",
+    "audit_reason": "8 authentic scanned photographic picture(s) present (GPS coordinates not stamped on photo).",
     "attached_files": [
       {
         "name": "WORK_219766_9uc.pdf",
         "type": "PDF Document",
         "size_kb": 1915.7,
-        "path": "downloads/pdfs/WORK_219766_9uc.pdf"
+        "path": "downloads/pdfs/WORK_219766_9uc.pdf",
+        "sha256": "d62da413a470bc8c0d9b07915f7e8830be1377e9095a1a56f8252cd53c0da0d4"
       },
       {
         "name": "WORK_219766_page1_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 208.1,
-        "path": "downloads/images/WORK_219766_page1_X1.jpg"
+        "path": "downloads/images/WORK_219766_page1_X1.jpg",
+        "sha256": "2b9d49590f8fcc2f43b2886cfe0cf18db59ec41745fc98131dfc837e17c4e192"
       },
       {
         "name": "WORK_219766_page2_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 129.2,
-        "path": "downloads/images/WORK_219766_page2_X1.jpg"
+        "path": "downloads/images/WORK_219766_page2_X1.jpg",
+        "sha256": "6d15e481ff567c2cadcf4840f8deb81785934f6731eb2d1dafa56da7a84357c5"
       },
       {
         "name": "WORK_219766_page3_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 288.5,
-        "path": "downloads/images/WORK_219766_page3_X1.jpg"
+        "path": "downloads/images/WORK_219766_page3_X1.jpg",
+        "sha256": "7c9e16454d3514e51da422dde244c0a0befcf97d07b1b65bab40e413e541dae4"
       },
       {
         "name": "WORK_219766_page4_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 231.8,
-        "path": "downloads/images/WORK_219766_page4_X1.jpg"
+        "path": "downloads/images/WORK_219766_page4_X1.jpg",
+        "sha256": "dde629b6f6aa590a72e8dad4dcedd322be653c9958ef12ca30d512cfd550085c"
       },
       {
         "name": "WORK_219766_page5_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 190.4,
-        "path": "downloads/images/WORK_219766_page5_X1.jpg"
+        "path": "downloads/images/WORK_219766_page5_X1.jpg",
+        "sha256": "55e68917623d54bf2898b1c3ef27d3e49ddbe1672cb2c4a117b03dacedcfb34b"
       },
       {
         "name": "WORK_219766_page6_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 281.2,
-        "path": "downloads/images/WORK_219766_page6_X1.jpg"
+        "path": "downloads/images/WORK_219766_page6_X1.jpg",
+        "sha256": "71c28c7f5106c2aaf076ca1baf3c02d840fec9530ce796e893676535612010e6"
       },
       {
         "name": "WORK_219766_page7_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 452.0,
-        "path": "downloads/images/WORK_219766_page7_X1.jpg"
+        "path": "downloads/images/WORK_219766_page7_X1.jpg",
+        "sha256": "cb481b2a7eadfe5c5a9189b087cce5de275214b48f2cbad245080957bb573add"
       },
       {
         "name": "WORK_219766_page8_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 286.8,
-        "path": "downloads/images/WORK_219766_page8_X1.jpg"
+        "path": "downloads/images/WORK_219766_page8_X1.jpg",
+        "sha256": "7e95f7d967d5f0909ccf31c33b8d55437fc853506f3131a220b45759da264b21"
       }
     ],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 30.0,
+    "risk_level": "LOW",
+    "work_risk_description": "Missing: GPS watermark coordinates on photo (photo is untagged); Physical execution progress status tables",
+    "missing_items": [
+      "GPS watermark coordinates on photo (photo is untagged)",
+      "Physical execution progress status tables"
+    ],
+    "missing_summary": "Missing: GPS watermark coordinates on photo (photo is untagged); Physical execution progress status tables",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "240802",
@@ -1620,15 +1803,13 @@
       "file_name": "WORK_240802_20uc.pdf",
       "file_size_kb": 1804.8,
       "page_count": 9,
+      "has_progress_tables": false,
       "total_images": 9,
       "has_photo_evidence": true,
       "has_bill_proof": false,
       "bill_proof_keywords": [],
       "geotag_status": "PHOTO_PRESENT_UNTAGGED",
       "gps": null,
-      "sections": [
-        "Photographic Evidence"
-      ],
       "sample_images": [
         {
           "name": "WORK_240802_page1_X1.jpg",
@@ -1687,73 +1868,94 @@
       ]
     },
     "audit_classification": "GREEN",
-    "audit_badge_text": "\ud83d\udfe2 Scanned Image / Picture Present",
-    "audit_reason": "9 authentic scanned image(s) / photographic picture(s) present (GPS coordinates not stamped on photo).",
+    "audit_badge_text": "\ud83d\udfe2 Scanned Picture Present (Untagged)",
+    "audit_reason": "9 authentic scanned photographic picture(s) present (GPS coordinates not stamped on photo).",
     "attached_files": [
       {
         "name": "WORK_240802_20uc.pdf",
         "type": "PDF Document",
         "size_kb": 1804.8,
-        "path": "downloads/pdfs/WORK_240802_20uc.pdf"
+        "path": "downloads/pdfs/WORK_240802_20uc.pdf",
+        "sha256": "4200284e3eeda15922720ec8978603ea7fe75e2c5fd0c9cf4a2fe525160085af"
       },
       {
         "name": "WORK_240802_page1_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 218.1,
-        "path": "downloads/images/WORK_240802_page1_X1.jpg"
+        "path": "downloads/images/WORK_240802_page1_X1.jpg",
+        "sha256": "b31c16ae9bb05a9c128c59bec0869f96a9d96807b1208a6811371d94beaf2470"
       },
       {
         "name": "WORK_240802_page2_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 125.8,
-        "path": "downloads/images/WORK_240802_page2_X1.jpg"
+        "path": "downloads/images/WORK_240802_page2_X1.jpg",
+        "sha256": "02aa251dba6d167a6b000ac35ac92a1fdeb342b30d9c572f4867aed66c37f825"
       },
       {
         "name": "WORK_240802_page3_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 282.4,
-        "path": "downloads/images/WORK_240802_page3_X1.jpg"
+        "path": "downloads/images/WORK_240802_page3_X1.jpg",
+        "sha256": "fee50cbb735227e0a299fb873ffc28afc3593962b36507f23b5fc2db0c076093"
       },
       {
         "name": "WORK_240802_page4_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 250.3,
-        "path": "downloads/images/WORK_240802_page4_X1.jpg"
+        "path": "downloads/images/WORK_240802_page4_X1.jpg",
+        "sha256": "3727651f34f6497a83dfd7989e6db8c277e1d03c4dc873db10b8871c4b4ac629"
       },
       {
         "name": "WORK_240802_page5_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 187.6,
-        "path": "downloads/images/WORK_240802_page5_X1.jpg"
+        "path": "downloads/images/WORK_240802_page5_X1.jpg",
+        "sha256": "9bcd3f336e8a6b7d5a933347ff1f30110d6048ca9a9f91a37919c88241982840"
       },
       {
         "name": "WORK_240802_page6_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 182.3,
-        "path": "downloads/images/WORK_240802_page6_X1.jpg"
+        "path": "downloads/images/WORK_240802_page6_X1.jpg",
+        "sha256": "500732791477832f5a1c00b9a033a72f552ea421608674cb7c592e840f3d688d"
       },
       {
         "name": "WORK_240802_page7_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 205.9,
-        "path": "downloads/images/WORK_240802_page7_X1.jpg"
+        "path": "downloads/images/WORK_240802_page7_X1.jpg",
+        "sha256": "bccc4851f22842665dfb6f9fa1faa7bf96988ee4564074257b8c838cbf57f4b7"
       },
       {
         "name": "WORK_240802_page8_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 274.9,
-        "path": "downloads/images/WORK_240802_page8_X1.jpg"
+        "path": "downloads/images/WORK_240802_page8_X1.jpg",
+        "sha256": "b4a7339199155f6051bfe896275627df8ac1d64bf949723c0135bce6340a9bff"
       },
       {
         "name": "WORK_240802_page9_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 212.6,
-        "path": "downloads/images/WORK_240802_page9_X1.jpg"
+        "path": "downloads/images/WORK_240802_page9_X1.jpg",
+        "sha256": "0717fbb79e57517dd12c8f40a64afd6267c4ea9537684540459b7daea6db3432"
       }
     ],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 30.0,
+    "risk_level": "LOW",
+    "work_risk_description": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "missing_items": [
+      "GPS watermark coordinates on photo (photo is untagged)",
+      "Contractor bills, invoices, and financial vouchers",
+      "Physical execution progress status tables"
+    ],
+    "missing_summary": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "240794",
@@ -1770,15 +1972,13 @@
       "file_name": "WORK_240794_18uc.pdf",
       "file_size_kb": 1799.0,
       "page_count": 9,
+      "has_progress_tables": false,
       "total_images": 9,
       "has_photo_evidence": true,
       "has_bill_proof": false,
       "bill_proof_keywords": [],
       "geotag_status": "PHOTO_PRESENT_UNTAGGED",
       "gps": null,
-      "sections": [
-        "Photographic Evidence"
-      ],
       "sample_images": [
         {
           "name": "WORK_240794_page1_X1.jpg",
@@ -1837,73 +2037,94 @@
       ]
     },
     "audit_classification": "GREEN",
-    "audit_badge_text": "\ud83d\udfe2 Scanned Image / Picture Present",
-    "audit_reason": "9 authentic scanned image(s) / photographic picture(s) present (GPS coordinates not stamped on photo).",
+    "audit_badge_text": "\ud83d\udfe2 Scanned Picture Present (Untagged)",
+    "audit_reason": "9 authentic scanned photographic picture(s) present (GPS coordinates not stamped on photo).",
     "attached_files": [
       {
         "name": "WORK_240794_18uc.pdf",
         "type": "PDF Document",
         "size_kb": 1799.0,
-        "path": "downloads/pdfs/WORK_240794_18uc.pdf"
+        "path": "downloads/pdfs/WORK_240794_18uc.pdf",
+        "sha256": "e17bc6829f8e79d6af1d635caba595811c5f8d8b9e17087250f98fdffc2113b1"
       },
       {
         "name": "WORK_240794_page1_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 208.5,
-        "path": "downloads/images/WORK_240794_page1_X1.jpg"
+        "path": "downloads/images/WORK_240794_page1_X1.jpg",
+        "sha256": "e308b526c36ca0eb96396a5c1cc99232d64099d4a9d854ec3b77465527e3c1b5"
       },
       {
         "name": "WORK_240794_page2_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 124.7,
-        "path": "downloads/images/WORK_240794_page2_X1.jpg"
+        "path": "downloads/images/WORK_240794_page2_X1.jpg",
+        "sha256": "a8ef4c0ff822ca8607aae3cd70df265f7246898d2a457d1f37393673f45879a4"
       },
       {
         "name": "WORK_240794_page3_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 277.7,
-        "path": "downloads/images/WORK_240794_page3_X1.jpg"
+        "path": "downloads/images/WORK_240794_page3_X1.jpg",
+        "sha256": "94f3be871b31520e564e807946f57da98b0f82e75996bd422e059591e140cf1b"
       },
       {
         "name": "WORK_240794_page4_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 242.0,
-        "path": "downloads/images/WORK_240794_page4_X1.jpg"
+        "path": "downloads/images/WORK_240794_page4_X1.jpg",
+        "sha256": "4243c26e00d35082d474a03bb4fe7ca631c9bfc5adeaa27910e95a20ce99feef"
       },
       {
         "name": "WORK_240794_page5_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 210.8,
-        "path": "downloads/images/WORK_240794_page5_X1.jpg"
+        "path": "downloads/images/WORK_240794_page5_X1.jpg",
+        "sha256": "303a729870b05495c26abb0a52d538df25045dbed5155789e215aac3391a6544"
       },
       {
         "name": "WORK_240794_page6_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 171.2,
-        "path": "downloads/images/WORK_240794_page6_X1.jpg"
+        "path": "downloads/images/WORK_240794_page6_X1.jpg",
+        "sha256": "98f9eb726549a0808af52018070953dcdafa318640c1af448382245ec5621eb1"
       },
       {
         "name": "WORK_240794_page7_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 195.9,
-        "path": "downloads/images/WORK_240794_page7_X1.jpg"
+        "path": "downloads/images/WORK_240794_page7_X1.jpg",
+        "sha256": "1f1a991a16cb17ab75a96644900215a772026679e6e4d893952910fb63c7d73d"
       },
       {
         "name": "WORK_240794_page8_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 296.9,
-        "path": "downloads/images/WORK_240794_page8_X1.jpg"
+        "path": "downloads/images/WORK_240794_page8_X1.jpg",
+        "sha256": "7ddd1840e18bc284b28fa7fa0b25e6b2e421f6a8577006f1b2e051404bfa2af6"
       },
       {
         "name": "WORK_240794_page9_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 217.5,
-        "path": "downloads/images/WORK_240794_page9_X1.jpg"
+        "path": "downloads/images/WORK_240794_page9_X1.jpg",
+        "sha256": "44460eb9b911945e96f6b34152e7510df98f17583bd13f62d1521cab04a04624"
       }
     ],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 30.0,
+    "risk_level": "LOW",
+    "work_risk_description": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "missing_items": [
+      "GPS watermark coordinates on photo (photo is untagged)",
+      "Contractor bills, invoices, and financial vouchers",
+      "Physical execution progress status tables"
+    ],
+    "missing_summary": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "240800",
@@ -1920,15 +2141,13 @@
       "file_name": "WORK_240800_19uc.pdf",
       "file_size_kb": 1663.6,
       "page_count": 9,
+      "has_progress_tables": false,
       "total_images": 9,
       "has_photo_evidence": true,
       "has_bill_proof": false,
       "bill_proof_keywords": [],
       "geotag_status": "PHOTO_PRESENT_UNTAGGED",
       "gps": null,
-      "sections": [
-        "Photographic Evidence"
-      ],
       "sample_images": [
         {
           "name": "WORK_240800_page1_X1.jpg",
@@ -1987,73 +2206,94 @@
       ]
     },
     "audit_classification": "GREEN",
-    "audit_badge_text": "\ud83d\udfe2 Scanned Image / Picture Present",
-    "audit_reason": "9 authentic scanned image(s) / photographic picture(s) present (GPS coordinates not stamped on photo).",
+    "audit_badge_text": "\ud83d\udfe2 Scanned Picture Present (Untagged)",
+    "audit_reason": "9 authentic scanned photographic picture(s) present (GPS coordinates not stamped on photo).",
     "attached_files": [
       {
         "name": "WORK_240800_19uc.pdf",
         "type": "PDF Document",
         "size_kb": 1663.6,
-        "path": "downloads/pdfs/WORK_240800_19uc.pdf"
+        "path": "downloads/pdfs/WORK_240800_19uc.pdf",
+        "sha256": "a354c50730344736c2542d0c1403d9e3de9177cce134aef5713ff5c8dd6ca9f1"
       },
       {
         "name": "WORK_240800_page1_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 161.5,
-        "path": "downloads/images/WORK_240800_page1_X1.jpg"
+        "path": "downloads/images/WORK_240800_page1_X1.jpg",
+        "sha256": "1909513e69663f54bb047ec30ed29f7033beb086c4668452b3395eb3de634710"
       },
       {
         "name": "WORK_240800_page2_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 114.4,
-        "path": "downloads/images/WORK_240800_page2_X1.jpg"
+        "path": "downloads/images/WORK_240800_page2_X1.jpg",
+        "sha256": "ca35af25fb84823de837e9ec98c964dec657a9d2e5897f9c207008d3c3866c56"
       },
       {
         "name": "WORK_240800_page3_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 270.4,
-        "path": "downloads/images/WORK_240800_page3_X1.jpg"
+        "path": "downloads/images/WORK_240800_page3_X1.jpg",
+        "sha256": "f109cb04b842781efc6dcf6aad2b4524992a955f13a4e9287caf83f1b893d3af"
       },
       {
         "name": "WORK_240800_page4_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 227.7,
-        "path": "downloads/images/WORK_240800_page4_X1.jpg"
+        "path": "downloads/images/WORK_240800_page4_X1.jpg",
+        "sha256": "9987f68c0f4d5d1d64e45085cbfa6aa8a6cba9ecd85194283b67cfa3e5de3d1c"
       },
       {
         "name": "WORK_240800_page5_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 193.0,
-        "path": "downloads/images/WORK_240800_page5_X1.jpg"
+        "path": "downloads/images/WORK_240800_page5_X1.jpg",
+        "sha256": "d4d12c075b11fd337defc6d4f94e58b31eebf8e562e724b589918bb81e27c1a1"
       },
       {
         "name": "WORK_240800_page6_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 134.7,
-        "path": "downloads/images/WORK_240800_page6_X1.jpg"
+        "path": "downloads/images/WORK_240800_page6_X1.jpg",
+        "sha256": "6ed79c63f56ad51429a638a6a994559d4bf51b9b411771e0e1992a2d7574e683"
       },
       {
         "name": "WORK_240800_page7_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 197.3,
-        "path": "downloads/images/WORK_240800_page7_X1.jpg"
+        "path": "downloads/images/WORK_240800_page7_X1.jpg",
+        "sha256": "6aecb5f29e67afce218ca19255c28e0969eeda458833ecd4bf7cd495e237d045"
       },
       {
         "name": "WORK_240800_page8_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 293.7,
-        "path": "downloads/images/WORK_240800_page8_X1.jpg"
+        "path": "downloads/images/WORK_240800_page8_X1.jpg",
+        "sha256": "c71a769c2de374110a34787430ad092dbc6196637a7dacf2ecc682c743984af4"
       },
       {
         "name": "WORK_240800_page9_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 215.4,
-        "path": "downloads/images/WORK_240800_page9_X1.jpg"
+        "path": "downloads/images/WORK_240800_page9_X1.jpg",
+        "sha256": "2a9b472f6857de7dc76f946eb55d13076bf908d5644dd5279e2d681f64f13410"
       }
     ],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 30.0,
+    "risk_level": "LOW",
+    "work_risk_description": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "missing_items": [
+      "GPS watermark coordinates on photo (photo is untagged)",
+      "Contractor bills, invoices, and financial vouchers",
+      "Physical execution progress status tables"
+    ],
+    "missing_summary": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "256736",
@@ -2070,15 +2310,13 @@
       "file_name": "WORK_256736_uc_bill.pdf",
       "file_size_kb": 3081.0,
       "page_count": 15,
+      "has_progress_tables": false,
       "total_images": 15,
       "has_photo_evidence": true,
       "has_bill_proof": false,
       "bill_proof_keywords": [],
       "geotag_status": "PHOTO_PRESENT_UNTAGGED",
       "gps": null,
-      "sections": [
-        "Photographic Evidence"
-      ],
       "sample_images": [
         {
           "name": "WORK_256736_page10_X1.jpg",
@@ -2173,109 +2411,136 @@
       ]
     },
     "audit_classification": "GREEN",
-    "audit_badge_text": "\ud83d\udfe2 Scanned Image / Picture Present",
-    "audit_reason": "15 authentic scanned image(s) / photographic picture(s) present (GPS coordinates not stamped on photo).",
+    "audit_badge_text": "\ud83d\udfe2 Scanned Picture Present (Untagged)",
+    "audit_reason": "15 authentic scanned photographic picture(s) present (GPS coordinates not stamped on photo).",
     "attached_files": [
       {
         "name": "WORK_256736_uc_bill.pdf",
         "type": "PDF Document",
         "size_kb": 3081.0,
-        "path": "downloads/pdfs/WORK_256736_uc_bill.pdf"
+        "path": "downloads/pdfs/WORK_256736_uc_bill.pdf",
+        "sha256": "88e6932eb5bab443fa7e6de0edcab21ac00e1cace6b4d97893375b60ebf3f829"
       },
       {
         "name": "WORK_256736_page10_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 251.3,
-        "path": "downloads/images/WORK_256736_page10_X1.jpg"
+        "path": "downloads/images/WORK_256736_page10_X1.jpg",
+        "sha256": "11771c52f01add78d8b77f63bda7051a80ce04e00597b3dc46c86ce717e3dd8e"
       },
       {
         "name": "WORK_256736_page11_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 230.9,
-        "path": "downloads/images/WORK_256736_page11_X1.jpg"
+        "path": "downloads/images/WORK_256736_page11_X1.jpg",
+        "sha256": "1e12e4dd448d17440a6ea86e5671984afa95ba90e7ea2cffdc2635d977fe3979"
       },
       {
         "name": "WORK_256736_page12_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 285.5,
-        "path": "downloads/images/WORK_256736_page12_X1.jpg"
+        "path": "downloads/images/WORK_256736_page12_X1.jpg",
+        "sha256": "01d1a4af3a940af232fae8585a3dfd77dbe8f6ae34461bf94848f017cb556a83"
       },
       {
         "name": "WORK_256736_page13_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 222.2,
-        "path": "downloads/images/WORK_256736_page13_X1.jpg"
+        "path": "downloads/images/WORK_256736_page13_X1.jpg",
+        "sha256": "5bd47e4fac87e00795af28b9628d97bb5f19c041d29b43d66b2fc149bcf97c63"
       },
       {
         "name": "WORK_256736_page14_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 132.6,
-        "path": "downloads/images/WORK_256736_page14_X1.jpg"
+        "path": "downloads/images/WORK_256736_page14_X1.jpg",
+        "sha256": "da55f4eaa1b72c8671e8f79a2d5c25af84eb407efc1bc09d8d712512b6f602a0"
       },
       {
         "name": "WORK_256736_page15_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 108.4,
-        "path": "downloads/images/WORK_256736_page15_X1.jpg"
+        "path": "downloads/images/WORK_256736_page15_X1.jpg",
+        "sha256": "3b73b8794dc68d033bba1e2b27ff86ef7f5c36ba6807cb521d4627de1825c604"
       },
       {
         "name": "WORK_256736_page1_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 238.5,
-        "path": "downloads/images/WORK_256736_page1_X1.jpg"
+        "path": "downloads/images/WORK_256736_page1_X1.jpg",
+        "sha256": "13099e2e17565288d39ec026ee6c85840e25d813b6a6e3f1f89d967b635f8b93"
       },
       {
         "name": "WORK_256736_page2_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 114.9,
-        "path": "downloads/images/WORK_256736_page2_X1.jpg"
+        "path": "downloads/images/WORK_256736_page2_X1.jpg",
+        "sha256": "fd2687a0d78773b4ac2234ce6f5f48043f9283accd2dda03409419c1025dff27"
       },
       {
         "name": "WORK_256736_page3_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 274.8,
-        "path": "downloads/images/WORK_256736_page3_X1.jpg"
+        "path": "downloads/images/WORK_256736_page3_X1.jpg",
+        "sha256": "2f265bf21495c2f05bb031f0b2e92bf26315387f639b06fe71c19276968db87d"
       },
       {
         "name": "WORK_256736_page4_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 224.9,
-        "path": "downloads/images/WORK_256736_page4_X1.jpg"
+        "path": "downloads/images/WORK_256736_page4_X1.jpg",
+        "sha256": "02a8e3a1c210eee941f8ca852d0d97851718a14021ce9ce5c14205149bc802e6"
       },
       {
         "name": "WORK_256736_page5_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 202.9,
-        "path": "downloads/images/WORK_256736_page5_X1.jpg"
+        "path": "downloads/images/WORK_256736_page5_X1.jpg",
+        "sha256": "c3014c2d72773c55d6dcc43e9f52dfe6327bfd18741aa0404483e467cbfc13a6"
       },
       {
         "name": "WORK_256736_page6_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 146.4,
-        "path": "downloads/images/WORK_256736_page6_X1.jpg"
+        "path": "downloads/images/WORK_256736_page6_X1.jpg",
+        "sha256": "c7438fbc85df7f0579877b6d71683a9d364f9ef77b9369e86fda9c177299e159"
       },
       {
         "name": "WORK_256736_page7_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 321.0,
-        "path": "downloads/images/WORK_256736_page7_X1.jpg"
+        "path": "downloads/images/WORK_256736_page7_X1.jpg",
+        "sha256": "b8c52cc307b19e4b53b7653bbe8862d778cf1ed90749a7fd8754fbf47ef206b0"
       },
       {
         "name": "WORK_256736_page8_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 294.8,
-        "path": "downloads/images/WORK_256736_page8_X1.jpg"
+        "path": "downloads/images/WORK_256736_page8_X1.jpg",
+        "sha256": "45764b4df6055c7312119042ca183c9d54dfb8c05f5d1f16bcd9b090b4365f89"
       },
       {
         "name": "WORK_256736_page9_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 346.8,
-        "path": "downloads/images/WORK_256736_page9_X1.jpg"
+        "path": "downloads/images/WORK_256736_page9_X1.jpg",
+        "sha256": "c03dbc3808d821983b41cc0f9042ceebd438446c18a80bf4712ae3a3e10eec56"
       }
     ],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 30.0,
+    "risk_level": "LOW",
+    "work_risk_description": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "missing_items": [
+      "GPS watermark coordinates on photo (photo is untagged)",
+      "Contractor bills, invoices, and financial vouchers",
+      "Physical execution progress status tables"
+    ],
+    "missing_summary": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "248544",
@@ -2292,15 +2557,13 @@
       "file_name": "WORK_248544_Narsipatnampics.pdf",
       "file_size_kb": 293.4,
       "page_count": 4,
+      "has_progress_tables": false,
       "total_images": 4,
       "has_photo_evidence": true,
       "has_bill_proof": false,
       "bill_proof_keywords": [],
       "geotag_status": "PHOTO_PRESENT_UNTAGGED",
       "gps": null,
-      "sections": [
-        "Photographic Evidence"
-      ],
       "sample_images": [
         {
           "name": "WORK_248544_page1_X0.jpg",
@@ -2329,43 +2592,59 @@
       ]
     },
     "audit_classification": "GREEN",
-    "audit_badge_text": "\ud83d\udfe2 Scanned Image / Picture Present",
-    "audit_reason": "4 authentic scanned image(s) / photographic picture(s) present (GPS coordinates not stamped on photo).",
+    "audit_badge_text": "\ud83d\udfe2 Scanned Picture Present (Untagged)",
+    "audit_reason": "4 authentic scanned photographic picture(s) present (GPS coordinates not stamped on photo).",
     "attached_files": [
       {
         "name": "WORK_248544_Narsipatnampics.pdf",
         "type": "PDF Document",
         "size_kb": 293.4,
-        "path": "downloads/pdfs/WORK_248544_Narsipatnampics.pdf"
+        "path": "downloads/pdfs/WORK_248544_Narsipatnampics.pdf",
+        "sha256": "5c6d45f0b3439259b78f0fa6177d83825c8980606d514ba146a8bae6714dd099"
       },
       {
         "name": "WORK_248544_page1_X0.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 72.8,
-        "path": "downloads/images/WORK_248544_page1_X0.jpg"
+        "path": "downloads/images/WORK_248544_page1_X0.jpg",
+        "sha256": "1c9d79b0789d3b55bc1fdd9c825f3a13e1e180824c34e2c1078e75d85eb017f5"
       },
       {
         "name": "WORK_248544_page2_X0.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 71.8,
-        "path": "downloads/images/WORK_248544_page2_X0.jpg"
+        "path": "downloads/images/WORK_248544_page2_X0.jpg",
+        "sha256": "0c55c4604d7177efc0bf05f396a7d459b20a0add78f237d37c75e783b40cfaa1"
       },
       {
         "name": "WORK_248544_page3_X0.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 72.8,
-        "path": "downloads/images/WORK_248544_page3_X0.jpg"
+        "path": "downloads/images/WORK_248544_page3_X0.jpg",
+        "sha256": "86ac5cf778e90578326e292613cfce94e2c93096e32a561cfacf904d732b0646"
       },
       {
         "name": "WORK_248544_page4_X0.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 76.0,
-        "path": "downloads/images/WORK_248544_page4_X0.jpg"
+        "path": "downloads/images/WORK_248544_page4_X0.jpg",
+        "sha256": "b145c42b442d0e444bbd7fc5001c319ecad55482144d80e92a1ca168a39c97d1"
       }
     ],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 30.0,
+    "risk_level": "LOW",
+    "work_risk_description": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "missing_items": [
+      "GPS watermark coordinates on photo (photo is untagged)",
+      "Contractor bills, invoices, and financial vouchers",
+      "Physical execution progress status tables"
+    ],
+    "missing_summary": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "256734",
@@ -2382,15 +2661,13 @@
       "file_name": "WORK_256734_30uc.pdf",
       "file_size_kb": 2301.5,
       "page_count": 9,
+      "has_progress_tables": false,
       "total_images": 9,
       "has_photo_evidence": true,
       "has_bill_proof": false,
       "bill_proof_keywords": [],
       "geotag_status": "PHOTO_PRESENT_UNTAGGED",
       "gps": null,
-      "sections": [
-        "Photographic Evidence"
-      ],
       "sample_images": [
         {
           "name": "WORK_256734_page1_X1.jpg",
@@ -2449,73 +2726,94 @@
       ]
     },
     "audit_classification": "GREEN",
-    "audit_badge_text": "\ud83d\udfe2 Scanned Image / Picture Present",
-    "audit_reason": "9 authentic scanned image(s) / photographic picture(s) present (GPS coordinates not stamped on photo).",
+    "audit_badge_text": "\ud83d\udfe2 Scanned Picture Present (Untagged)",
+    "audit_reason": "9 authentic scanned photographic picture(s) present (GPS coordinates not stamped on photo).",
     "attached_files": [
       {
         "name": "WORK_256734_30uc.pdf",
         "type": "PDF Document",
         "size_kb": 2301.5,
-        "path": "downloads/pdfs/WORK_256734_30uc.pdf"
+        "path": "downloads/pdfs/WORK_256734_30uc.pdf",
+        "sha256": "8305c2ad1404a1512d8e7e531d11e8a622eb93e094bad235954d934f0debc57d"
       },
       {
         "name": "WORK_256734_page1_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 229.7,
-        "path": "downloads/images/WORK_256734_page1_X1.jpg"
+        "path": "downloads/images/WORK_256734_page1_X1.jpg",
+        "sha256": "f2c6dc2ddea9481a434343e72f4ea3609d8fd6e419c761d5fc67d983478086f4"
       },
       {
         "name": "WORK_256734_page2_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 159.4,
-        "path": "downloads/images/WORK_256734_page2_X1.jpg"
+        "path": "downloads/images/WORK_256734_page2_X1.jpg",
+        "sha256": "ce05513c80413bf693c61c38fb03e79528fbb8e66cee4a1a69bfbf3e647d453d"
       },
       {
         "name": "WORK_256734_page3_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 324.3,
-        "path": "downloads/images/WORK_256734_page3_X1.jpg"
+        "path": "downloads/images/WORK_256734_page3_X1.jpg",
+        "sha256": "bc17e237018ac16f5e8b31ec045a1648f638944d06d9d140a1c391adf220d3cf"
       },
       {
         "name": "WORK_256734_page4_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 265.6,
-        "path": "downloads/images/WORK_256734_page4_X1.jpg"
+        "path": "downloads/images/WORK_256734_page4_X1.jpg",
+        "sha256": "24f3b683746383af18b98c6b2d371150f2b81a953c049cdc361371bc439ba686"
       },
       {
         "name": "WORK_256734_page5_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 204.8,
-        "path": "downloads/images/WORK_256734_page5_X1.jpg"
+        "path": "downloads/images/WORK_256734_page5_X1.jpg",
+        "sha256": "0acf183d94a5bff50ff990f78a8e7ac9692c45dd88e90331c275e0425899c1d0"
       },
       {
         "name": "WORK_256734_page6_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 329.6,
-        "path": "downloads/images/WORK_256734_page6_X1.jpg"
+        "path": "downloads/images/WORK_256734_page6_X1.jpg",
+        "sha256": "5dd03d0119f19b6352c3104b8f32a6641219c57fc2f68ae146f7a973ea1cd7fc"
       },
       {
         "name": "WORK_256734_page7_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 481.2,
-        "path": "downloads/images/WORK_256734_page7_X1.jpg"
+        "path": "downloads/images/WORK_256734_page7_X1.jpg",
+        "sha256": "56ad6c6684ed737becc8921ea7d14c32bdb66259e02cb52283565a17da19deff"
       },
       {
         "name": "WORK_256734_page8_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 347.2,
-        "path": "downloads/images/WORK_256734_page8_X1.jpg"
+        "path": "downloads/images/WORK_256734_page8_X1.jpg",
+        "sha256": "3ec84071f9a011df8ebdf90d821c7c7caeb3219d28e25398e69af37647d82773"
       },
       {
         "name": "WORK_256734_page9_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 162.7,
-        "path": "downloads/images/WORK_256734_page9_X1.jpg"
+        "path": "downloads/images/WORK_256734_page9_X1.jpg",
+        "sha256": "a6a8c6714324dfea47484be2404000a02710ed1b707625bb4136f60a6957308f"
       }
     ],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 30.0,
+    "risk_level": "LOW",
+    "work_risk_description": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "missing_items": [
+      "GPS watermark coordinates on photo (photo is untagged)",
+      "Contractor bills, invoices, and financial vouchers",
+      "Physical execution progress status tables"
+    ],
+    "missing_summary": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "256732",
@@ -2532,15 +2830,13 @@
       "file_name": "WORK_256732_jammadula_uc.pdf",
       "file_size_kb": 1505.6,
       "page_count": 9,
+      "has_progress_tables": false,
       "total_images": 9,
       "has_photo_evidence": true,
       "has_bill_proof": false,
       "bill_proof_keywords": [],
       "geotag_status": "PHOTO_PRESENT_UNTAGGED",
       "gps": null,
-      "sections": [
-        "Photographic Evidence"
-      ],
       "sample_images": [
         {
           "name": "WORK_256732_page1_X1.jpg",
@@ -2599,73 +2895,94 @@
       ]
     },
     "audit_classification": "GREEN",
-    "audit_badge_text": "\ud83d\udfe2 Scanned Image / Picture Present",
-    "audit_reason": "9 authentic scanned image(s) / photographic picture(s) present (GPS coordinates not stamped on photo).",
+    "audit_badge_text": "\ud83d\udfe2 Scanned Picture Present (Untagged)",
+    "audit_reason": "9 authentic scanned photographic picture(s) present (GPS coordinates not stamped on photo).",
     "attached_files": [
       {
         "name": "WORK_256732_jammadula_uc.pdf",
         "type": "PDF Document",
         "size_kb": 1505.6,
-        "path": "downloads/pdfs/WORK_256732_jammadula_uc.pdf"
+        "path": "downloads/pdfs/WORK_256732_jammadula_uc.pdf",
+        "sha256": "123f87917ba6351ff05a1f60606ffd085abed635a404b81a64a43d86b0467148"
       },
       {
         "name": "WORK_256732_page1_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 157.5,
-        "path": "downloads/images/WORK_256732_page1_X1.jpg"
+        "path": "downloads/images/WORK_256732_page1_X1.jpg",
+        "sha256": "cb07eca9ecfd448c991ebc03ab5aff169f90f0dae4d27100d2267b01126f1ad1"
       },
       {
         "name": "WORK_256732_page2_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 107.6,
-        "path": "downloads/images/WORK_256732_page2_X1.jpg"
+        "path": "downloads/images/WORK_256732_page2_X1.jpg",
+        "sha256": "58ea624ff62fd1941ba1c7e6b065d9f140edaf316bdcfa1c1bc4ad27680c0805"
       },
       {
         "name": "WORK_256732_page3_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 247.8,
-        "path": "downloads/images/WORK_256732_page3_X1.jpg"
+        "path": "downloads/images/WORK_256732_page3_X1.jpg",
+        "sha256": "53308ff3e9a25751d523d5d4ffb6be979a225e3fd3a74696f994d41254280de1"
       },
       {
         "name": "WORK_256732_page4_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 166.4,
-        "path": "downloads/images/WORK_256732_page4_X1.jpg"
+        "path": "downloads/images/WORK_256732_page4_X1.jpg",
+        "sha256": "f0ff6b69309c38b7544ff2dd9bd164fd3f87859834013c6f65d77c112d9983b8"
       },
       {
         "name": "WORK_256732_page5_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 142.9,
-        "path": "downloads/images/WORK_256732_page5_X1.jpg"
+        "path": "downloads/images/WORK_256732_page5_X1.jpg",
+        "sha256": "6430bf83a77a6c2a0094684678da0ea8b3f7118d2e7705acc2a145621e3c3f65"
       },
       {
         "name": "WORK_256732_page6_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 209.1,
-        "path": "downloads/images/WORK_256732_page6_X1.jpg"
+        "path": "downloads/images/WORK_256732_page6_X1.jpg",
+        "sha256": "9e281d895ac244b9eee2a247a1076da376f44c57863d7df93b0e5ef13ce015b0"
       },
       {
         "name": "WORK_256732_page7_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 320.6,
-        "path": "downloads/images/WORK_256732_page7_X1.jpg"
+        "path": "downloads/images/WORK_256732_page7_X1.jpg",
+        "sha256": "236ad18329eb8e914665823d10cf288dda311d4ffcc64ea0322d1d24cbb85e65"
       },
       {
         "name": "WORK_256732_page8_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 227.9,
-        "path": "downloads/images/WORK_256732_page8_X1.jpg"
+        "path": "downloads/images/WORK_256732_page8_X1.jpg",
+        "sha256": "3bc7af33736121c81635c9c00c99e770ffa388000e195efbb5fd35281a62b618"
       },
       {
         "name": "WORK_256732_page9_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 119.8,
-        "path": "downloads/images/WORK_256732_page9_X1.jpg"
+        "path": "downloads/images/WORK_256732_page9_X1.jpg",
+        "sha256": "4dd467be3248e81ebd47b05ad7eaa6e0489470ee77bfac94734ce82d86416cc5"
       }
     ],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 30.0,
+    "risk_level": "LOW",
+    "work_risk_description": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "missing_items": [
+      "GPS watermark coordinates on photo (photo is untagged)",
+      "Contractor bills, invoices, and financial vouchers",
+      "Physical execution progress status tables"
+    ],
+    "missing_summary": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "274759",
@@ -2682,15 +2999,13 @@
       "file_name": "WORK_274759_shankaram_uc.pdf",
       "file_size_kb": 1222.6,
       "page_count": 9,
+      "has_progress_tables": false,
       "total_images": 9,
       "has_photo_evidence": true,
       "has_bill_proof": false,
       "bill_proof_keywords": [],
       "geotag_status": "PHOTO_PRESENT_UNTAGGED",
       "gps": null,
-      "sections": [
-        "Photographic Evidence"
-      ],
       "sample_images": [
         {
           "name": "WORK_274759_page1_X1.jpg",
@@ -2749,73 +3064,94 @@
       ]
     },
     "audit_classification": "GREEN",
-    "audit_badge_text": "\ud83d\udfe2 Scanned Image / Picture Present",
-    "audit_reason": "9 authentic scanned image(s) / photographic picture(s) present (GPS coordinates not stamped on photo).",
+    "audit_badge_text": "\ud83d\udfe2 Scanned Picture Present (Untagged)",
+    "audit_reason": "9 authentic scanned photographic picture(s) present (GPS coordinates not stamped on photo).",
     "attached_files": [
       {
         "name": "WORK_274759_shankaram_uc.pdf",
         "type": "PDF Document",
         "size_kb": 1222.6,
-        "path": "downloads/pdfs/WORK_274759_shankaram_uc.pdf"
+        "path": "downloads/pdfs/WORK_274759_shankaram_uc.pdf",
+        "sha256": "a6beeb17f3c070f5ac648c4f9dbae41592a4d2fb59b7b61195ae7e767363ab9d"
       },
       {
         "name": "WORK_274759_page1_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 171.6,
-        "path": "downloads/images/WORK_274759_page1_X1.jpg"
+        "path": "downloads/images/WORK_274759_page1_X1.jpg",
+        "sha256": "61379aa98c2bce6666250bd8f8dfc014bb5f66b3b59904d0f1023187b55cb5a2"
       },
       {
         "name": "WORK_274759_page2_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 96.2,
-        "path": "downloads/images/WORK_274759_page2_X1.jpg"
+        "path": "downloads/images/WORK_274759_page2_X1.jpg",
+        "sha256": "27edd94588a916631de3ffd5b93f706994687cc5d00e4b7ccc3b60263357849e"
       },
       {
         "name": "WORK_274759_page3_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 209.5,
-        "path": "downloads/images/WORK_274759_page3_X1.jpg"
+        "path": "downloads/images/WORK_274759_page3_X1.jpg",
+        "sha256": "c46a2d0a0ea2fa0f091d70224a171d4592543fbe2048d3ca9f7be754ea5d6f3a"
       },
       {
         "name": "WORK_274759_page4_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 176.8,
-        "path": "downloads/images/WORK_274759_page4_X1.jpg"
+        "path": "downloads/images/WORK_274759_page4_X1.jpg",
+        "sha256": "ddb397d6b712ad2354be095a8da6f78595249791961d7d295cc06b58bdd9e75f"
       },
       {
         "name": "WORK_274759_page5_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 144.6,
-        "path": "downloads/images/WORK_274759_page5_X1.jpg"
+        "path": "downloads/images/WORK_274759_page5_X1.jpg",
+        "sha256": "4f58282f5b9c8829e933b3f2cd47f4c6fd65871009131492be1c2eb15316e415"
       },
       {
         "name": "WORK_274759_page6_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 107.0,
-        "path": "downloads/images/WORK_274759_page6_X1.jpg"
+        "path": "downloads/images/WORK_274759_page6_X1.jpg",
+        "sha256": "a57d35ba60ef6f231b4370373235b1e855d9eb0d2e4a4ab95eb02b3dd780dc2a"
       },
       {
         "name": "WORK_274759_page7_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 124.9,
-        "path": "downloads/images/WORK_274759_page7_X1.jpg"
+        "path": "downloads/images/WORK_274759_page7_X1.jpg",
+        "sha256": "4e9ab3fef31ec4589dc1ba0e04fe283e052549b5443cdb4c234b8f10601ea5da"
       },
       {
         "name": "WORK_274759_page8_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 214.4,
-        "path": "downloads/images/WORK_274759_page8_X1.jpg"
+        "path": "downloads/images/WORK_274759_page8_X1.jpg",
+        "sha256": "173f00a7c9110edf75e5c1f6ec43f6826279fbd5efd314f6f75fdd582891ce43"
       },
       {
         "name": "WORK_274759_page9_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 154.9,
-        "path": "downloads/images/WORK_274759_page9_X1.jpg"
+        "path": "downloads/images/WORK_274759_page9_X1.jpg",
+        "sha256": "0fbf7fa6ed386bcfa143972931aaeb8a107ebdf8615b3383eb037de7416bec33"
       }
     ],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 30.0,
+    "risk_level": "LOW",
+    "work_risk_description": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "missing_items": [
+      "GPS watermark coordinates on photo (photo is untagged)",
+      "Contractor bills, invoices, and financial vouchers",
+      "Physical execution progress status tables"
+    ],
+    "missing_summary": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "274760",
@@ -2832,15 +3168,13 @@
       "file_name": "WORK_274760_gopalapuram_uc.pdf",
       "file_size_kb": 1295.6,
       "page_count": 9,
+      "has_progress_tables": false,
       "total_images": 9,
       "has_photo_evidence": true,
       "has_bill_proof": false,
       "bill_proof_keywords": [],
       "geotag_status": "PHOTO_PRESENT_UNTAGGED",
       "gps": null,
-      "sections": [
-        "Photographic Evidence"
-      ],
       "sample_images": [
         {
           "name": "WORK_274760_page1_X1.jpg",
@@ -2899,73 +3233,94 @@
       ]
     },
     "audit_classification": "GREEN",
-    "audit_badge_text": "\ud83d\udfe2 Scanned Image / Picture Present",
-    "audit_reason": "9 authentic scanned image(s) / photographic picture(s) present (GPS coordinates not stamped on photo).",
+    "audit_badge_text": "\ud83d\udfe2 Scanned Picture Present (Untagged)",
+    "audit_reason": "9 authentic scanned photographic picture(s) present (GPS coordinates not stamped on photo).",
     "attached_files": [
       {
         "name": "WORK_274760_gopalapuram_uc.pdf",
         "type": "PDF Document",
         "size_kb": 1295.6,
-        "path": "downloads/pdfs/WORK_274760_gopalapuram_uc.pdf"
+        "path": "downloads/pdfs/WORK_274760_gopalapuram_uc.pdf",
+        "sha256": "2ac1adc952d50b361c0ba88890c7d8aefa16ef9b33cdf8f2cfb0e40b7c65b849"
       },
       {
         "name": "WORK_274760_page1_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 170.0,
-        "path": "downloads/images/WORK_274760_page1_X1.jpg"
+        "path": "downloads/images/WORK_274760_page1_X1.jpg",
+        "sha256": "13a825c491ba6fa51d32c7b46ad476af0e8bbee8e7068a06360228d6c99302f7"
       },
       {
         "name": "WORK_274760_page2_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 112.0,
-        "path": "downloads/images/WORK_274760_page2_X1.jpg"
+        "path": "downloads/images/WORK_274760_page2_X1.jpg",
+        "sha256": "9845476b4b8441c46c4ba9313671aab2b2e90064b11946071dd924329e215e7a"
       },
       {
         "name": "WORK_274760_page3_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 228.3,
-        "path": "downloads/images/WORK_274760_page3_X1.jpg"
+        "path": "downloads/images/WORK_274760_page3_X1.jpg",
+        "sha256": "b8db93d0b1cfbfbb48eeb51173b4acb37f4e29665c2737f2d2504fb4291180ec"
       },
       {
         "name": "WORK_274760_page4_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 184.6,
-        "path": "downloads/images/WORK_274760_page4_X1.jpg"
+        "path": "downloads/images/WORK_274760_page4_X1.jpg",
+        "sha256": "edd096e5e0a2bbede4c75f32ce2ccbc0ddfe0acfbfb6df72939c519197f8980d"
       },
       {
         "name": "WORK_274760_page5_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 182.9,
-        "path": "downloads/images/WORK_274760_page5_X1.jpg"
+        "path": "downloads/images/WORK_274760_page5_X1.jpg",
+        "sha256": "3864cb4fa5c05b39f455932602f516c0a7678876ed1e9e3f0023fb8de8efecd1"
       },
       {
         "name": "WORK_274760_page6_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 120.1,
-        "path": "downloads/images/WORK_274760_page6_X1.jpg"
+        "path": "downloads/images/WORK_274760_page6_X1.jpg",
+        "sha256": "e20be40d6c534b36fc5b4b904bd881c7dc1c075ccf1fa3eb23ff2012a9915c35"
       },
       {
         "name": "WORK_274760_page7_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 127.1,
-        "path": "downloads/images/WORK_274760_page7_X1.jpg"
+        "path": "downloads/images/WORK_274760_page7_X1.jpg",
+        "sha256": "488e831cc5315d418f7209aa8aa27643dc08b851b0d23f451374aaf650ba7346"
       },
       {
         "name": "WORK_274760_page8_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 209.7,
-        "path": "downloads/images/WORK_274760_page8_X1.jpg"
+        "path": "downloads/images/WORK_274760_page8_X1.jpg",
+        "sha256": "c0224b77e9d475781c10aac84605e6064f120eb04f106b3a6fe567069abbff93"
       },
       {
         "name": "WORK_274760_page9_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 150.8,
-        "path": "downloads/images/WORK_274760_page9_X1.jpg"
+        "path": "downloads/images/WORK_274760_page9_X1.jpg",
+        "sha256": "f965a05229d4cdf7cb225b51bc9bad761fef1af8f6e773d133659851f974e633"
       }
     ],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 30.0,
+    "risk_level": "LOW",
+    "work_risk_description": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "missing_items": [
+      "GPS watermark coordinates on photo (photo is untagged)",
+      "Contractor bills, invoices, and financial vouchers",
+      "Physical execution progress status tables"
+    ],
+    "missing_summary": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "274772",
@@ -2982,15 +3337,13 @@
       "file_name": "WORK_274772_ktpalem_uc.pdf",
       "file_size_kb": 1176.7,
       "page_count": 9,
+      "has_progress_tables": false,
       "total_images": 9,
       "has_photo_evidence": true,
       "has_bill_proof": false,
       "bill_proof_keywords": [],
       "geotag_status": "PHOTO_PRESENT_UNTAGGED",
       "gps": null,
-      "sections": [
-        "Photographic Evidence"
-      ],
       "sample_images": [
         {
           "name": "WORK_274772_page1_X1.jpg",
@@ -3049,73 +3402,94 @@
       ]
     },
     "audit_classification": "GREEN",
-    "audit_badge_text": "\ud83d\udfe2 Scanned Image / Picture Present",
-    "audit_reason": "9 authentic scanned image(s) / photographic picture(s) present (GPS coordinates not stamped on photo).",
+    "audit_badge_text": "\ud83d\udfe2 Scanned Picture Present (Untagged)",
+    "audit_reason": "9 authentic scanned photographic picture(s) present (GPS coordinates not stamped on photo).",
     "attached_files": [
       {
         "name": "WORK_274772_ktpalem_uc.pdf",
         "type": "PDF Document",
         "size_kb": 1176.7,
-        "path": "downloads/pdfs/WORK_274772_ktpalem_uc.pdf"
+        "path": "downloads/pdfs/WORK_274772_ktpalem_uc.pdf",
+        "sha256": "2257223073e64b8bdef123343fa45d28ee986628ee0b8a11372eb4e017ec948f"
       },
       {
         "name": "WORK_274772_page1_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 134.9,
-        "path": "downloads/images/WORK_274772_page1_X1.jpg"
+        "path": "downloads/images/WORK_274772_page1_X1.jpg",
+        "sha256": "1516cc3f411bc8c85c6e06fa033c86f603893c96ef4cc15b4c0f3f3a4cd6a794"
       },
       {
         "name": "WORK_274772_page2_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 76.4,
-        "path": "downloads/images/WORK_274772_page2_X1.jpg"
+        "path": "downloads/images/WORK_274772_page2_X1.jpg",
+        "sha256": "d5cbbe20a0634f3d96521ac0a1b3f7353c7319a5e6370c9bf79bf0d4b88b723d"
       },
       {
         "name": "WORK_274772_page3_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 203.7,
-        "path": "downloads/images/WORK_274772_page3_X1.jpg"
+        "path": "downloads/images/WORK_274772_page3_X1.jpg",
+        "sha256": "95323db42035ad5adba41187f9bb3cb7324434c4f84f66c208b32bd7c9880dcc"
       },
       {
         "name": "WORK_274772_page4_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 180.7,
-        "path": "downloads/images/WORK_274772_page4_X1.jpg"
+        "path": "downloads/images/WORK_274772_page4_X1.jpg",
+        "sha256": "b73b87a86b78ed0fe880be8358d8fceaee5b8d07a6822a5c3baab03f88c8720b"
       },
       {
         "name": "WORK_274772_page5_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 132.5,
-        "path": "downloads/images/WORK_274772_page5_X1.jpg"
+        "path": "downloads/images/WORK_274772_page5_X1.jpg",
+        "sha256": "0af2cdfe5caed643452411a96f69f2a4df31fe620619362d608f757dd29c9c06"
       },
       {
         "name": "WORK_274772_page6_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 119.9,
-        "path": "downloads/images/WORK_274772_page6_X1.jpg"
+        "path": "downloads/images/WORK_274772_page6_X1.jpg",
+        "sha256": "179823a2f781e5b36edaa4385d1fce882e536e69c8dd7542e89cce10c0fc14b2"
       },
       {
         "name": "WORK_274772_page7_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 121.8,
-        "path": "downloads/images/WORK_274772_page7_X1.jpg"
+        "path": "downloads/images/WORK_274772_page7_X1.jpg",
+        "sha256": "3543e98804f046b93dfd43203cc72e01c2f682e8889299835e110cc8d6590639"
       },
       {
         "name": "WORK_274772_page8_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 207.8,
-        "path": "downloads/images/WORK_274772_page8_X1.jpg"
+        "path": "downloads/images/WORK_274772_page8_X1.jpg",
+        "sha256": "e2635afd0e6ab178dacf28b2ca7b186490ca20c9553c82f70e438c5d7012bf05"
       },
       {
         "name": "WORK_274772_page9_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 155.6,
-        "path": "downloads/images/WORK_274772_page9_X1.jpg"
+        "path": "downloads/images/WORK_274772_page9_X1.jpg",
+        "sha256": "85bd115a7789cc8e66961d2d4c6322212920c98e644cfe887ff49ff83807640c"
       }
     ],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 30.0,
+    "risk_level": "LOW",
+    "work_risk_description": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "missing_items": [
+      "GPS watermark coordinates on photo (photo is untagged)",
+      "Contractor bills, invoices, and financial vouchers",
+      "Physical execution progress status tables"
+    ],
+    "missing_summary": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "274773",
@@ -3132,15 +3506,13 @@
       "file_name": "WORK_274773_akkireddypalem_uc.pdf",
       "file_size_kb": 1247.5,
       "page_count": 9,
+      "has_progress_tables": false,
       "total_images": 9,
       "has_photo_evidence": true,
       "has_bill_proof": false,
       "bill_proof_keywords": [],
       "geotag_status": "PHOTO_PRESENT_UNTAGGED",
       "gps": null,
-      "sections": [
-        "Photographic Evidence"
-      ],
       "sample_images": [
         {
           "name": "WORK_274773_page1_X1.jpg",
@@ -3199,73 +3571,94 @@
       ]
     },
     "audit_classification": "GREEN",
-    "audit_badge_text": "\ud83d\udfe2 Scanned Image / Picture Present",
-    "audit_reason": "9 authentic scanned image(s) / photographic picture(s) present (GPS coordinates not stamped on photo).",
+    "audit_badge_text": "\ud83d\udfe2 Scanned Picture Present (Untagged)",
+    "audit_reason": "9 authentic scanned photographic picture(s) present (GPS coordinates not stamped on photo).",
     "attached_files": [
       {
         "name": "WORK_274773_akkireddypalem_uc.pdf",
         "type": "PDF Document",
         "size_kb": 1247.5,
-        "path": "downloads/pdfs/WORK_274773_akkireddypalem_uc.pdf"
+        "path": "downloads/pdfs/WORK_274773_akkireddypalem_uc.pdf",
+        "sha256": "3a19120b5356d635f3158ada78e4ee0a3bbefd2653b0b404b0f8da5c09a6d4cf"
       },
       {
         "name": "WORK_274773_page1_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 180.3,
-        "path": "downloads/images/WORK_274773_page1_X1.jpg"
+        "path": "downloads/images/WORK_274773_page1_X1.jpg",
+        "sha256": "052f368b7df22949253fd77d889096165f1cce3e6d3a7bdf3bad3d10a65507c4"
       },
       {
         "name": "WORK_274773_page2_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 79.6,
-        "path": "downloads/images/WORK_274773_page2_X1.jpg"
+        "path": "downloads/images/WORK_274773_page2_X1.jpg",
+        "sha256": "ecdee8ee393c5775f976396943b8bb98f6e9f967c0b62f926de32cf157a85b7a"
       },
       {
         "name": "WORK_274773_page3_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 198.0,
-        "path": "downloads/images/WORK_274773_page3_X1.jpg"
+        "path": "downloads/images/WORK_274773_page3_X1.jpg",
+        "sha256": "f79844efbd0ac43bcfbd88f51f8579165b79dbb46403d29609ec3fdd4cabaf71"
       },
       {
         "name": "WORK_274773_page4_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 167.5,
-        "path": "downloads/images/WORK_274773_page4_X1.jpg"
+        "path": "downloads/images/WORK_274773_page4_X1.jpg",
+        "sha256": "2bbda1bec4776a6d711dbdc3b815b52b31681d7f1b4061b39dd27ac78be4069c"
       },
       {
         "name": "WORK_274773_page5_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 172.3,
-        "path": "downloads/images/WORK_274773_page5_X1.jpg"
+        "path": "downloads/images/WORK_274773_page5_X1.jpg",
+        "sha256": "d5a7538709709cbdeb3d84ed98ebb41394918ed3187ed7e6280c657814752862"
       },
       {
         "name": "WORK_274773_page6_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 115.1,
-        "path": "downloads/images/WORK_274773_page6_X1.jpg"
+        "path": "downloads/images/WORK_274773_page6_X1.jpg",
+        "sha256": "e1d945419d72ae71e633146c72b67160e0ac6bf0e38ba60c23d7ddfb9ce4ad49"
       },
       {
         "name": "WORK_274773_page7_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 132.8,
-        "path": "downloads/images/WORK_274773_page7_X1.jpg"
+        "path": "downloads/images/WORK_274773_page7_X1.jpg",
+        "sha256": "ea64bbe63c6720c527e90d0ce1561c35e9514e62c15d0a9e06c0ca99bac43940"
       },
       {
         "name": "WORK_274773_page8_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 212.4,
-        "path": "downloads/images/WORK_274773_page8_X1.jpg"
+        "path": "downloads/images/WORK_274773_page8_X1.jpg",
+        "sha256": "9595798808b30115602f2239c89bbf157775bb890196a22bf827906d2cc47a8c"
       },
       {
         "name": "WORK_274773_page9_X1.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 157.4,
-        "path": "downloads/images/WORK_274773_page9_X1.jpg"
+        "path": "downloads/images/WORK_274773_page9_X1.jpg",
+        "sha256": "902287959106b5626aeac34038a35e095264d532fde547280104bf13bdde8ffb"
       }
     ],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 30.0,
+    "risk_level": "LOW",
+    "work_risk_description": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "missing_items": [
+      "GPS watermark coordinates on photo (photo is untagged)",
+      "Contractor bills, invoices, and financial vouchers",
+      "Physical execution progress status tables"
+    ],
+    "missing_summary": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "248547",
@@ -3282,13 +3675,13 @@
       "file_name": null,
       "file_size_kb": 0,
       "page_count": 0,
+      "has_progress_tables": false,
       "total_images": 0,
       "has_photo_evidence": false,
       "has_bill_proof": false,
       "bill_proof_keywords": [],
       "geotag_status": "NO_DOCUMENT_UPLOADED",
       "gps": null,
-      "sections": [],
       "sample_images": []
     },
     "audit_classification": "RED",
@@ -3297,7 +3690,16 @@
     "attached_files": [],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 75.0,
+    "risk_level": "HIGH",
+    "work_risk_description": "Missing: Entire completion dossier (no photographs, bills, or completion certificates uploaded)",
+    "missing_items": [
+      "Entire completion dossier (no photographs, bills, or completion certificates uploaded)"
+    ],
+    "missing_summary": "Missing: Entire completion dossier (no photographs, bills, or completion certificates uploaded)",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "267660",
@@ -3314,13 +3716,14 @@
       "file_name": null,
       "file_size_kb": 0,
       "page_count": 0,
+      "has_progress_tables": false,
       "total_images": 1,
       "has_photo_evidence": true,
       "has_bill_proof": true,
       "bill_proof_keywords": [
         "uc"
       ],
-      "geotag_status": "GEOTAG_VERIFIED",
+      "geotag_status": "FRAUD_SUSPECTED",
       "gps": {
         "latitude": 17.68763,
         "longitude": 83.014933,
@@ -3336,7 +3739,6 @@
           "h_pct": 0.73
         }
       },
-      "sections": [],
       "sample_images": [
         {
           "name": "WORK_267660_1788842461587.jpeg",
@@ -3360,20 +3762,41 @@
         }
       ]
     },
-    "audit_classification": "GREEN",
-    "audit_badge_text": "\ud83d\udfe2 Geotagged Picture Verified",
-    "audit_reason": "1 scanned picture(s) found. Ground-truth coordinates extracted from Visual GPS Stamp (Photo Watermark): 17.68763\u00b0 N, 83.014933\u00b0 E (Lat: 17.687630 Long: 83.014933).",
+    "audit_classification": "FRAUD_CRITICAL",
+    "audit_badge_text": "\ud83d\udea8 Suspected Fraud (100% Risk Override)",
+    "audit_reason": "Exact duplicate geotag location reused across distinct works. Claimed coordinates (17.68763\u00b0 N, 83.014933\u00b0 E) are identical (2.2m apart) to Work 256730 (Kasimkota: Providing 1000 LPHS RO Water Plant with ...).",
     "attached_files": [
       {
         "name": "WORK_267660_1788842461587.jpeg",
         "type": "JPEG Image Attachment",
         "size_kb": 994.5,
-        "path": "downloads/images/WORK_267660_1788842461587.jpeg"
+        "path": "downloads/images/WORK_267660_1788842461587.jpeg",
+        "sha256": "211b8bae9a492a3b89d2552360ba86d0267cef1470691832886eba3f299664da"
       }
     ],
     "latitude": 17.68763,
     "longitude": 83.014933,
-    "geocoding_source": "Visual GPS Stamp (Photo Watermark)"
+    "geocoding_source": "Visual GPS Stamp (Photo Watermark)",
+    "risk_score": 100.0,
+    "risk_level": "CRITICAL",
+    "work_risk_description": "\ud83d\udea8 CRITICAL FRAUD ALERT (100% Risk Override): Evidence reuse detected. Exact duplicate geotag location reused across distinct works. Claimed coordinates (17.68763\u00b0 N, 83.014933\u00b0 E) are identical (2.2m apart) to Work 256730 (Kasimkota: Providing 1000 LPHS RO Water Plant with ...). Missing: Physical execution progress status tables",
+    "missing_items": [
+      "Physical execution progress status tables"
+    ],
+    "missing_summary": "Missing: Physical execution progress status tables",
+    "is_fraud_suspected": true,
+    "fraud_details": {
+      "is_fraud_suspected": true,
+      "fraud_type": "DUPLICATE_GEOTAG_LOCATION_REUSE",
+      "fraud_matched_work_id": "256730",
+      "fraud_matched_work_title": "Providing 1000 LPHS RO Water Plant with shed at Atcherla Village of Kasimkota mandal",
+      "fraud_matched_mandal": "Kasimkota",
+      "fraud_matched_coords": "17.687629\u00b0 N, 83.014912\u00b0 E",
+      "fraud_distance_meters": 2.2,
+      "fraud_matched_image": "WORK_256730_1788843096992.jpeg",
+      "override_risk_score": 100.0,
+      "reason": "Exact duplicate geotag location reused across distinct works. Claimed coordinates (17.68763\u00b0 N, 83.014933\u00b0 E) are identical (2.2m apart) to Work 256730 (Kasimkota: Providing 1000 LPHS RO Water Plant with ...)."
+    }
   },
   {
     "work_id": "256730",
@@ -3390,11 +3813,12 @@
       "file_name": null,
       "file_size_kb": 0,
       "page_count": 0,
+      "has_progress_tables": false,
       "total_images": 1,
       "has_photo_evidence": true,
       "has_bill_proof": false,
       "bill_proof_keywords": [],
-      "geotag_status": "GEOTAG_VERIFIED",
+      "geotag_status": "FRAUD_SUSPECTED",
       "gps": {
         "latitude": 17.687629,
         "longitude": 83.014912,
@@ -3410,7 +3834,6 @@
           "h_pct": 0.54
         }
       },
-      "sections": [],
       "sample_images": [
         {
           "name": "WORK_256730_1788843096992.jpeg",
@@ -3434,20 +3857,42 @@
         }
       ]
     },
-    "audit_classification": "GREEN",
-    "audit_badge_text": "\ud83d\udfe2 Geotagged Picture Verified",
-    "audit_reason": "1 scanned picture(s) found. Ground-truth coordinates extracted from Visual GPS Stamp (Photo Watermark): 17.687629\u00b0 N, 83.014912\u00b0 E (Lat: 17.687629 Long: 83.014912).",
+    "audit_classification": "FRAUD_CRITICAL",
+    "audit_badge_text": "\ud83d\udea8 Suspected Fraud (100% Risk Override)",
+    "audit_reason": "Exact duplicate geotag location reused across distinct works. Claimed coordinates (17.687629\u00b0 N, 83.014912\u00b0 E) are identical (2.2m apart) to Work 267660 (Anakapalli: Construction of Bus Shelter at P.Bheemav...).",
     "attached_files": [
       {
         "name": "WORK_256730_1788843096992.jpeg",
         "type": "JPEG Image Attachment",
         "size_kb": 921.7,
-        "path": "downloads/images/WORK_256730_1788843096992.jpeg"
+        "path": "downloads/images/WORK_256730_1788843096992.jpeg",
+        "sha256": "7df9f20a9cb80eeed8ccb8e01a65d5e12b24d1d1dd1660447d865e3615620e0a"
       }
     ],
     "latitude": 17.687629,
     "longitude": 83.014912,
-    "geocoding_source": "Visual GPS Stamp (Photo Watermark)"
+    "geocoding_source": "Visual GPS Stamp (Photo Watermark)",
+    "risk_score": 100.0,
+    "risk_level": "CRITICAL",
+    "work_risk_description": "\ud83d\udea8 CRITICAL FRAUD ALERT (100% Risk Override): Evidence reuse detected. Exact duplicate geotag location reused across distinct works. Claimed coordinates (17.687629\u00b0 N, 83.014912\u00b0 E) are identical (2.2m apart) to Work 267660 (Anakapalli: Construction of Bus Shelter at P.Bheemav...). Missing: Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "missing_items": [
+      "Contractor bills, invoices, and financial vouchers",
+      "Physical execution progress status tables"
+    ],
+    "missing_summary": "Missing: Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "is_fraud_suspected": true,
+    "fraud_details": {
+      "is_fraud_suspected": true,
+      "fraud_type": "DUPLICATE_GEOTAG_LOCATION_REUSE",
+      "fraud_matched_work_id": "267660",
+      "fraud_matched_work_title": "Construction of Bus Shelter at P.Bheemavaram Village of Butchayyapeta Mandal of Anakapalli District",
+      "fraud_matched_mandal": "Anakapalli",
+      "fraud_matched_coords": "17.68763\u00b0 N, 83.014933\u00b0 E",
+      "fraud_distance_meters": 2.2,
+      "fraud_matched_image": "WORK_267660_1788842461587.jpeg",
+      "override_risk_score": 100.0,
+      "reason": "Exact duplicate geotag location reused across distinct works. Claimed coordinates (17.687629\u00b0 N, 83.014912\u00b0 E) are identical (2.2m apart) to Work 267660 (Anakapalli: Construction of Bus Shelter at P.Bheemav...)."
+    }
   },
   {
     "work_id": "256735",
@@ -3464,11 +3909,12 @@
       "file_name": null,
       "file_size_kb": 0,
       "page_count": 0,
+      "has_progress_tables": false,
       "total_images": 1,
       "has_photo_evidence": true,
       "has_bill_proof": false,
       "bill_proof_keywords": [],
-      "geotag_status": "GEOTAG_VERIFIED",
+      "geotag_status": "FRAUD_SUSPECTED",
       "gps": {
         "latitude": 17.68772,
         "longitude": 83.014961,
@@ -3484,7 +3930,6 @@
           "h_pct": 0.54
         }
       },
-      "sections": [],
       "sample_images": [
         {
           "name": "WORK_256735_1788845402888.jpeg",
@@ -3508,20 +3953,42 @@
         }
       ]
     },
-    "audit_classification": "GREEN",
-    "audit_badge_text": "\ud83d\udfe2 Geotagged Picture Verified",
-    "audit_reason": "1 scanned picture(s) found. Ground-truth coordinates extracted from Visual GPS Stamp (Photo Watermark): 17.68772\u00b0 N, 83.014961\u00b0 E (Lat: 17.687720 Long: 83.014961).",
+    "audit_classification": "FRAUD_CRITICAL",
+    "audit_badge_text": "\ud83d\udea8 Suspected Fraud (100% Risk Override)",
+    "audit_reason": "Exact duplicate geotag location reused across distinct works. Claimed coordinates (17.68772\u00b0 N, 83.014961\u00b0 E) are identical (10.4m apart) to Work 267660 (Anakapalli: Construction of Bus Shelter at P.Bheemav...).",
     "attached_files": [
       {
         "name": "WORK_256735_1788845402888.jpeg",
         "type": "JPEG Image Attachment",
         "size_kb": 890.4,
-        "path": "downloads/images/WORK_256735_1788845402888.jpeg"
+        "path": "downloads/images/WORK_256735_1788845402888.jpeg",
+        "sha256": "afffc7411ee8c7fed2592a551b57e217de9839df8c2c01f1e71aadda7c7d2f4a"
       }
     ],
     "latitude": 17.68772,
     "longitude": 83.014961,
-    "geocoding_source": "Visual GPS Stamp (Photo Watermark)"
+    "geocoding_source": "Visual GPS Stamp (Photo Watermark)",
+    "risk_score": 100.0,
+    "risk_level": "CRITICAL",
+    "work_risk_description": "\ud83d\udea8 CRITICAL FRAUD ALERT (100% Risk Override): Evidence reuse detected. Exact duplicate geotag location reused across distinct works. Claimed coordinates (17.68772\u00b0 N, 83.014961\u00b0 E) are identical (10.4m apart) to Work 267660 (Anakapalli: Construction of Bus Shelter at P.Bheemav...). Missing: Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "missing_items": [
+      "Contractor bills, invoices, and financial vouchers",
+      "Physical execution progress status tables"
+    ],
+    "missing_summary": "Missing: Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "is_fraud_suspected": true,
+    "fraud_details": {
+      "is_fraud_suspected": true,
+      "fraud_type": "DUPLICATE_GEOTAG_LOCATION_REUSE",
+      "fraud_matched_work_id": "267660",
+      "fraud_matched_work_title": "Construction of Bus Shelter at P.Bheemavaram Village of Butchayyapeta Mandal of Anakapalli District",
+      "fraud_matched_mandal": "Anakapalli",
+      "fraud_matched_coords": "17.68763\u00b0 N, 83.014933\u00b0 E",
+      "fraud_distance_meters": 10.4,
+      "fraud_matched_image": "WORK_267660_1788842461587.jpeg",
+      "override_risk_score": 100.0,
+      "reason": "Exact duplicate geotag location reused across distinct works. Claimed coordinates (17.68772\u00b0 N, 83.014961\u00b0 E) are identical (10.4m apart) to Work 267660 (Anakapalli: Construction of Bus Shelter at P.Bheemav...)."
+    }
   },
   {
     "work_id": "272081",
@@ -3538,6 +4005,7 @@
       "file_name": null,
       "file_size_kb": 0,
       "page_count": 0,
+      "has_progress_tables": false,
       "total_images": 1,
       "has_photo_evidence": true,
       "has_bill_proof": false,
@@ -3558,7 +4026,6 @@
           "h_pct": 0.66
         }
       },
-      "sections": [],
       "sample_images": [
         {
           "name": "WORK_272081_1788841515647.jpeg",
@@ -3584,18 +4051,29 @@
     },
     "audit_classification": "GREEN",
     "audit_badge_text": "\ud83d\udfe2 Geotagged Picture Verified",
-    "audit_reason": "1 scanned picture(s) found. Ground-truth coordinates extracted from Visual GPS Stamp (Photo Watermark): 17.797997\u00b0 N, 83.072825\u00b0 E (Lat 17.7979970 Long 83.072825e).",
+    "audit_reason": "1 scanned picture(s) found. Ground-truth coordinates extracted: 17.797997\u00b0 N, 83.072825\u00b0 E (Lat 17.7979970 Long 83.072825e).",
     "attached_files": [
       {
         "name": "WORK_272081_1788841515647.jpeg",
         "type": "JPEG Image Attachment",
         "size_kb": 912.5,
-        "path": "downloads/images/WORK_272081_1788841515647.jpeg"
+        "path": "downloads/images/WORK_272081_1788841515647.jpeg",
+        "sha256": "e45f640f82913d1897723c444e3f47fea09ee1565108fe4a2639c8646e96f325"
       }
     ],
     "latitude": 17.797997,
     "longitude": 83.072825,
-    "geocoding_source": "Visual GPS Stamp (Photo Watermark)"
+    "geocoding_source": "Visual GPS Stamp (Photo Watermark)",
+    "risk_score": 15.0,
+    "risk_level": "LOW",
+    "work_risk_description": "Missing: Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "missing_items": [
+      "Contractor bills, invoices, and financial vouchers",
+      "Physical execution progress status tables"
+    ],
+    "missing_summary": "Missing: Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "272080",
@@ -3612,6 +4090,7 @@
       "file_name": null,
       "file_size_kb": 0,
       "page_count": 0,
+      "has_progress_tables": false,
       "total_images": 1,
       "has_photo_evidence": true,
       "has_bill_proof": false,
@@ -3632,7 +4111,6 @@
           "h_pct": 0.73
         }
       },
-      "sections": [],
       "sample_images": [
         {
           "name": "WORK_272080_1788841907105.jpeg",
@@ -3658,18 +4136,29 @@
     },
     "audit_classification": "GREEN",
     "audit_badge_text": "\ud83d\udfe2 Geotagged Picture Verified",
-    "audit_reason": "1 scanned picture(s) found. Ground-truth coordinates extracted from Visual GPS Stamp (Photo Watermark): 17.790802\u00b0 N, 83.143399\u00b0 E (Lat 17.7908020 Long 83.1433990).",
+    "audit_reason": "1 scanned picture(s) found. Ground-truth coordinates extracted: 17.790802\u00b0 N, 83.143399\u00b0 E (Lat 17.7908020 Long 83.1433990).",
     "attached_files": [
       {
         "name": "WORK_272080_1788841907105.jpeg",
         "type": "JPEG Image Attachment",
         "size_kb": 770.8,
-        "path": "downloads/images/WORK_272080_1788841907105.jpeg"
+        "path": "downloads/images/WORK_272080_1788841907105.jpeg",
+        "sha256": "b7d3edf6c35e44898a7a892668b3d1a3e4fd2c36db58f210db08bedc4441a09b"
       }
     ],
     "latitude": 17.790802,
     "longitude": 83.143399,
-    "geocoding_source": "Visual GPS Stamp (Photo Watermark)"
+    "geocoding_source": "Visual GPS Stamp (Photo Watermark)",
+    "risk_score": 15.0,
+    "risk_level": "LOW",
+    "work_risk_description": "Missing: Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "missing_items": [
+      "Contractor bills, invoices, and financial vouchers",
+      "Physical execution progress status tables"
+    ],
+    "missing_summary": "Missing: Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "272083",
@@ -3686,6 +4175,7 @@
       "file_name": null,
       "file_size_kb": 0,
       "page_count": 0,
+      "has_progress_tables": false,
       "total_images": 1,
       "has_photo_evidence": true,
       "has_bill_proof": false,
@@ -3706,7 +4196,6 @@
           "h_pct": 0.63
         }
       },
-      "sections": [],
       "sample_images": [
         {
           "name": "WORK_272083_1788840518359.jpeg",
@@ -3732,18 +4221,29 @@
     },
     "audit_classification": "GREEN",
     "audit_badge_text": "\ud83d\udfe2 Geotagged Picture Verified",
-    "audit_reason": "1 scanned picture(s) found. Ground-truth coordinates extracted from Visual GPS Stamp (Photo Watermark): 17.544332\u00b0 N, 83.084768\u00b0 E (Lat 17.5443320 Long 83.0847680).",
+    "audit_reason": "1 scanned picture(s) found. Ground-truth coordinates extracted: 17.544332\u00b0 N, 83.084768\u00b0 E (Lat 17.5443320 Long 83.0847680).",
     "attached_files": [
       {
         "name": "WORK_272083_1788840518359.jpeg",
         "type": "JPEG Image Attachment",
         "size_kb": 674.5,
-        "path": "downloads/images/WORK_272083_1788840518359.jpeg"
+        "path": "downloads/images/WORK_272083_1788840518359.jpeg",
+        "sha256": "407020044361ce9da08780f36cf166174bf57ec4435b3c76bba030927fd889b0"
       }
     ],
     "latitude": 17.544332,
     "longitude": 83.084768,
-    "geocoding_source": "Visual GPS Stamp (Photo Watermark)"
+    "geocoding_source": "Visual GPS Stamp (Photo Watermark)",
+    "risk_score": 15.0,
+    "risk_level": "LOW",
+    "work_risk_description": "Missing: Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "missing_items": [
+      "Contractor bills, invoices, and financial vouchers",
+      "Physical execution progress status tables"
+    ],
+    "missing_summary": "Missing: Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "272082",
@@ -3760,6 +4260,7 @@
       "file_name": null,
       "file_size_kb": 0,
       "page_count": 0,
+      "has_progress_tables": false,
       "total_images": 1,
       "has_photo_evidence": true,
       "has_bill_proof": false,
@@ -3780,7 +4281,6 @@
           "h_pct": 1
         }
       },
-      "sections": [],
       "sample_images": [
         {
           "name": "WORK_272082_1788840988409.jpeg",
@@ -3806,18 +4306,29 @@
     },
     "audit_classification": "GREEN",
     "audit_badge_text": "\ud83d\udfe2 Geotagged Picture Verified",
-    "audit_reason": "1 scanned picture(s) found. Ground-truth coordinates extracted from Visual GPS Stamp (Photo Watermark): 17.820852\u00b0 N, 83.124078\u00b0 E (Lat 17.8208520 Long 83.1240780).",
+    "audit_reason": "1 scanned picture(s) found. Ground-truth coordinates extracted: 17.820852\u00b0 N, 83.124078\u00b0 E (Lat 17.8208520 Long 83.1240780).",
     "attached_files": [
       {
         "name": "WORK_272082_1788840988409.jpeg",
         "type": "JPEG Image Attachment",
         "size_kb": 765.0,
-        "path": "downloads/images/WORK_272082_1788840988409.jpeg"
+        "path": "downloads/images/WORK_272082_1788840988409.jpeg",
+        "sha256": "ee2bb6f735a1c93bd9f5b5d4e76a0c55d377c946818a66d0b232a7ff7e1343a5"
       }
     ],
     "latitude": 17.820852,
     "longitude": 83.124078,
-    "geocoding_source": "Visual GPS Stamp (Photo Watermark)"
+    "geocoding_source": "Visual GPS Stamp (Photo Watermark)",
+    "risk_score": 15.0,
+    "risk_level": "LOW",
+    "work_risk_description": "Missing: Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "missing_items": [
+      "Contractor bills, invoices, and financial vouchers",
+      "Physical execution progress status tables"
+    ],
+    "missing_summary": "Missing: Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "278233",
@@ -3834,11 +4345,12 @@
       "file_name": null,
       "file_size_kb": 0,
       "page_count": 0,
+      "has_progress_tables": false,
       "total_images": 1,
       "has_photo_evidence": true,
       "has_bill_proof": false,
       "bill_proof_keywords": [],
-      "geotag_status": "GEOTAG_VERIFIED",
+      "geotag_status": "FRAUD_SUSPECTED",
       "gps": {
         "latitude": 17.68766,
         "longitude": 83.014945,
@@ -3854,7 +4366,6 @@
           "h_pct": 0.54
         }
       },
-      "sections": [],
       "sample_images": [
         {
           "name": "WORK_278233_1788833828741.jpeg",
@@ -3878,20 +4389,42 @@
         }
       ]
     },
-    "audit_classification": "GREEN",
-    "audit_badge_text": "\ud83d\udfe2 Geotagged Picture Verified",
-    "audit_reason": "1 scanned picture(s) found. Ground-truth coordinates extracted from Visual GPS Stamp (Photo Watermark): 17.68766\u00b0 N, 83.014945\u00b0 E (Lat: 17.687660 Long: 83.014945).",
+    "audit_classification": "FRAUD_CRITICAL",
+    "audit_badge_text": "\ud83d\udea8 Suspected Fraud (100% Risk Override)",
+    "audit_reason": "Exact duplicate geotag location reused across distinct works. Claimed coordinates (17.68766\u00b0 N, 83.014945\u00b0 E) are identical (3.6m apart) to Work 267660 (Anakapalli: Construction of Bus Shelter at P.Bheemav...).",
     "attached_files": [
       {
         "name": "WORK_278233_1788833828741.jpeg",
         "type": "JPEG Image Attachment",
         "size_kb": 858.2,
-        "path": "downloads/images/WORK_278233_1788833828741.jpeg"
+        "path": "downloads/images/WORK_278233_1788833828741.jpeg",
+        "sha256": "97360766cfa305c96925c443d180f6e6cd2b4136153826783b946870ca49d9ca"
       }
     ],
     "latitude": 17.68766,
     "longitude": 83.014945,
-    "geocoding_source": "Visual GPS Stamp (Photo Watermark)"
+    "geocoding_source": "Visual GPS Stamp (Photo Watermark)",
+    "risk_score": 100.0,
+    "risk_level": "CRITICAL",
+    "work_risk_description": "\ud83d\udea8 CRITICAL FRAUD ALERT (100% Risk Override): Evidence reuse detected. Exact duplicate geotag location reused across distinct works. Claimed coordinates (17.68766\u00b0 N, 83.014945\u00b0 E) are identical (3.6m apart) to Work 267660 (Anakapalli: Construction of Bus Shelter at P.Bheemav...). Missing: Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "missing_items": [
+      "Contractor bills, invoices, and financial vouchers",
+      "Physical execution progress status tables"
+    ],
+    "missing_summary": "Missing: Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "is_fraud_suspected": true,
+    "fraud_details": {
+      "is_fraud_suspected": true,
+      "fraud_type": "DUPLICATE_GEOTAG_LOCATION_REUSE",
+      "fraud_matched_work_id": "267660",
+      "fraud_matched_work_title": "Construction of Bus Shelter at P.Bheemavaram Village of Butchayyapeta Mandal of Anakapalli District",
+      "fraud_matched_mandal": "Anakapalli",
+      "fraud_matched_coords": "17.68763\u00b0 N, 83.014933\u00b0 E",
+      "fraud_distance_meters": 3.6,
+      "fraud_matched_image": "WORK_267660_1788842461587.jpeg",
+      "override_risk_score": 100.0,
+      "reason": "Exact duplicate geotag location reused across distinct works. Claimed coordinates (17.68766\u00b0 N, 83.014945\u00b0 E) are identical (3.6m apart) to Work 267660 (Anakapalli: Construction of Bus Shelter at P.Bheemav...)."
+    }
   },
   {
     "work_id": "278236",
@@ -3908,6 +4441,7 @@
       "file_name": null,
       "file_size_kb": 0,
       "page_count": 0,
+      "has_progress_tables": false,
       "total_images": 1,
       "has_photo_evidence": true,
       "has_bill_proof": false,
@@ -3928,7 +4462,6 @@
           "h_pct": 0.76
         }
       },
-      "sections": [],
       "sample_images": [
         {
           "name": "WORK_278236_1788833104217.jpeg",
@@ -3954,18 +4487,29 @@
     },
     "audit_classification": "GREEN",
     "audit_badge_text": "\ud83d\udfe2 Geotagged Picture Verified",
-    "audit_reason": "1 scanned picture(s) found. Ground-truth coordinates extracted from Visual GPS Stamp (Photo Watermark): 17.686306\u00b0 N, 83.002368\u00b0 E (Lat 17.6863060 Long 83.0023680).",
+    "audit_reason": "1 scanned picture(s) found. Ground-truth coordinates extracted: 17.686306\u00b0 N, 83.002368\u00b0 E (Lat 17.6863060 Long 83.0023680).",
     "attached_files": [
       {
         "name": "WORK_278236_1788833104217.jpeg",
         "type": "JPEG Image Attachment",
         "size_kb": 821.3,
-        "path": "downloads/images/WORK_278236_1788833104217.jpeg"
+        "path": "downloads/images/WORK_278236_1788833104217.jpeg",
+        "sha256": "e62898358c501388f092fea2b03679ab0d1ff4326e243ced6aa30c8fcc5d5c9c"
       }
     ],
     "latitude": 17.686306,
     "longitude": 83.002368,
-    "geocoding_source": "Visual GPS Stamp (Photo Watermark)"
+    "geocoding_source": "Visual GPS Stamp (Photo Watermark)",
+    "risk_score": 15.0,
+    "risk_level": "LOW",
+    "work_risk_description": "Missing: Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "missing_items": [
+      "Contractor bills, invoices, and financial vouchers",
+      "Physical execution progress status tables"
+    ],
+    "missing_summary": "Missing: Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "256733",
@@ -3982,6 +4526,7 @@
       "file_name": null,
       "file_size_kb": 0,
       "page_count": 0,
+      "has_progress_tables": false,
       "total_images": 1,
       "has_photo_evidence": true,
       "has_bill_proof": false,
@@ -4002,7 +4547,6 @@
           "h_pct": 1
         }
       },
-      "sections": [],
       "sample_images": [
         {
           "name": "WORK_256733_1788845034327.jpeg",
@@ -4028,18 +4572,29 @@
     },
     "audit_classification": "GREEN",
     "audit_badge_text": "\ud83d\udfe2 Geotagged Picture Verified",
-    "audit_reason": "1 scanned picture(s) found. Ground-truth coordinates extracted from Visual GPS Stamp (Photo Watermark): 17.64298\u00b0 N, 82.938395\u00b0 E (Lat 17.642980 Long 82.9383950).",
+    "audit_reason": "1 scanned picture(s) found. Ground-truth coordinates extracted: 17.64298\u00b0 N, 82.938395\u00b0 E (Lat 17.642980 Long 82.9383950).",
     "attached_files": [
       {
         "name": "WORK_256733_1788845034327.jpeg",
         "type": "JPEG Image Attachment",
         "size_kb": 1095.2,
-        "path": "downloads/images/WORK_256733_1788845034327.jpeg"
+        "path": "downloads/images/WORK_256733_1788845034327.jpeg",
+        "sha256": "b2ee763a38c26d99e057a21c23254e1e7cac1cb52c90f0148f6fb37d8a305550"
       }
     ],
     "latitude": 17.64298,
     "longitude": 82.938395,
-    "geocoding_source": "Visual GPS Stamp (Photo Watermark)"
+    "geocoding_source": "Visual GPS Stamp (Photo Watermark)",
+    "risk_score": 15.0,
+    "risk_level": "LOW",
+    "work_risk_description": "Missing: Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "missing_items": [
+      "Contractor bills, invoices, and financial vouchers",
+      "Physical execution progress status tables"
+    ],
+    "missing_summary": "Missing: Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "221411",
@@ -4057,15 +4612,13 @@
       "file_name": null,
       "file_size_kb": 0,
       "page_count": 0,
+      "has_progress_tables": false,
       "total_images": 5,
       "has_photo_evidence": true,
       "has_bill_proof": false,
       "bill_proof_keywords": [],
       "geotag_status": "PHOTO_PRESENT_UNTAGGED",
       "gps": null,
-      "sections": [
-        "MoSPI Physical Inspection Photos (5 Uploaded)"
-      ],
       "sample_images": [
         {
           "name": "WORK_221411_WSMP1801620252026221411A.jpg",
@@ -4100,43 +4653,59 @@
       ]
     },
     "audit_classification": "GREEN",
-    "audit_badge_text": "\ud83d\udfe2 Scanned Image / Picture Present",
-    "audit_reason": "5 authentic scanned image(s) / photographic picture(s) present (GPS coordinates not stamped on photo).",
+    "audit_badge_text": "\ud83d\udfe2 Scanned Picture Present (Untagged)",
+    "audit_reason": "5 authentic scanned photographic picture(s) present (GPS coordinates not stamped on photo).",
     "attached_files": [
       {
         "name": "WORK_221411_WSMP1801620252026221411A.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 308.5,
-        "path": "downloads/images/WORK_221411_WSMP1801620252026221411A.jpg"
+        "path": "downloads/images/WORK_221411_WSMP1801620252026221411A.jpg",
+        "sha256": "828cf139518defee8b2ffe38c77027a23ecaf438da309b582751e4a90c012d52"
       },
       {
         "name": "WORK_221411_WSMP1801620252026221411B.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 1025.7,
-        "path": "downloads/images/WORK_221411_WSMP1801620252026221411B.jpg"
+        "path": "downloads/images/WORK_221411_WSMP1801620252026221411B.jpg",
+        "sha256": "a092e47fb0281eb2b64950ab5740009fc0659382d719b587c9364f16af389a28"
       },
       {
         "name": "WORK_221411_WSMP1801620252026221411C.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 158.6,
-        "path": "downloads/images/WORK_221411_WSMP1801620252026221411C.jpg"
+        "path": "downloads/images/WORK_221411_WSMP1801620252026221411C.jpg",
+        "sha256": "78521d710709a080c4235b3834a3ea776da2a8be60c5574fb5e5e7320b81b76f"
       },
       {
         "name": "WORK_221411_WSMP1801620252026221411D.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 1133.6,
-        "path": "downloads/images/WORK_221411_WSMP1801620252026221411D.jpg"
+        "path": "downloads/images/WORK_221411_WSMP1801620252026221411D.jpg",
+        "sha256": "f908ac09beb8c6c696a2a308577d2d5ad85896a38887116dd2dab4fa71a7c269"
       },
       {
         "name": "WORK_221411_WSMP1801620252026221411E.jpg",
         "type": "JPG Image Attachment",
         "size_kb": 1315.0,
-        "path": "downloads/images/WORK_221411_WSMP1801620252026221411E.jpg"
+        "path": "downloads/images/WORK_221411_WSMP1801620252026221411E.jpg",
+        "sha256": "8f16ebb15b4d82fb3faca65434c8e7a0af48977c076a4a31530cd2214fcb67f2"
       }
     ],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 30.0,
+    "risk_level": "LOW",
+    "work_risk_description": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "missing_items": [
+      "GPS watermark coordinates on photo (photo is untagged)",
+      "Contractor bills, invoices, and financial vouchers",
+      "Physical execution progress status tables"
+    ],
+    "missing_summary": "Missing: GPS watermark coordinates on photo (photo is untagged); Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "251879",
@@ -4154,6 +4723,7 @@
       "file_name": null,
       "file_size_kb": 0,
       "page_count": 0,
+      "has_progress_tables": false,
       "total_images": 0,
       "has_photo_evidence": false,
       "has_bill_proof": true,
@@ -4162,7 +4732,6 @@
       ],
       "geotag_status": "NO_DOCUMENT_UPLOADED",
       "gps": null,
-      "sections": [],
       "sample_images": []
     },
     "audit_classification": "RED",
@@ -4171,7 +4740,16 @@
     "attached_files": [],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 75.0,
+    "risk_level": "HIGH",
+    "work_risk_description": "Missing: Entire completion dossier (no photographs, bills, or completion certificates uploaded)",
+    "missing_items": [
+      "Entire completion dossier (no photographs, bills, or completion certificates uploaded)"
+    ],
+    "missing_summary": "Missing: Entire completion dossier (no photographs, bills, or completion certificates uploaded)",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "251880",
@@ -4189,6 +4767,7 @@
       "file_name": null,
       "file_size_kb": 0,
       "page_count": 0,
+      "has_progress_tables": false,
       "total_images": 0,
       "has_photo_evidence": false,
       "has_bill_proof": true,
@@ -4197,7 +4776,6 @@
       ],
       "geotag_status": "NO_DOCUMENT_UPLOADED",
       "gps": null,
-      "sections": [],
       "sample_images": []
     },
     "audit_classification": "RED",
@@ -4206,7 +4784,16 @@
     "attached_files": [],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 75.0,
+    "risk_level": "HIGH",
+    "work_risk_description": "Missing: Entire completion dossier (no photographs, bills, or completion certificates uploaded)",
+    "missing_items": [
+      "Entire completion dossier (no photographs, bills, or completion certificates uploaded)"
+    ],
+    "missing_summary": "Missing: Entire completion dossier (no photographs, bills, or completion certificates uploaded)",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "251882",
@@ -4224,13 +4811,13 @@
       "file_name": null,
       "file_size_kb": 0,
       "page_count": 0,
+      "has_progress_tables": false,
       "total_images": 0,
       "has_photo_evidence": false,
       "has_bill_proof": false,
       "bill_proof_keywords": [],
       "geotag_status": "NO_DOCUMENT_UPLOADED",
       "gps": null,
-      "sections": [],
       "sample_images": []
     },
     "audit_classification": "RED",
@@ -4239,7 +4826,16 @@
     "attached_files": [],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 75.0,
+    "risk_level": "HIGH",
+    "work_risk_description": "Missing: Entire completion dossier (no photographs, bills, or completion certificates uploaded)",
+    "missing_items": [
+      "Entire completion dossier (no photographs, bills, or completion certificates uploaded)"
+    ],
+    "missing_summary": "Missing: Entire completion dossier (no photographs, bills, or completion certificates uploaded)",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "251883",
@@ -4257,6 +4853,7 @@
       "file_name": null,
       "file_size_kb": 0,
       "page_count": 0,
+      "has_progress_tables": false,
       "total_images": 0,
       "has_photo_evidence": false,
       "has_bill_proof": true,
@@ -4265,7 +4862,6 @@
       ],
       "geotag_status": "NO_DOCUMENT_UPLOADED",
       "gps": null,
-      "sections": [],
       "sample_images": []
     },
     "audit_classification": "RED",
@@ -4274,7 +4870,16 @@
     "attached_files": [],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 75.0,
+    "risk_level": "HIGH",
+    "work_risk_description": "Missing: Entire completion dossier (no photographs, bills, or completion certificates uploaded)",
+    "missing_items": [
+      "Entire completion dossier (no photographs, bills, or completion certificates uploaded)"
+    ],
+    "missing_summary": "Missing: Entire completion dossier (no photographs, bills, or completion certificates uploaded)",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "251884",
@@ -4292,13 +4897,13 @@
       "file_name": null,
       "file_size_kb": 0,
       "page_count": 0,
+      "has_progress_tables": false,
       "total_images": 0,
       "has_photo_evidence": false,
       "has_bill_proof": false,
       "bill_proof_keywords": [],
       "geotag_status": "NO_DOCUMENT_UPLOADED",
       "gps": null,
-      "sections": [],
       "sample_images": []
     },
     "audit_classification": "RED",
@@ -4307,7 +4912,16 @@
     "attached_files": [],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 75.0,
+    "risk_level": "HIGH",
+    "work_risk_description": "Missing: Entire completion dossier (no photographs, bills, or completion certificates uploaded)",
+    "missing_items": [
+      "Entire completion dossier (no photographs, bills, or completion certificates uploaded)"
+    ],
+    "missing_summary": "Missing: Entire completion dossier (no photographs, bills, or completion certificates uploaded)",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "252028",
@@ -4325,13 +4939,13 @@
       "file_name": null,
       "file_size_kb": 0,
       "page_count": 0,
+      "has_progress_tables": false,
       "total_images": 0,
       "has_photo_evidence": false,
       "has_bill_proof": false,
       "bill_proof_keywords": [],
       "geotag_status": "NO_DOCUMENT_UPLOADED",
       "gps": null,
-      "sections": [],
       "sample_images": []
     },
     "audit_classification": "RED",
@@ -4340,7 +4954,16 @@
     "attached_files": [],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 75.0,
+    "risk_level": "HIGH",
+    "work_risk_description": "Missing: Entire completion dossier (no photographs, bills, or completion certificates uploaded)",
+    "missing_items": [
+      "Entire completion dossier (no photographs, bills, or completion certificates uploaded)"
+    ],
+    "missing_summary": "Missing: Entire completion dossier (no photographs, bills, or completion certificates uploaded)",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "273575",
@@ -4358,6 +4981,7 @@
       "file_name": null,
       "file_size_kb": 0,
       "page_count": 0,
+      "has_progress_tables": false,
       "total_images": 0,
       "has_photo_evidence": false,
       "has_bill_proof": true,
@@ -4366,7 +4990,6 @@
       ],
       "geotag_status": "NO_DOCUMENT_UPLOADED",
       "gps": null,
-      "sections": [],
       "sample_images": []
     },
     "audit_classification": "RED",
@@ -4375,7 +4998,16 @@
     "attached_files": [],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 75.0,
+    "risk_level": "HIGH",
+    "work_risk_description": "Missing: Entire completion dossier (no photographs, bills, or completion certificates uploaded)",
+    "missing_items": [
+      "Entire completion dossier (no photographs, bills, or completion certificates uploaded)"
+    ],
+    "missing_summary": "Missing: Entire completion dossier (no photographs, bills, or completion certificates uploaded)",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "277854",
@@ -4393,13 +5025,13 @@
       "file_name": null,
       "file_size_kb": 0,
       "page_count": 0,
+      "has_progress_tables": false,
       "total_images": 0,
       "has_photo_evidence": false,
       "has_bill_proof": false,
       "bill_proof_keywords": [],
       "geotag_status": "NO_DOCUMENT_UPLOADED",
       "gps": null,
-      "sections": [],
       "sample_images": []
     },
     "audit_classification": "RED",
@@ -4408,7 +5040,16 @@
     "attached_files": [],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 75.0,
+    "risk_level": "HIGH",
+    "work_risk_description": "Missing: Entire completion dossier (no photographs, bills, or completion certificates uploaded)",
+    "missing_items": [
+      "Entire completion dossier (no photographs, bills, or completion certificates uploaded)"
+    ],
+    "missing_summary": "Missing: Entire completion dossier (no photographs, bills, or completion certificates uploaded)",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "279535",
@@ -4426,13 +5067,13 @@
       "file_name": null,
       "file_size_kb": 0,
       "page_count": 0,
+      "has_progress_tables": false,
       "total_images": 0,
       "has_photo_evidence": false,
       "has_bill_proof": false,
       "bill_proof_keywords": [],
       "geotag_status": "NO_DOCUMENT_UPLOADED",
       "gps": null,
-      "sections": [],
       "sample_images": []
     },
     "audit_classification": "RED",
@@ -4441,7 +5082,16 @@
     "attached_files": [],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 75.0,
+    "risk_level": "HIGH",
+    "work_risk_description": "Missing: Entire completion dossier (no photographs, bills, or completion certificates uploaded)",
+    "missing_items": [
+      "Entire completion dossier (no photographs, bills, or completion certificates uploaded)"
+    ],
+    "missing_summary": "Missing: Entire completion dossier (no photographs, bills, or completion certificates uploaded)",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "285880",
@@ -4459,6 +5109,7 @@
       "file_name": null,
       "file_size_kb": 0,
       "page_count": 0,
+      "has_progress_tables": false,
       "total_images": 0,
       "has_photo_evidence": false,
       "has_bill_proof": true,
@@ -4467,7 +5118,6 @@
       ],
       "geotag_status": "NO_DOCUMENT_UPLOADED",
       "gps": null,
-      "sections": [],
       "sample_images": []
     },
     "audit_classification": "RED",
@@ -4476,7 +5126,16 @@
     "attached_files": [],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 75.0,
+    "risk_level": "HIGH",
+    "work_risk_description": "Missing: Entire completion dossier (no photographs, bills, or completion certificates uploaded)",
+    "missing_items": [
+      "Entire completion dossier (no photographs, bills, or completion certificates uploaded)"
+    ],
+    "missing_summary": "Missing: Entire completion dossier (no photographs, bills, or completion certificates uploaded)",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "292111",
@@ -4494,13 +5153,13 @@
       "file_name": null,
       "file_size_kb": 0,
       "page_count": 0,
+      "has_progress_tables": false,
       "total_images": 0,
       "has_photo_evidence": false,
       "has_bill_proof": false,
       "bill_proof_keywords": [],
       "geotag_status": "NO_DOCUMENT_UPLOADED",
       "gps": null,
-      "sections": [],
       "sample_images": []
     },
     "audit_classification": "RED",
@@ -4509,7 +5168,16 @@
     "attached_files": [],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 75.0,
+    "risk_level": "HIGH",
+    "work_risk_description": "Missing: Entire completion dossier (no photographs, bills, or completion certificates uploaded)",
+    "missing_items": [
+      "Entire completion dossier (no photographs, bills, or completion certificates uploaded)"
+    ],
+    "missing_summary": "Missing: Entire completion dossier (no photographs, bills, or completion certificates uploaded)",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "292113",
@@ -4527,13 +5195,13 @@
       "file_name": null,
       "file_size_kb": 0,
       "page_count": 0,
+      "has_progress_tables": false,
       "total_images": 0,
       "has_photo_evidence": false,
       "has_bill_proof": false,
       "bill_proof_keywords": [],
       "geotag_status": "NO_DOCUMENT_UPLOADED",
       "gps": null,
-      "sections": [],
       "sample_images": []
     },
     "audit_classification": "RED",
@@ -4542,7 +5210,16 @@
     "attached_files": [],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 75.0,
+    "risk_level": "HIGH",
+    "work_risk_description": "Missing: Entire completion dossier (no photographs, bills, or completion certificates uploaded)",
+    "missing_items": [
+      "Entire completion dossier (no photographs, bills, or completion certificates uploaded)"
+    ],
+    "missing_summary": "Missing: Entire completion dossier (no photographs, bills, or completion certificates uploaded)",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "301023",
@@ -4560,6 +5237,7 @@
       "file_name": null,
       "file_size_kb": 0,
       "page_count": 0,
+      "has_progress_tables": false,
       "total_images": 0,
       "has_photo_evidence": false,
       "has_bill_proof": true,
@@ -4568,7 +5246,6 @@
       ],
       "geotag_status": "NO_DOCUMENT_UPLOADED",
       "gps": null,
-      "sections": [],
       "sample_images": []
     },
     "audit_classification": "RED",
@@ -4577,6 +5254,15 @@
     "attached_files": [],
     "latitude": null,
     "longitude": null,
-    "geocoding_source": null
+    "geocoding_source": null,
+    "risk_score": 75.0,
+    "risk_level": "HIGH",
+    "work_risk_description": "Missing: Entire completion dossier (no photographs, bills, or completion certificates uploaded)",
+    "missing_items": [
+      "Entire completion dossier (no photographs, bills, or completion certificates uploaded)"
+    ],
+    "missing_summary": "Missing: Entire completion dossier (no photographs, bills, or completion certificates uploaded)",
+    "is_fraud_suspected": false,
+    "fraud_details": null
   }
 ]

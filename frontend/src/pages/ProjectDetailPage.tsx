@@ -276,11 +276,11 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({ workId, on
             </div>
           </div>
           <WorkInfoCards work={work} />
-          <GeotagEvidenceCard workId={work.work_id} onOpenEvidence={onOpenEvidence} />
+          <GeotagEvidenceCard workId={work.work_id} onOpenEvidence={onOpenEvidence} onSelectWork={onSelectWork} />
         </div>
       )}
 
-      {activeSubTab === 'evidence' && <RiskEvidencePanel work={work} onOpenEvidence={onOpenEvidence} />}
+      {activeSubTab === 'evidence' && <RiskEvidencePanel work={work} onOpenEvidence={onOpenEvidence} onSelectWork={onSelectWork} />}
 
       {activeSubTab === 'duplicates' && (
         <div className="space-y-4">

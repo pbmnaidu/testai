@@ -49,10 +49,30 @@ interface AuditRecord {
   audit_badge_text?: string;
   audit_reason?: string;
   geocoding_source?: string | null;
+  risk_score?: number;
+  risk_level?: string;
+  work_risk_description?: string;
+  missing_items?: string[];
+  missing_summary?: string;
+  is_fraud_suspected?: boolean;
+  fraud_details?: {
+    is_fraud_suspected?: boolean;
+    fraud_type?: string;
+    fraud_matched_work_id?: string;
+    fraud_matched_work_title?: string;
+    fraud_matched_mandal?: string;
+    fraud_matched_coords?: string;
+    fraud_distance_meters?: number;
+    fraud_matched_image?: string;
+    override_risk_score?: number;
+    reason?: string;
+  } | null;
   attached_files?: AuditAttachedFile[];
   pdf_audit?: {
     file_name?: string | null;
     file_size_kb?: number;
+    page_count?: number;
+    has_progress_tables?: boolean;
     total_images?: number;
     has_photo_evidence?: boolean;
     has_bill_proof?: boolean;
@@ -79,6 +99,7 @@ export interface EvidenceImage {
 
 export interface GeotagEvidenceRecord {
   workId: string;
+  fullWorkId?: string;
   title: string;
   description: string;
   category: string;
@@ -91,6 +112,15 @@ export interface GeotagEvidenceRecord {
   auditReason: string;
   hasPhotoEvidence: boolean;
   hasBillProof: boolean;
+  hasProgressTables?: boolean;
+  pageCount?: number;
+  isFraudSuspected?: boolean;
+  fraudDetails?: AuditRecord['fraud_details'];
+  missingItems: string[];
+  missingSummary: string;
+  riskScore?: number;
+  riskLevel?: string;
+  workRiskDescription?: string;
   attachedFiles: AuditAttachedFile[];
   images: EvidenceImage[];
   gpsImages: EvidenceImage[];
@@ -161,6 +191,15 @@ const buildEvidenceRecord = (audit: AuditRecord): GeotagEvidenceRecord => {
       audit.pdf_audit?.has_bill_proof
       && ((audit.attached_files || []).length > 0 || (manifest.files || []).length > 0),
     ),
+    hasProgressTables: audit.pdf_audit?.has_progress_tables,
+    pageCount: audit.pdf_audit?.page_count,
+    isFraudSuspected: Boolean(audit.is_fraud_suspected),
+    fraudDetails: audit.fraud_details,
+    missingItems: audit.missing_items || [],
+    missingSummary: audit.missing_summary || '',
+    riskScore: audit.risk_score,
+    riskLevel: audit.risk_level,
+    workRiskDescription: audit.work_risk_description,
     attachedFiles: audit.attached_files || [],
     images,
     gpsImages,
@@ -175,6 +214,16 @@ geotagEvidenceRecords.forEach((record) => {
   evidenceByWorkId.set(String(record.workId).trim(), record);
   evidenceByWorkId.set(normalizedWorkId(record.workId), record);
 });
+
+export const applyFullWorkIds = (workIdMap: Record<string, string>) => {
+  geotagEvidenceRecords.forEach((record) => {
+    const fullWorkId = workIdMap[normalizedWorkId(record.workId)] || workIdMap[record.workId];
+    if (!fullWorkId) return;
+    record.fullWorkId = fullWorkId;
+    record.workId = fullWorkId;
+    evidenceByWorkId.set(fullWorkId, record);
+  });
+};
 
 export const getGeotagEvidence = (workId: string | null | undefined) => (
   workId
@@ -210,9 +259,12 @@ export const fileUrl = (file: AuditAttachedFile) => {
 
 export const statusLabel = (status: string) => {
   switch (status) {
+    case 'FRAUD_SUSPECTED': return '🚨 Suspected Fraud (100% Risk Override)';
     case 'GEOTAG_VERIFIED': return '🟢 Geotagged Picture Verified';
     case 'PHOTO_PRESENT_UNTAGGED': return '🟢 Scanned Picture Present (Untagged)';
     case 'TEXT_BILL_PROOF_ONLY': return '🟡 Bill Proof Only';
+    case 'STUB_DOSSIER_NO_EVIDENCE': return '🔴 Stub Dossier (Critical Risk)';
+    case 'NO_BILLS_NO_PROGRESS_TABLES': return '🔴 Missing Bills / Progress Tables';
     case 'FILE_NO_BILLS_OR_IMAGES': return '🟠 File Present, No Photo';
     default: return '🔴 Missing / No Files';
   }

@@ -136,12 +136,22 @@ def run_composite_risk_engine():
             return "MEDIUM"
         return "LOW"
 
+    fraud_gate = (
+        df_base["compliance_risk_score"].ge(99) |
+        df_base["triggered_rules"].fillna("").astype(str).str.contains("C_FRAUD_DUPLICATE_EVIDENCE")
+    )
     compliance_gate = df_base["compliance_risk_score"].ge(85)
     high_compliance_gate = df_base["compliance_risk_score"].ge(65)
     financial_gate = df_base["financial_risk_score"].ge(85)
-    df_base["composite_risk_score"] = np.maximum(df_base["composite_risk_score"], np.where(compliance_gate, 85, np.where(high_compliance_gate, 65, np.where(financial_gate, 65, 0))))
+    
+    # Priority-preserving composite with 100% Risk Override for Suspected Fraud
+    df_base["composite_risk_score"] = np.where(
+        fraud_gate,
+        100.0,
+        np.maximum(df_base["composite_risk_score"], np.where(compliance_gate, 85, np.where(high_compliance_gate, 65, np.where(financial_gate, 65, 0))))
+    )
     df_base["overall_risk_score"] = df_base["composite_risk_score"]
-    df_base["overall_risk_level"] = df_base["composite_risk_score"].apply(assign_overall_level)
+    df_base["overall_risk_level"] = np.where(fraud_gate, "CRITICAL", df_base["composite_risk_score"].apply(assign_overall_level))
     df_base["overall_risk_category"] = df_base["overall_risk_level"]
     df_base["requires_audit_action"] = df_base["composite_risk_score"] >= 35
 
@@ -193,6 +203,8 @@ def run_composite_risk_engine():
     )
 
     def priority_reason(row):
+        if row.get("compliance_risk_score", 0) >= 99 or "C_FRAUD_DUPLICATE_EVIDENCE" in str(row.get("triggered_rules", "")):
+            return "🚨 CRITICAL FRAUD OVERRIDE: Exact duplicate evidence or geotagged coordinates reused across distinct works."
         if row["compliance_risk_score"] >= 85:
             return "A high-priority work-level guideline finding is the main reason this work was prioritized for review."
         if row["compliance_risk_score"] >= 65:
@@ -208,6 +220,11 @@ def run_composite_risk_engine():
     df_base["highest_priority_reason"] = df_base.apply(priority_reason, axis=1)
 
     def concise_risk_description(row):
+        triggered = str(row.get("triggered_rules", ""))
+        if "C_FRAUD_DUPLICATE_EVIDENCE" in triggered or float(row.get("composite_risk_score", 0) or 0) >= 99:
+            comp_exp = str(row.get("compliance_explanation", "")).strip()
+            return f"🚨 CRITICAL FRAUD ALERT (100% Risk Override): Evidence reuse detected. {comp_exp}"
+
         candidates = [
             (float(row.get("compliance_risk_score", 0) or 0), row.get("compliance_explanation", "")),
             (float(row.get("financial_risk_score", 0) or 0), row.get("financial_explanation", "")),
@@ -215,6 +232,8 @@ def run_composite_risk_engine():
             (float(row.get("schedule_risk_score", 0) or 0), row.get("schedule_explanation", "")),
         ]
         narrative = next((str(text).strip() for _, text in sorted(candidates, key=lambda item: item[0], reverse=True) if text and str(text).strip() and str(text).lower() != "nan"), "No major risk concern requiring audit review was observed.")
+        # Remove any existing co-relation jargon
+        narrative = re.sub(r'\b(?:image\s+)?co[- ]?relation\b', 'physical evidence comparison', narrative, flags=re.IGNORECASE)
         sentences = [part.strip() for part in re.split(r"(?<=[.!?])\s+", narrative) if part.strip()]
         return " ".join(sentences[:3])
 

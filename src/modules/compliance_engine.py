@@ -135,6 +135,18 @@ GUIDELINE_SCOPE_MATRIX = [
     _meta("H_SECTOR_COST_RULES", "Sector cost benchmark", "No guideline clause", "NON_GUIDELINE_HEURISTIC",
           "Predefined sector price ceilings are not MPLADS compliance requirements.",
           ["sanction_amount"], None, 0, "REMOVE_FROM_COMPLIANCE"),
+    _meta("C_FRAUD_DUPLICATE_EVIDENCE", "Cross-work duplicate evidence / location reuse", "Para 9.1 & Forensic Audit", "WORK",
+          "Evidence reuse across separate works is prohibited. Identical photos, files, or geotagged coordinates across different projects constitute suspected fraud.",
+          ["work_id", "attached_files", "geotag_status"], "No duplicate evidence across works", 100, "FRAUD_100_OVERRIDE"),
+    _meta("C_EVIDENCE_STUB_DOSSIER", "Critical stub dossier without evidence", "Para 3.2.15", "WORK",
+          "Completion dossiers of 1-2 pages lacking site photos, contractor bills, or progress tables fail minimum audit documentation standards.",
+          ["pdf_page_count", "attached_files"], "Substantive completion records required", 85, "CRITICAL_EVIDENCE_GAP"),
+    _meta("C_EVIDENCE_NO_BILLS_TABLES", "Missing financial bills and progress tables", "Para 4.1.2", "WORK",
+          "Works lacking both contractor bills/vouchers and progress status tables require audit verification before final payment certification.",
+          ["has_bill_proof", "has_progress_tables"], "Bills and progress tables required", 65, "HIGH_EVIDENCE_GAP"),
+    _meta("C_EVIDENCE_PHOTO_GAP", "Missing field photographic inspection proof", "Para 3.2.14", "WORK",
+          "Physical completion verification requires ground-level photographic evidence (preferably geotagged).",
+          ["has_photo_evidence"], "Photographic inspection proof required", 65, "HIGH_EVIDENCE_GAP"),
 ]
 WORK_RULES = {item["rule_id"]: item for item in GUIDELINE_SCOPE_MATRIX if item["scope"] == "WORK"}
 
@@ -274,6 +286,20 @@ def run_compliance_engine() -> Dict[str, Any]:
         raise FileNotFoundError(master_path)
     master = pd.read_parquet(master_path)
 
+    geotag_audit_path = os.path.join(processed, "combined_geotag_audit.json")
+    geotag_audit_by_id = {}
+    if os.path.exists(geotag_audit_path):
+        try:
+            with open(geotag_audit_path, "r", encoding="utf-8") as f:
+                for item in json.load(f):
+                    wid = str(item.get("work_id", "")).strip()
+                    geotag_audit_by_id[wid] = item
+                    tail = wid.split("/")[-1].split("_")[-1]
+                    if tail:
+                        geotag_audit_by_id[tail] = item
+        except Exception as e:
+            print(f"[-] Error loading geotag audit: {e}")
+
     t3_path = os.path.join(processed, "t3_works_recommended.parquet")
     if os.path.exists(t3_path):
         t3 = pd.read_parquet(t3_path)
@@ -389,6 +415,59 @@ def run_compliance_engine() -> Dict[str, Any]:
                     {"description_excerpt": description.at[index][:240]}, "description_indicator"))
             else:
                 results.append(_finding(meta, "PASS"))
+
+        # Evaluate Physical / Evidence & Cross-Work Fraud Rules
+        wid_raw = str(master.at[index, "work_id"] if "work_id" in master.columns else "").strip()
+        wid_tail = wid_raw.split("/")[-1].split("_")[-1]
+        audit_info = geotag_audit_by_id.get(wid_raw) or geotag_audit_by_id.get(wid_tail)
+
+        if audit_info:
+            # 1. Suspected Fraud Duplicate Evidence Reuse (100% Risk Override)
+            meta_fraud = WORK_RULES["C_FRAUD_DUPLICATE_EVIDENCE"]
+            if audit_info.get("is_fraud_suspected"):
+                fraud_data = audit_info.get("fraud_details", {}) or {}
+                add(meta_fraud, _finding(meta_fraud, "FAIL",
+                    f"Cross-work duplicate evidence reuse detected: {fraud_data.get('reason', 'Identical proof reused across works')}",
+                    "Evidence reuse across separate works constitutes suspected fraud. Override composite risk to 100.",
+                    {
+                        "fraud_type": fraud_data.get("fraud_type"),
+                        "matched_work_id": fraud_data.get("fraud_matched_work_id"),
+                        "claimed_coordinates": f"{audit_info.get('latitude')} N, {audit_info.get('longitude')} E",
+                        "distance_between_works_meters": fraud_data.get("fraud_distance_meters"),
+                    }, "forensic_duplicate_match"))
+                score = 100.0
+            else:
+                results.append(_finding(meta_fraud, "PASS"))
+
+            # 2. Stub Dossier (1-2 pages lacking substantive evidence)
+            meta_stub = WORK_RULES["C_EVIDENCE_STUB_DOSSIER"]
+            if audit_info.get("audit_classification") == "CRITICAL" or audit_info.get("pdf_audit", {}).get("geotag_status") == "STUB_DOSSIER_NO_EVIDENCE":
+                add(meta_stub, _finding(meta_stub, "FAIL",
+                    "Uploaded dossier has only 1-2 pages and lacks photographic proof, contractor bills, and progress status tables.",
+                    "A stub administrative dossier without substantive physical and financial evidence cannot substantiate project completion.",
+                    {"page_count": audit_info.get("pdf_audit", {}).get("page_count", 0), "missing_items": audit_info.get("missing_items", [])}))
+            else:
+                results.append(_finding(meta_stub, "PASS"))
+
+            # 3. Missing Bills & Progress Tables
+            meta_bills = WORK_RULES["C_EVIDENCE_NO_BILLS_TABLES"]
+            if audit_info.get("pdf_audit", {}).get("geotag_status") == "NO_BILLS_NO_PROGRESS_TABLES":
+                add(meta_bills, _finding(meta_bills, "NEEDS_REVIEW",
+                    "Document exists but contains neither contractor bills nor physical execution progress status tables.",
+                    "Verify contractor measurement book (M-book) records, bills, and physical progress before treating financial records as complete.",
+                    {"missing_items": audit_info.get("missing_items", [])}))
+            else:
+                results.append(_finding(meta_bills, "PASS"))
+
+            # 4. Photographic Inspection Gap
+            meta_photo = WORK_RULES["C_EVIDENCE_PHOTO_GAP"]
+            if not audit_info.get("pdf_audit", {}).get("has_photo_evidence"):
+                add(meta_photo, _finding(meta_photo, "NEEDS_REVIEW",
+                    "No ground-level photographic site inspection proof was uploaded to MoSPI.",
+                    "Physical verification of the created asset requires ground-level inspection photographs.",
+                    {"missing_summary": audit_info.get("missing_summary")}))
+            else:
+                results.append(_finding(meta_photo, "PASS"))
 
         score = min(float(score), 100.0)
         scores.append(score)

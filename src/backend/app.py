@@ -64,12 +64,16 @@ class LazyWorkIndex:
     def __init__(self, frame: pd.DataFrame):
         self.frame = frame
         self.positions = {}
+        self.normalized_positions = {}
+        self.tail_positions = {}
         self.cache = {}
         if not frame.empty and "work_id" in frame.columns:
             for position, value in enumerate(frame["work_id"].tolist()):
                 work_id = str(value or "").strip()
                 if work_id:
                     self.positions[work_id] = position
+                    self.normalized_positions.setdefault(work_id.lower().replace(" ", "-"), work_id)
+                    self.tail_positions.setdefault(work_id.rsplit("/", 1)[-1], work_id)
 
     def get(self, work_id, default=None):
         clean_id = str(work_id or "").strip()
@@ -82,6 +86,20 @@ class LazyWorkIndex:
     def items(self):
         for work_id in self.positions:
             yield work_id, self.get(work_id)
+
+    def get_by_tail(self, tail_id, default=None):
+        work_id = self.tail_positions.get(str(tail_id or "").strip())
+        return self.get(work_id, default) if work_id else default
+
+    def id_by_tail(self, tail_id):
+        return self.tail_positions.get(str(tail_id or "").strip())
+
+    def get_normalized(self, normalized_id, default=None):
+        work_id = self.normalized_positions.get(str(normalized_id or "").strip().lower())
+        return self.get(work_id, default) if work_id else default
+
+    def id_by_normalized(self, normalized_id):
+        return self.normalized_positions.get(str(normalized_id or "").strip().lower())
 
     def __len__(self):
         return len(self.positions)
@@ -1128,6 +1146,21 @@ def _source_work_id(row):
     return ""
 
 
+def _source_work_ids(frame):
+    """Vectorized counterpart used when building the complete-record cache."""
+    candidates = pd.Series("", index=frame.index, dtype="object")
+    for column in ("work_id", "WORK_ID", "ACTIVITY_NAME"):
+        if column not in frame.columns:
+            continue
+        values = frame[column].fillna("").astype(str).str.strip()
+        valid = values.str.contains(r"WS\s*/", case=False, regex=True, na=False)
+        candidates = candidates.mask(candidates.eq("") & valid, values)
+    pattern = r"(WS\s*/\s*MP\d+\s*/\s*\d{4}-\d{4}\s*/\s*\d+)(?=\D|$)"
+    matched = candidates.str.extract(pattern, expand=False)
+    fallback = candidates.str.replace(r"\s+", "", regex=True).str.split("-", n=1).str[0]
+    return matched.fillna(fallback).fillna("").astype(str).str.replace(r"\s+", "", regex=True)
+
+
 def _source_column(frame, names, default=""):
     for name in names:
         if name in frame.columns:
@@ -1149,7 +1182,7 @@ def _build_recommended_record_frame(source):
     if source.empty:
         return pd.DataFrame()
     frame = source.copy()
-    frame["_canonical_work_id"] = frame.apply(_source_work_id, axis=1)
+    frame["_canonical_work_id"] = _source_work_ids(frame)
     frame = frame[frame["_canonical_work_id"].ne("")].drop_duplicates("_canonical_work_id", keep="last")
     if frame.empty:
         return pd.DataFrame()
@@ -1174,7 +1207,7 @@ def _build_expenditure_record_frame(source):
     if source.empty:
         return pd.DataFrame()
     frame = source.copy()
-    frame["_canonical_work_id"] = frame.apply(_source_work_id, axis=1)
+    frame["_canonical_work_id"] = _source_work_ids(frame)
     frame = frame[frame["_canonical_work_id"].ne("")].copy()
     if frame.empty:
         return pd.DataFrame()
@@ -1271,8 +1304,12 @@ def _all_records_frame(data):
         if column not in all_records.columns:
             all_records[column] = ""
         all_records[column] = all_records[column].fillna("").astype(str)
-    all_records["overall_risk_level"] = all_records.get("overall_risk_level", "UNASSESSED").fillna("UNASSESSED").astype(str).replace({"": "UNASSESSED"})
-    all_records["has_expenditure_record"] = all_records.get("has_expenditure_record", False).fillna(False).astype(bool)
+    if "overall_risk_level" not in all_records.columns:
+        all_records["overall_risk_level"] = "UNASSESSED"
+    all_records["overall_risk_level"] = all_records["overall_risk_level"].fillna("UNASSESSED").astype(str).replace({"": "UNASSESSED"})
+    if "has_expenditure_record" not in all_records.columns:
+        all_records["has_expenditure_record"] = False
+    all_records["has_expenditure_record"] = all_records["has_expenditure_record"].fillna(False).astype(bool)
     data["all_records"] = all_records
     data["all_work_index"] = LazyWorkIndex(all_records)
     return all_records
@@ -1437,6 +1474,30 @@ def get_all_records(
         "metadata": _analytics_metadata(),
     }
 
+
+@app.get("/api/work-id-map")
+def get_work_id_map(work_ids: str = ""):
+    """Resolve manifest tail IDs to the complete work IDs used by the API."""
+    requested = {item.strip() for item in work_ids.split(",") if item.strip()}
+    if not requested:
+        return {}
+    result = {}
+    data = get_data()
+    for value in data["master"]["work_id"].dropna().astype(str):
+        full_id = value.strip()
+        tail_id = full_id.rsplit("/", 1)[-1]
+        if full_id in requested or tail_id in requested:
+            result[tail_id] = full_id
+            result[full_id] = full_id
+    if len(result) < len(requested):
+        for value in _all_records_frame(data)["work_id"].dropna().astype(str):
+            full_id = value.strip()
+            tail_id = full_id.rsplit("/", 1)[-1]
+            if full_id in requested or tail_id in requested:
+                result[tail_id] = full_id
+                result[full_id] = full_id
+    return result
+
 def _fetch_work_detail_internal(target_work_id: str):
     if not target_work_id:
         raise HTTPException(status_code=400, detail="work_id parameter is required.")
@@ -1451,21 +1512,42 @@ def _fetch_work_detail_internal(target_work_id: str):
     if not work_record:
         # Fallback search by normalized or tail ID
         norm_target = clean_id.lower().replace(" ", "-")
-        for wid, rec in work_index.items():
-            if wid.lower().replace(" ", "-") == norm_target:
-                work_record = rec
-                clean_id = wid
-                break
+        if hasattr(work_index, "get_normalized"):
+            resolved_id = work_index.id_by_normalized(norm_target)
+            work_record = work_index.get_normalized(norm_target)
+            if work_record and resolved_id:
+                clean_id = resolved_id
                 
     if not work_record:
         parts = clean_id.replace(" ", "-").split("/")
         tail = parts[-1] if len(parts) > 1 else clean_id
-        if tail and len(tail) >= 4 and tail.isdigit():
-            for wid, rec in work_index.items():
-                if wid.endswith("/" + tail) or wid == tail:
-                    work_record = rec
-                    clean_id = wid
-                    break
+        if tail and len(tail) >= 4 and tail.isdigit() and hasattr(work_index, "get_by_tail"):
+            resolved_id = work_index.id_by_tail(tail)
+            work_record = work_index.get_by_tail(tail)
+            if work_record and resolved_id:
+                clean_id = resolved_id
+
+    if not work_record:
+        # Recommended-only and expenditure-only rows live outside the risk
+        # master, but must still open from the complete-records view.
+        all_index = data.get("all_work_index") or LazyWorkIndex(_all_records_frame(data))
+        data["all_work_index"] = all_index
+        work_index = all_index
+        work_record = work_index.get(clean_id)
+        if not work_record:
+            if hasattr(work_index, "get_normalized"):
+                resolved_id = work_index.id_by_normalized(norm_target)
+                work_record = work_index.get_normalized(norm_target)
+                if work_record and resolved_id:
+                    clean_id = resolved_id
+        if not work_record:
+            parts = clean_id.replace(" ", "-").split("/")
+            tail = parts[-1] if len(parts) > 1 else clean_id
+            if tail and len(tail) >= 4 and tail.isdigit() and hasattr(work_index, "get_by_tail"):
+                resolved_id = work_index.id_by_tail(tail)
+                work_record = work_index.get_by_tail(tail)
+                if work_record and resolved_id:
+                    clean_id = resolved_id
                     
     if not work_record:
         raise HTTPException(status_code=404, detail=f"Work ID '{clean_id}' not found.")
@@ -1579,9 +1661,9 @@ def get_duplicate_clusters(
     }
 
 @app.get("/api/filters")
-def get_filter_options(state: str = None):
+def get_filter_options(state: str = None, scope: str = "risk"):
     data = get_data()
-    master = data["master"]
+    master = _all_records_frame(data) if scope.strip().lower() == "all" else data["master"]
     
     states = sorted([str(s) for s in master["state"].dropna().unique() if str(s).strip() != ""])
     constituency_master = master
@@ -1593,6 +1675,7 @@ def get_filter_options(state: str = None):
     categories = sorted([str(c) for c in master["work_category"].dropna().unique() if str(c).strip() != ""])
     severities = ["CRITICAL", "HIGH", "MEDIUM", "LOW"]
     
+    risk_levels = sorted([str(level) for level in master["overall_risk_level"].dropna().unique() if str(level).strip() != ""]) if "overall_risk_level" in master.columns else []
     return {
         "states": states,
         "constituencies": constituencies,
@@ -1600,6 +1683,8 @@ def get_filter_options(state: str = None):
         "categories": categories,
         "severities": severities,
         "statuses": statuses,
+        "risk_levels": risk_levels,
+        "expenditure_options": ["WITH", "WITHOUT"],
     }
 
 if __name__ == "__main__":

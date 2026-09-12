@@ -16,12 +16,15 @@ import {
   getGeotagEvidence,
   mapsUrl,
 } from '../lib/geotagEvidence';
+import { fetchWorkDetail } from '../services/api';
+import { WorkRecord } from '../types';
 
 interface GeotagEvidenceModalProps {
   isOpen: boolean;
   workId: string | null;
   initialImageName?: string;
   onClose: () => void;
+  onSelectWork?: (workId: string) => void;
 }
 
 export const GeotagEvidenceModal: React.FC<GeotagEvidenceModalProps> = ({
@@ -29,10 +32,13 @@ export const GeotagEvidenceModal: React.FC<GeotagEvidenceModalProps> = ({
   workId,
   initialImageName,
   onClose,
+  onSelectWork,
 }) => {
   const record = getGeotagEvidence(workId);
   const [selectedImageName, setSelectedImageName] = useState<string | undefined>();
   const [zoom, setZoom] = useState(1);
+  const [imageLoadError, setImageLoadError] = useState(false);
+  const [riskWork, setRiskWork] = useState<WorkRecord | null>(null);
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -41,6 +47,7 @@ export const GeotagEvidenceModal: React.FC<GeotagEvidenceModalProps> = ({
       || record?.images[0];
     setSelectedImageName(image?.name);
     setZoom(1);
+    setImageLoadError(false);
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
     };
@@ -53,6 +60,24 @@ export const GeotagEvidenceModal: React.FC<GeotagEvidenceModalProps> = ({
     };
   }, [isOpen, workId, initialImageName, record, onClose]);
 
+  useEffect(() => {
+    if (!isOpen || !workId) {
+      setRiskWork(null);
+      return undefined;
+    }
+    let cancelled = false;
+    fetchWorkDetail(workId)
+      .then((response) => {
+        if (!cancelled) setRiskWork(response.work || null);
+      })
+      .catch(() => {
+        if (!cancelled) setRiskWork(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, workId]);
+
   const selectedImage = useMemo(
     () => record?.images.find((image) => image.name === selectedImageName) || record?.images[0],
     [record, selectedImageName],
@@ -60,6 +85,8 @@ export const GeotagEvidenceModal: React.FC<GeotagEvidenceModalProps> = ({
   const selectedGps = selectedImage?.gps;
   const firstGpsImage = record?.gpsImages[0];
   const selectedIndex = record?.images.findIndex((image) => image.name === selectedImage?.name) ?? -1;
+  const displayWorkId = riskWork?.work_id || (workId && workId.includes('/') ? workId : record?.fullWorkId || record?.workId || workId);
+  const formatAmount = (amount?: number) => `₹${(Number(amount || 0) / 100000).toFixed(2)} L`;
 
   if (!isOpen) return null;
 
@@ -71,26 +98,31 @@ export const GeotagEvidenceModal: React.FC<GeotagEvidenceModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6" role="dialog" aria-modal="true" aria-label="Photographic evidence preview">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 lg:p-6" role="dialog" aria-modal="true" aria-label="Photographic evidence preview">
       <button aria-label="Close evidence preview" onClick={onClose} className="absolute inset-0 bg-slate-950/75 backdrop-blur-sm" />
-      <div className="relative z-10 flex max-h-[94vh] w-full max-w-7xl flex-col overflow-hidden rounded-2xl border border-slate-700 bg-slate-950 text-slate-100 shadow-2xl lg:flex-row">
+      <div className="relative z-10 flex h-[calc(100vh-1rem)] max-h-[94vh] w-full max-w-[calc(100vw-1rem)] flex-col overflow-hidden rounded-2xl border border-slate-700 bg-slate-950 text-slate-100 shadow-2xl sm:h-[calc(100vh-2rem)] lg:h-[94vh] lg:max-w-[calc(100vw-3rem)] lg:flex-row">
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3 sm:px-5">
             <div className="min-w-0">
               <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-300">
                 <ImageIcon className="h-3.5 w-3.5" /> Visual field evidence
               </div>
-              <h2 className="mt-1 truncate text-sm font-bold text-white">Work {record?.workId || workId || '—'}</h2>
+              <h2 className="mt-1 truncate text-sm font-bold text-white">Work {displayWorkId || '—'}</h2>
             </div>
             <button onClick={onClose} className="rounded-xl p-2 text-slate-400 transition hover:bg-slate-800 hover:text-white" aria-label="Close">
               <X className="h-5 w-5" />
             </button>
           </div>
 
-          <div className="relative flex min-h-[300px] flex-1 items-center justify-center overflow-auto bg-[radial-gradient(circle_at_center,_#1e293b_0,_#020617_70%)] p-4 sm:min-h-[460px]">
-            {selectedImage ? (
-              <div className="relative inline-block max-w-full origin-center transition-transform duration-150" style={{ transform: `scale(${zoom})` }}>
-                <img src={selectedImage.url} alt={`Photographic evidence for work ${record?.workId || workId}`} className="block max-h-[58vh] max-w-[min(78vw,920px)] rounded-lg object-contain shadow-2xl" />
+          <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-auto bg-[radial-gradient(circle_at_center,_#1e293b_0,_#020617_70%)] p-3 sm:p-5">
+            {selectedImage && !imageLoadError ? (
+              <div className="relative inline-block max-h-full max-w-full origin-center transition-transform duration-150" style={{ transform: `scale(${zoom})` }}>
+                <img
+                  src={selectedImage.url}
+                  alt={`Photographic evidence for work ${displayWorkId || workId}`}
+                  onError={() => setImageLoadError(true)}
+                  className="block h-auto max-h-full max-w-full rounded-lg object-contain shadow-2xl"
+                />
                 {selectedGps?.bbox && (
                   <div
                     className="pointer-events-none absolute z-10 rounded-sm border-2 border-emerald-300 bg-emerald-400/10 shadow-[0_0_0_9999px_rgba(2,6,23,0.12),0_0_18px_rgba(52,211,153,0.8)]"
@@ -106,6 +138,10 @@ export const GeotagEvidenceModal: React.FC<GeotagEvidenceModalProps> = ({
                     </span>
                   </div>
                 )}
+              </div>
+            ) : selectedImage ? (
+              <div className="rounded-xl border border-dashed border-rose-700/70 bg-rose-950/30 px-6 py-10 text-center text-xs text-rose-200">
+                The image file could not be loaded from the evidence archive.
               </div>
             ) : (
               <div className="rounded-xl border border-dashed border-slate-700 px-6 py-10 text-center text-xs text-slate-400">No photographic evidence is attached to this work.</div>
@@ -146,11 +182,11 @@ export const GeotagEvidenceModal: React.FC<GeotagEvidenceModalProps> = ({
           </div>
         </div>
 
-        <aside className="w-full shrink-0 overflow-y-auto border-t border-slate-800 bg-slate-900/70 p-4 sm:p-5 lg:w-[330px] lg:border-l lg:border-t-0">
+        <aside className="max-h-[38vh] w-full shrink-0 overflow-y-auto border-t border-slate-800 bg-slate-900/70 p-4 sm:p-5 lg:max-h-none lg:w-[clamp(18rem,28vw,24rem)] lg:border-l lg:border-t-0">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">Audit telemetry</p>
-              <h3 className="mt-1 text-base font-bold text-white">{record?.title || `Work ${workId}`}</h3>
+              <h3 className="mt-1 text-base font-bold text-white">{record?.title || `Work ${displayWorkId || workId}`}</h3>
             </div>
             <MapPin className="mt-1 h-5 w-5 shrink-0 text-emerald-300" />
           </div>
@@ -162,7 +198,7 @@ export const GeotagEvidenceModal: React.FC<GeotagEvidenceModalProps> = ({
           <div className="mt-3 rounded-xl border border-slate-800 bg-slate-950/60 p-3 text-[11px]">
             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Work details</p>
             <dl className="mt-2 space-y-2">
-              <div className="flex justify-between gap-3"><dt className="text-slate-500">Work ID</dt><dd className="font-mono font-bold text-slate-200">{record?.workId || workId || '—'}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-slate-500">Work ID</dt><dd className="text-right font-mono font-bold text-slate-200">{displayWorkId || '—'}</dd></div>
               <div className="flex justify-between gap-3"><dt className="text-slate-500">Constituency</dt><dd className="text-right font-semibold text-slate-300">{record?.constituency || '—'}</dd></div>
               <div className="flex justify-between gap-3"><dt className="text-slate-500">Mandal</dt><dd className="text-right font-semibold text-slate-300">{record?.mandal || '—'}</dd></div>
               <div className="flex justify-between gap-3"><dt className="text-slate-500">Category</dt><dd className="text-right font-semibold text-slate-300">{record?.category || '—'}</dd></div>
@@ -171,6 +207,18 @@ export const GeotagEvidenceModal: React.FC<GeotagEvidenceModalProps> = ({
             </dl>
             {record?.auditReason && <p className="mt-3 border-t border-slate-800 pt-3 leading-relaxed text-slate-400">{record.auditReason}</p>}
           </div>
+
+          {riskWork && <div className="mt-3 rounded-xl border border-indigo-800/70 bg-indigo-950/30 p-3 text-[11px]">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-300">Complete risk record</p>
+            <dl className="mt-2 space-y-2">
+              <div className="flex justify-between gap-3"><dt className="text-slate-500">Status</dt><dd className="text-right font-semibold text-slate-200">{riskWork.work_status || '—'}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-slate-500">Risk level</dt><dd className="font-bold text-amber-300">{riskWork.overall_risk_level || '—'}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-slate-500">Composite risk</dt><dd className="font-mono font-bold text-slate-200">{Number(riskWork.composite_risk_score || 0).toFixed(1)} / 100</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-slate-500">Sanctioned</dt><dd className="font-mono font-semibold text-slate-200">{formatAmount(riskWork.sanction_amount)}</dd></div>
+              <div className="flex justify-between gap-3"><dt className="text-slate-500">Expenditure</dt><dd className="font-mono font-semibold text-emerald-300">{formatAmount(riskWork.effective_expenditure)}</dd></div>
+            </dl>
+            {onSelectWork && <button onClick={() => { onClose(); onSelectWork(riskWork.work_id); }} className="mt-3 inline-flex w-full items-center justify-center rounded-xl border border-indigo-500/70 bg-indigo-500/20 px-3 py-2 text-[11px] font-bold text-indigo-200 transition hover:bg-indigo-500/35">Open full risk profile</button>}
+          </div>}
 
           <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950/60 p-3">
             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Coordinates</p>

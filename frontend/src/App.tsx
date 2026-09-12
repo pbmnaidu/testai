@@ -157,6 +157,7 @@ export function App() {
         isOpen={Boolean(evidencePreview)}
         workId={evidencePreview?.workId || null}
         initialImageName={evidencePreview?.imageName}
+        onSelectWork={handleSelectWork}
         onClose={() => setEvidencePreview(null)}
       />
     </div>

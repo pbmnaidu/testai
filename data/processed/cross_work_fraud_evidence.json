@@ -1,0 +1,50 @@
+{
+  "267660": {
+    "is_fraud_suspected": true,
+    "fraud_type": "DUPLICATE_GEOTAG_LOCATION_REUSE",
+    "fraud_matched_work_id": "256730",
+    "fraud_matched_work_title": "Providing 1000 LPHS RO Water Plant with shed at Atcherla Village of Kasimkota mandal",
+    "fraud_matched_mandal": "Kasimkota",
+    "fraud_matched_coords": "17.687629\u00b0 N, 83.014912\u00b0 E",
+    "fraud_distance_meters": 2.2,
+    "fraud_matched_image": "WORK_256730_1788843096992.jpeg",
+    "override_risk_score": 100.0,
+    "reason": "Exact duplicate geotag location reused across distinct works. Claimed coordinates (17.68763\u00b0 N, 83.014933\u00b0 E) are identical (2.2m apart) to Work 256730 (Kasimkota: Providing 1000 LPHS RO Water Plant with ...)."
+  },
+  "256730": {
+    "is_fraud_suspected": true,
+    "fraud_type": "DUPLICATE_GEOTAG_LOCATION_REUSE",
+    "fraud_matched_work_id": "267660",
+    "fraud_matched_work_title": "Construction of Bus Shelter at P.Bheemavaram Village of Butchayyapeta Mandal of Anakapalli District",
+    "fraud_matched_mandal": "Anakapalli",
+    "fraud_matched_coords": "17.68763\u00b0 N, 83.014933\u00b0 E",
+    "fraud_distance_meters": 2.2,
+    "fraud_matched_image": "WORK_267660_1788842461587.jpeg",
+    "override_risk_score": 100.0,
+    "reason": "Exact duplicate geotag location reused across distinct works. Claimed coordinates (17.687629\u00b0 N, 83.014912\u00b0 E) are identical (2.2m apart) to Work 267660 (Anakapalli: Construction of Bus Shelter at P.Bheemav...)."
+  },
+  "256735": {
+    "is_fraud_suspected": true,
+    "fraud_type": "DUPLICATE_GEOTAG_LOCATION_REUSE",
+    "fraud_matched_work_id": "267660",
+    "fraud_matched_work_title": "Construction of Bus Shelter at P.Bheemavaram Village of Butchayyapeta Mandal of Anakapalli District",
+    "fraud_matched_mandal": "Anakapalli",
+    "fraud_matched_coords": "17.68763\u00b0 N, 83.014933\u00b0 E",
+    "fraud_distance_meters": 10.4,
+    "fraud_matched_image": "WORK_267660_1788842461587.jpeg",
+    "override_risk_score": 100.0,
+    "reason": "Exact duplicate geotag location reused across distinct works. Claimed coordinates (17.68772\u00b0 N, 83.014961\u00b0 E) are identical (10.4m apart) to Work 267660 (Anakapalli: Construction of Bus Shelter at P.Bheemav...)."
+  },
+  "278233": {
+    "is_fraud_suspected": true,
+    "fraud_type": "DUPLICATE_GEOTAG_LOCATION_REUSE",
+    "fraud_matched_work_id": "267660",
+    "fraud_matched_work_title": "Construction of Bus Shelter at P.Bheemavaram Village of Butchayyapeta Mandal of Anakapalli District",
+    "fraud_matched_mandal": "Anakapalli",
+    "fraud_matched_coords": "17.68763\u00b0 N, 83.014933\u00b0 E",
+    "fraud_distance_meters": 3.6,
+    "fraud_matched_image": "WORK_267660_1788842461587.jpeg",
+    "override_risk_score": 100.0,
+    "reason": "Exact duplicate geotag location reused across distinct works. Claimed coordinates (17.68766\u00b0 N, 83.014945\u00b0 E) are identical (3.6m apart) to Work 267660 (Anakapalli: Construction of Bus Shelter at P.Bheemav...)."
+  }
+}

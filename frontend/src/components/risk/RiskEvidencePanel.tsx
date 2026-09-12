@@ -6,9 +6,10 @@ import { GeotagEvidenceCard } from '../GeotagEvidenceCard';
 interface RiskEvidencePanelProps {
   work: WorkRecord;
   onOpenEvidence?: (workId: string, imageName?: string) => void;
+  onSelectWork?: (workId: string) => void;
 }
 
-export const RiskEvidencePanel: React.FC<RiskEvidencePanelProps> = ({ work, onOpenEvidence }) => {
+export const RiskEvidencePanel: React.FC<RiskEvidencePanelProps> = ({ work, onOpenEvidence, onSelectWork }) => {
   const amount = work.sanction_amount || 0;
   const nestedComplianceFinding = (work.compliance_findings || work.compliance_rule_results || [])
     .find((finding) => finding.status === 'FAIL' || finding.status === 'NEEDS_REVIEW');
@@ -100,7 +101,7 @@ export const RiskEvidencePanel: React.FC<RiskEvidencePanelProps> = ({ work, onOp
         </p>
       </div>
 
-      <GeotagEvidenceCard workId={work.work_id} onOpenEvidence={onOpenEvidence} />
+      <GeotagEvidenceCard workId={work.work_id} onOpenEvidence={onOpenEvidence} onSelectWork={onSelectWork} />
 
       {/* 5 Risk Sub-Engine Cards */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
