@@ -20,6 +20,8 @@ from src.data.sync.sync_runner import (
     commit_preview,
     run_sync_job,
     start_sync_job,
+    reset_sync_job,
+    reconcile_sync_state,
     start_scheduler,
 )
 from src.data.sync.training_manager import TRAINING_MANAGER
@@ -46,6 +48,7 @@ app.add_middleware(
 
 @app.on_event("startup")
 def start_automatic_sync_scheduler():
+    reconcile_sync_state()
     start_scheduler()
 
 # Resolve paths dynamically so the backend works on any machine (including Vercel)
@@ -922,6 +925,12 @@ def sync_run_now():
             status_code=503,
             detail="A synchronization job could not be started. The previous validated dataset remains available.",
         )
+
+
+@app.post("/api/sync/reset")
+def sync_reset():
+    """Reset or clear an interrupted/stale synchronization job."""
+    return reset_sync_job()
 
 
 @app.get("/api/sync/training-status")

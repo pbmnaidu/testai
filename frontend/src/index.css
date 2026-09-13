@@ -260,6 +260,20 @@ html:not(.dark) .risk-evidence-admin-action {
 html:not(.dark) .risk-evidence-admin-action .text-emerald-400 { color: #047857 !important; }
 html:not(.dark) .risk-evidence-admin-action .text-slate-200 { color: #1e3a8a !important; }
 
+/* The evidence page uses dark-mode utility variants on controls so the night
+   palette remains compact. Do not let the broad legacy slate remap turn those
+   daytime controls into blue cards or blue text. */
+html:not(.dark) .geotag-evidence-page [class*="bg-slate-900"] {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+html:not(.dark) .geotag-evidence-modal [class*="bg-slate-900"] {
+  background-color: #f8fafc !important;
+}
+html:not(.dark) .geotag-evidence-modal [class*="dark:text-slate-300"] {
+  color: #334155 !important;
+}
+
 html:not(.dark) .gis-map-panel {
   background: #ffffff !important;
   border-color: #dbe3ee !important;
@@ -375,6 +389,32 @@ html:not(.dark) .schedule-monitor-action {
 .sidebar-shell { width: 18rem; }
 .shell-topbar { left: 0; }
 .shell-main { margin-left: 0; }
+.geotag-evidence-modal { z-index: 100; }
+.geotag-evidence-modal__backdrop { background: rgba(2, 6, 23, 0.75); }
+.geotag-evidence-modal__panel {
+  width: calc(100vw - 1rem);
+  height: calc(100vh - 1rem);
+  max-height: 94vh;
+}
+.geotag-evidence-modal__image-canvas {
+  background: radial-gradient(circle at center, #e2e8f0 0, #f8fafc 70%);
+}
+.geotag-evidence-modal__coordinate-canvas {
+  background: radial-gradient(circle at 45% 40%, #dbeafe 0, #f8fafc 52%, #e2e8f0 100%);
+}
+.geotag-evidence-modal__aside { max-height: 38vh; }
+.geotag-evidence-table { min-width: 1000px; }
+.dark .geotag-evidence-modal__image-canvas {
+  background: radial-gradient(circle at center, #1e293b 0, #020617 70%);
+}
+.dark .geotag-evidence-modal__coordinate-canvas {
+  background: radial-gradient(circle at 45% 40%, #164e63 0, #0f172a 52%, #020617 100%);
+}
+html:not(.dark) .geotag-evidence-modal .text-slate-500 { color: #64748b !important; }
+html:not(.dark) .geotag-evidence-modal .text-slate-400 { color: #64748b !important; }
+html:not(.dark) .geotag-evidence-modal .text-slate-300 { color: #475569 !important; }
+html:not(.dark) .geotag-evidence-modal .text-slate-200 { color: #334155 !important; }
+html:not(.dark) .geotag-evidence-modal .text-white { color: #0f172a !important; }
 @media (min-width: 1024px) {
   .sidebar-shell { width: 16rem; }
   .sidebar-shell.sidebar-shell--collapsed { width: 4rem; }
@@ -382,4 +422,15 @@ html:not(.dark) .schedule-monitor-action {
   .shell-topbar.shell-topbar--collapsed { left: 4rem; }
   .shell-main { margin-left: 16rem; }
   .shell-main.shell-main--collapsed { margin-left: 4rem; }
+  .geotag-evidence-modal__panel { width: calc(100vw - 3rem); height: 94vh; }
+  .geotag-evidence-modal__aside {
+    width: clamp(18rem, 28vw, 24rem);
+    max-height: none;
+    border-left-width: 1px;
+    border-top-width: 0;
+  }
+  .geotag-evidence-table {
+    min-width: 0;
+    table-layout: fixed;
+  }
 }

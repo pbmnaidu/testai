@@ -118,6 +118,10 @@ export async function startSync(): Promise<SyncStatusResponse['job']> {
   return postJson<SyncStatusResponse['job']>(API_BASE + '/sync/start', {});
 }
 
+export async function resetSyncJob(): Promise<SyncStatusResponse['job']> {
+  return postJson<SyncStatusResponse['job']>(API_BASE + '/sync/reset', {});
+}
+
 export async function fetchAnalyticsStates(): Promise<any> {
   return safeFetchJson(API_BASE + '/analytics/states', { metadata: undefined, states: [], methodology: {} });
 }

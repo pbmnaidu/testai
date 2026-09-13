@@ -245,7 +245,7 @@ export const GeotagEvidenceAuditPage: React.FC<GeotagEvidenceAuditPageProps> = (
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1150px] text-left text-xs">
+          <table className="geotag-evidence-table w-full text-left text-xs">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50 text-[10px] uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-400">
                 <th className="px-5 py-3">Work ID &amp; constituency</th>

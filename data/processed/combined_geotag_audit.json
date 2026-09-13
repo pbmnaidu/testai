@@ -3723,7 +3723,7 @@
       "bill_proof_keywords": [
         "uc"
       ],
-      "geotag_status": "FRAUD_SUSPECTED",
+      "geotag_status": "GEOTAG_VERIFIED",
       "gps": {
         "latitude": 17.68763,
         "longitude": 83.014933,
@@ -3762,9 +3762,9 @@
         }
       ]
     },
-    "audit_classification": "FRAUD_CRITICAL",
-    "audit_badge_text": "\ud83d\udea8 Suspected Fraud (100% Risk Override)",
-    "audit_reason": "Exact duplicate geotag location reused across distinct works. Claimed coordinates (17.68763\u00b0 N, 83.014933\u00b0 E) are identical (2.2m apart) to Work 256730 (Kasimkota: Providing 1000 LPHS RO Water Plant with ...).",
+    "audit_classification": "GREEN",
+    "audit_badge_text": "\ud83d\udfe2 Geotagged Picture Verified",
+    "audit_reason": "1 scanned picture(s) found. Ground-truth coordinates extracted: 17.68763\u00b0 N, 83.014933\u00b0 E (Lat: 17.687630 Long: 83.014933).",
     "attached_files": [
       {
         "name": "WORK_267660_1788842461587.jpeg",
@@ -3777,26 +3777,15 @@
     "latitude": 17.68763,
     "longitude": 83.014933,
     "geocoding_source": "Visual GPS Stamp (Photo Watermark)",
-    "risk_score": 100.0,
-    "risk_level": "CRITICAL",
-    "work_risk_description": "\ud83d\udea8 CRITICAL FRAUD ALERT (100% Risk Override): Evidence reuse detected. Exact duplicate geotag location reused across distinct works. Claimed coordinates (17.68763\u00b0 N, 83.014933\u00b0 E) are identical (2.2m apart) to Work 256730 (Kasimkota: Providing 1000 LPHS RO Water Plant with ...). Missing: Physical execution progress status tables",
+    "risk_score": 15.0,
+    "risk_level": "LOW",
+    "work_risk_description": "Missing: Physical execution progress status tables",
     "missing_items": [
       "Physical execution progress status tables"
     ],
     "missing_summary": "Missing: Physical execution progress status tables",
-    "is_fraud_suspected": true,
-    "fraud_details": {
-      "is_fraud_suspected": true,
-      "fraud_type": "DUPLICATE_GEOTAG_LOCATION_REUSE",
-      "fraud_matched_work_id": "256730",
-      "fraud_matched_work_title": "Providing 1000 LPHS RO Water Plant with shed at Atcherla Village of Kasimkota mandal",
-      "fraud_matched_mandal": "Kasimkota",
-      "fraud_matched_coords": "17.687629\u00b0 N, 83.014912\u00b0 E",
-      "fraud_distance_meters": 2.2,
-      "fraud_matched_image": "WORK_256730_1788843096992.jpeg",
-      "override_risk_score": 100.0,
-      "reason": "Exact duplicate geotag location reused across distinct works. Claimed coordinates (17.68763\u00b0 N, 83.014933\u00b0 E) are identical (2.2m apart) to Work 256730 (Kasimkota: Providing 1000 LPHS RO Water Plant with ...)."
-    }
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "256730",
@@ -3818,7 +3807,7 @@
       "has_photo_evidence": true,
       "has_bill_proof": false,
       "bill_proof_keywords": [],
-      "geotag_status": "FRAUD_SUSPECTED",
+      "geotag_status": "GEOTAG_VERIFIED",
       "gps": {
         "latitude": 17.687629,
         "longitude": 83.014912,
@@ -3857,9 +3846,9 @@
         }
       ]
     },
-    "audit_classification": "FRAUD_CRITICAL",
-    "audit_badge_text": "\ud83d\udea8 Suspected Fraud (100% Risk Override)",
-    "audit_reason": "Exact duplicate geotag location reused across distinct works. Claimed coordinates (17.687629\u00b0 N, 83.014912\u00b0 E) are identical (2.2m apart) to Work 267660 (Anakapalli: Construction of Bus Shelter at P.Bheemav...).",
+    "audit_classification": "GREEN",
+    "audit_badge_text": "\ud83d\udfe2 Geotagged Picture Verified",
+    "audit_reason": "1 scanned picture(s) found. Ground-truth coordinates extracted: 17.687629\u00b0 N, 83.014912\u00b0 E (Lat: 17.687629 Long: 83.014912).",
     "attached_files": [
       {
         "name": "WORK_256730_1788843096992.jpeg",
@@ -3872,27 +3861,16 @@
     "latitude": 17.687629,
     "longitude": 83.014912,
     "geocoding_source": "Visual GPS Stamp (Photo Watermark)",
-    "risk_score": 100.0,
-    "risk_level": "CRITICAL",
-    "work_risk_description": "\ud83d\udea8 CRITICAL FRAUD ALERT (100% Risk Override): Evidence reuse detected. Exact duplicate geotag location reused across distinct works. Claimed coordinates (17.687629\u00b0 N, 83.014912\u00b0 E) are identical (2.2m apart) to Work 267660 (Anakapalli: Construction of Bus Shelter at P.Bheemav...). Missing: Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "risk_score": 15.0,
+    "risk_level": "LOW",
+    "work_risk_description": "Missing: Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
     "missing_items": [
       "Contractor bills, invoices, and financial vouchers",
       "Physical execution progress status tables"
     ],
     "missing_summary": "Missing: Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
-    "is_fraud_suspected": true,
-    "fraud_details": {
-      "is_fraud_suspected": true,
-      "fraud_type": "DUPLICATE_GEOTAG_LOCATION_REUSE",
-      "fraud_matched_work_id": "267660",
-      "fraud_matched_work_title": "Construction of Bus Shelter at P.Bheemavaram Village of Butchayyapeta Mandal of Anakapalli District",
-      "fraud_matched_mandal": "Anakapalli",
-      "fraud_matched_coords": "17.68763\u00b0 N, 83.014933\u00b0 E",
-      "fraud_distance_meters": 2.2,
-      "fraud_matched_image": "WORK_267660_1788842461587.jpeg",
-      "override_risk_score": 100.0,
-      "reason": "Exact duplicate geotag location reused across distinct works. Claimed coordinates (17.687629\u00b0 N, 83.014912\u00b0 E) are identical (2.2m apart) to Work 267660 (Anakapalli: Construction of Bus Shelter at P.Bheemav...)."
-    }
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "256735",
@@ -3914,7 +3892,7 @@
       "has_photo_evidence": true,
       "has_bill_proof": false,
       "bill_proof_keywords": [],
-      "geotag_status": "FRAUD_SUSPECTED",
+      "geotag_status": "GEOTAG_VERIFIED",
       "gps": {
         "latitude": 17.68772,
         "longitude": 83.014961,
@@ -3953,9 +3931,9 @@
         }
       ]
     },
-    "audit_classification": "FRAUD_CRITICAL",
-    "audit_badge_text": "\ud83d\udea8 Suspected Fraud (100% Risk Override)",
-    "audit_reason": "Exact duplicate geotag location reused across distinct works. Claimed coordinates (17.68772\u00b0 N, 83.014961\u00b0 E) are identical (10.4m apart) to Work 267660 (Anakapalli: Construction of Bus Shelter at P.Bheemav...).",
+    "audit_classification": "GREEN",
+    "audit_badge_text": "\ud83d\udfe2 Geotagged Picture Verified",
+    "audit_reason": "1 scanned picture(s) found. Ground-truth coordinates extracted: 17.68772\u00b0 N, 83.014961\u00b0 E (Lat: 17.687720 Long: 83.014961).",
     "attached_files": [
       {
         "name": "WORK_256735_1788845402888.jpeg",
@@ -3968,27 +3946,16 @@
     "latitude": 17.68772,
     "longitude": 83.014961,
     "geocoding_source": "Visual GPS Stamp (Photo Watermark)",
-    "risk_score": 100.0,
-    "risk_level": "CRITICAL",
-    "work_risk_description": "\ud83d\udea8 CRITICAL FRAUD ALERT (100% Risk Override): Evidence reuse detected. Exact duplicate geotag location reused across distinct works. Claimed coordinates (17.68772\u00b0 N, 83.014961\u00b0 E) are identical (10.4m apart) to Work 267660 (Anakapalli: Construction of Bus Shelter at P.Bheemav...). Missing: Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "risk_score": 15.0,
+    "risk_level": "LOW",
+    "work_risk_description": "Missing: Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
     "missing_items": [
       "Contractor bills, invoices, and financial vouchers",
       "Physical execution progress status tables"
     ],
     "missing_summary": "Missing: Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
-    "is_fraud_suspected": true,
-    "fraud_details": {
-      "is_fraud_suspected": true,
-      "fraud_type": "DUPLICATE_GEOTAG_LOCATION_REUSE",
-      "fraud_matched_work_id": "267660",
-      "fraud_matched_work_title": "Construction of Bus Shelter at P.Bheemavaram Village of Butchayyapeta Mandal of Anakapalli District",
-      "fraud_matched_mandal": "Anakapalli",
-      "fraud_matched_coords": "17.68763\u00b0 N, 83.014933\u00b0 E",
-      "fraud_distance_meters": 10.4,
-      "fraud_matched_image": "WORK_267660_1788842461587.jpeg",
-      "override_risk_score": 100.0,
-      "reason": "Exact duplicate geotag location reused across distinct works. Claimed coordinates (17.68772\u00b0 N, 83.014961\u00b0 E) are identical (10.4m apart) to Work 267660 (Anakapalli: Construction of Bus Shelter at P.Bheemav...)."
-    }
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "272081",
@@ -4350,7 +4317,7 @@
       "has_photo_evidence": true,
       "has_bill_proof": false,
       "bill_proof_keywords": [],
-      "geotag_status": "FRAUD_SUSPECTED",
+      "geotag_status": "GEOTAG_VERIFIED",
       "gps": {
         "latitude": 17.68766,
         "longitude": 83.014945,
@@ -4389,9 +4356,9 @@
         }
       ]
     },
-    "audit_classification": "FRAUD_CRITICAL",
-    "audit_badge_text": "\ud83d\udea8 Suspected Fraud (100% Risk Override)",
-    "audit_reason": "Exact duplicate geotag location reused across distinct works. Claimed coordinates (17.68766\u00b0 N, 83.014945\u00b0 E) are identical (3.6m apart) to Work 267660 (Anakapalli: Construction of Bus Shelter at P.Bheemav...).",
+    "audit_classification": "GREEN",
+    "audit_badge_text": "\ud83d\udfe2 Geotagged Picture Verified",
+    "audit_reason": "1 scanned picture(s) found. Ground-truth coordinates extracted: 17.68766\u00b0 N, 83.014945\u00b0 E (Lat: 17.687660 Long: 83.014945).",
     "attached_files": [
       {
         "name": "WORK_278233_1788833828741.jpeg",
@@ -4404,27 +4371,16 @@
     "latitude": 17.68766,
     "longitude": 83.014945,
     "geocoding_source": "Visual GPS Stamp (Photo Watermark)",
-    "risk_score": 100.0,
-    "risk_level": "CRITICAL",
-    "work_risk_description": "\ud83d\udea8 CRITICAL FRAUD ALERT (100% Risk Override): Evidence reuse detected. Exact duplicate geotag location reused across distinct works. Claimed coordinates (17.68766\u00b0 N, 83.014945\u00b0 E) are identical (3.6m apart) to Work 267660 (Anakapalli: Construction of Bus Shelter at P.Bheemav...). Missing: Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
+    "risk_score": 15.0,
+    "risk_level": "LOW",
+    "work_risk_description": "Missing: Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
     "missing_items": [
       "Contractor bills, invoices, and financial vouchers",
       "Physical execution progress status tables"
     ],
     "missing_summary": "Missing: Contractor bills, invoices, and financial vouchers; Physical execution progress status tables",
-    "is_fraud_suspected": true,
-    "fraud_details": {
-      "is_fraud_suspected": true,
-      "fraud_type": "DUPLICATE_GEOTAG_LOCATION_REUSE",
-      "fraud_matched_work_id": "267660",
-      "fraud_matched_work_title": "Construction of Bus Shelter at P.Bheemavaram Village of Butchayyapeta Mandal of Anakapalli District",
-      "fraud_matched_mandal": "Anakapalli",
-      "fraud_matched_coords": "17.68763\u00b0 N, 83.014933\u00b0 E",
-      "fraud_distance_meters": 3.6,
-      "fraud_matched_image": "WORK_267660_1788842461587.jpeg",
-      "override_risk_score": 100.0,
-      "reason": "Exact duplicate geotag location reused across distinct works. Claimed coordinates (17.68766\u00b0 N, 83.014945\u00b0 E) are identical (3.6m apart) to Work 267660 (Anakapalli: Construction of Bus Shelter at P.Bheemav...)."
-    }
+    "is_fraud_suspected": false,
+    "fraud_details": null
   },
   {
     "work_id": "278236",

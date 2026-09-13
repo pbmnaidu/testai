@@ -264,25 +264,36 @@ def run_audit():
     print("[*] Running cross-work fraud detection engine...")
     fraud_flags = {}  # wid -> fraud_dict
 
-    # Check GPS coordinate collisions (<15m between different works)
+    # Check GPS coordinate collisions - EXACT point-to-point match only
+    # (Do not consider even a single number change as fraud. Only exact point-to-point matches are considered fraud.)
     gps_works = [iw for iw in intermediate_works if iw["has_real_gps"] and iw["gps_data"]]
     for i in range(len(gps_works)):
         for j in range(i + 1, len(gps_works)):
             w1 = gps_works[i]
             w2 = gps_works[j]
-            dist = haversine_distance(
-                w1["gps_data"]["latitude"], w1["gps_data"]["longitude"],
-                w2["gps_data"]["latitude"], w2["gps_data"]["longitude"]
+            lat1 = w1["gps_data"].get("latitude")
+            lon1 = w1["gps_data"].get("longitude")
+            lat2 = w2["gps_data"].get("latitude")
+            lon2 = w2["gps_data"].get("longitude")
+
+            # Exact point-to-point match: even a single number change is NOT fraud
+            is_exact_point_match = (
+                lat1 is not None and lat2 is not None and
+                lon1 is not None and lon2 is not None and
+                float(lat1) == float(lat2) and
+                float(lon1) == float(lon2) and
+                str(lat1).strip() == str(lat2).strip() and
+                str(lon1).strip() == str(lon2).strip()
             )
-            # If coordinates are identical or within 15 meters on distinct works
-            # (e.g. Bus Shelter in Butchayyapeta vs RO Plant in Kasimkota claiming exact same collectorate spot)
-            if dist < 15.0:
+
+            if is_exact_point_match:
+                dist = haversine_distance(lat1, lon1, lat2, lon2)
                 m1 = w1["base_work"].get("mandal", "")
                 m2 = w2["base_work"].get("mandal", "")
                 t1 = w1["base_work"].get("title", "")
                 t2 = w2["base_work"].get("title", "")
                 
-                # We flag suspected fraud with 100 risk override
+                # Flag suspected fraud with 100 risk override only for exact point-to-point matches
                 fraud_detail_1 = {
                     "is_fraud_suspected": True,
                     "fraud_type": "DUPLICATE_GEOTAG_LOCATION_REUSE",
@@ -290,13 +301,13 @@ def run_audit():
                     "fraud_matched_work_title": t2,
                     "fraud_matched_mandal": m2,
                     "fraud_matched_coords": f"{w2['gps_data']['latitude']}° N, {w2['gps_data']['longitude']}° E",
-                    "fraud_distance_meters": round(dist, 1),
+                    "fraud_distance_meters": 0.0,
                     "fraud_matched_image": w2["all_images"][0] if w2["all_images"] else "",
                     "override_risk_score": 100.0,
                     "reason": (
-                        f"Exact duplicate geotag location reused across distinct works. "
+                        f"Exact point-to-point duplicate geotag location reused across distinct works. "
                         f"Claimed coordinates ({w1['gps_data']['latitude']}° N, {w1['gps_data']['longitude']}° E) "
-                        f"are identical ({round(dist, 1)}m apart) to Work {w2['work_id']} ({m2}: {t2[:40]}...)."
+                        f"are an exact point-to-point match to Work {w2['work_id']} ({m2}: {t2[:40]}...)."
                     )
                 }
                 fraud_detail_2 = {
@@ -306,13 +317,13 @@ def run_audit():
                     "fraud_matched_work_title": t1,
                     "fraud_matched_mandal": m1,
                     "fraud_matched_coords": f"{w1['gps_data']['latitude']}° N, {w1['gps_data']['longitude']}° E",
-                    "fraud_distance_meters": round(dist, 1),
+                    "fraud_distance_meters": 0.0,
                     "fraud_matched_image": w1["all_images"][0] if w1["all_images"] else "",
                     "override_risk_score": 100.0,
                     "reason": (
-                        f"Exact duplicate geotag location reused across distinct works. "
+                        f"Exact point-to-point duplicate geotag location reused across distinct works. "
                         f"Claimed coordinates ({w2['gps_data']['latitude']}° N, {w2['gps_data']['longitude']}° E) "
-                        f"are identical ({round(dist, 1)}m apart) to Work {w1['work_id']} ({m1}: {t1[:40]}...)."
+                        f"are an exact point-to-point match to Work {w1['work_id']} ({m1}: {t1[:40]}...)."
                     )
                 }
                 if w1["work_id"] not in fraud_flags:

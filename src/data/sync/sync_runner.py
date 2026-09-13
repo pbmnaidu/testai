@@ -28,6 +28,8 @@ _scheduler_lock = threading.Lock()
 _sync_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="mplads-sync")
 _sync_job_lock = threading.Lock()
 _job_status_lock = threading.Lock()
+_current_job_future: Optional[object] = None
+_current_job_id: Optional[str] = None
 
 
 def _now() -> datetime:
@@ -62,12 +64,65 @@ def _write_job_status(payload: dict) -> dict:
     return payload
 
 
-def _read_job_status() -> dict:
+def _reconcile_orphan_status(data: dict) -> dict:
+    """Check if an on-disk RUNNING or QUEUED job is actually dead or orphaned."""
+    global _current_job_future, _current_job_id
+    job_id = data.get("job_id")
+
+    # If this process is actively running this exact job:
+    if _current_job_id == job_id and _current_job_future is not None:
+        if hasattr(_current_job_future, "done") and not _current_job_future.done():
+            return data
+        try:
+            exc = _current_job_future.exception(timeout=0) if hasattr(_current_job_future, "exception") else None
+            if exc:
+                data.update({
+                    "status": "FAILED",
+                    "completed_at": _now().isoformat(),
+                    "message": _friendly_error(exc),
+                    "technical_error": str(exc),
+                })
+                _write_job_status(data)
+                return data
+        except Exception:
+            pass
+
+    # If no thread in this process is running it, check timestamp staleness
+    updated_at_str = data.get("updated_at") or data.get("started_at") or data.get("queued_at")
+    is_stale = False
+    if updated_at_str:
+        try:
+            updated_dt = datetime.fromisoformat(str(updated_at_str))
+            if updated_dt.tzinfo is None:
+                updated_dt = updated_dt.replace(tzinfo=timezone.utc)
+            age_sec = (_now() - updated_dt).total_seconds()
+            if (_current_job_future is None and age_sec > 60) or age_sec > 900:
+                is_stale = True
+        except Exception:
+            is_stale = True
+    else:
+        is_stale = True
+
+    if is_stale:
+        data.update({
+            "status": "FAILED",
+            "completed_at": _now().isoformat(),
+            "message": "The previous synchronization was interrupted (server restart or timeout). You may safely run sync again.",
+            "technical_error": "Job was detected as orphaned from a previous server session or timeout.",
+        })
+        _write_job_status(data)
+    return data
+
+
+def _read_job_status(reconcile: bool = True) -> dict:
     try:
         with open(SYNC_JOB_STATUS_FILE, encoding="utf-8") as handle:
-            return json.load(handle)
+            data = json.load(handle)
     except Exception:
-        return {"status": "IDLE", "message": "No synchronization job is running.", "datasets": [], "counters": {}}
+        data = {"status": "IDLE", "message": "No synchronization job is running.", "datasets": [], "counters": {}}
+    if reconcile and data.get("status") in {"QUEUED", "RUNNING"}:
+        data = _reconcile_orphan_status(data)
+    return data
 
 
 def _update_job_status(job_id: str, event: dict | None = None, **updates) -> dict:
@@ -317,7 +372,12 @@ def commit_preview(preview_token: str, progress_callback=None) -> dict:
     _write_history(entry)
     _append_audit({"sync_id": entry["sync_id"], "event": "sync_committed", "status": "SUCCESS", "snapshot_id": snapshot["snapshot_id"], "counters": counters})
     if progress_callback:
-        progress_callback({"event": "dataset_promotion_completed", "snapshot_id": snapshot["snapshot_id"], "records_processed": snapshot["total_records"]})
+        progress_callback({
+            "event": "dataset_promotion_completed",
+            "snapshot_id": snapshot["snapshot_id"],
+            "records_processed": snapshot["total_records"],
+            "message": "Dataset promotion completed; queuing model retraining.",
+        })
     training = TRAINING_MANAGER.start(snapshot["snapshot_id"], diff)
     if progress_callback:
         progress_callback({"event": "analysis_queued", "training": training, "message": "Validated data was published and analysis was queued."})
@@ -333,74 +393,129 @@ def run_sync_job(progress_callback=None, job_id: str | None = None) -> dict:
         if progress_callback:
             progress_callback(event)
 
-    _update_job_status(
-        job_id,
-        status="RUNNING",
-        started_at=_now().isoformat(),
-        message="Connecting to the official MPLADS data source.",
-        datasets=[],
-        counters={},
-    )
-    preview = preview_diff(progress_callback=emit)
-    if not preview.get("success"):
+    try:
+        _update_job_status(
+            job_id,
+            status="RUNNING",
+            started_at=_now().isoformat(),
+            message="Connecting to the official MPLADS data source.",
+            datasets=[],
+            counters={},
+        )
+        preview = preview_diff(progress_callback=emit)
+        if not preview.get("success"):
+            now = _now()
+            fetch = preview.get("fetch", {})
+            counters = fetch.get("counters", {})
+            raw_error = fetch.get("error") or "; ".join(fetch.get("errors", [])) or "REST fetch failed"
+            entry = {"sync_id": f"SYNC-{now.strftime('%Y%m%dT%H%M%SZ')}", "timestamp": now.isoformat(),
+                     "started_at": preview.get("created_at"), "completed_at": now.isoformat(), "status": "FAILED", "source_url": SOURCE_URL,
+                     "error": raw_error, "user_message": _friendly_error(raw_error), "records_received": counters.get("records_received", 0),
+                     "records_failed": counters.get("records_failed", 0), "records_skipped": counters.get("records_skipped", 0),
+                     "datasets_failed": counters.get("datasets_failed", 0), "pages_fetched": counters.get("pages_fetched", 0),
+                     "api_requests": counters.get("api_requests", 0), "retry_count": counters.get("retry_count", 0),
+                     "training_triggered": False, "risk_analysis_triggered": False, "error_count": max(1, len(fetch.get("errors", []))),
+                     "datasets": list(fetch.get("tables", {}).keys()), "counters": counters,
+                     "next_scheduled_sync": _next_scheduled_sync(now).isoformat()}
+            _write_history(entry)
+            _append_audit({"sync_id": entry["sync_id"], "event": "sync_failed", "status": "FAILED", "error": raw_error, "counters": counters})
+            _update_job_status(
+                job_id,
+                status="FAILED",
+                completed_at=now.isoformat(),
+                message=entry["user_message"],
+                counters=counters,
+                error_count=entry["error_count"],
+                technical_error=raw_error,
+            )
+            if progress_callback:
+                progress_callback({"event": "sync_failed", "message": entry["user_message"], "error": raw_error})
+            return {"success": False, "sync": entry, "fetch": preview.get("fetch")}
+
+        result = commit_preview(preview["preview_token"], progress_callback=emit)
+        if result.get("success"):
+            _update_job_status(
+                job_id,
+                status="COMPLETED",
+                completed_at=_now().isoformat(),
+                message="Synchronization completed. Validated data was published and analysis was queued.",
+                snapshot_id=result.get("sync", {}).get("snapshot_id"),
+                sync_id=result.get("sync", {}).get("sync_id"),
+                counters=result.get("sync", {}).get("counters", {}),
+                training=result.get("training"),
+            )
+        return result
+    except Exception as exc:
         now = _now()
-        fetch = preview.get("fetch", {})
-        counters = fetch.get("counters", {})
-        raw_error = fetch.get("error") or "; ".join(fetch.get("errors", [])) or "REST fetch failed"
-        entry = {"sync_id": f"SYNC-{now.strftime('%Y%m%dT%H%M%SZ')}", "timestamp": now.isoformat(),
-                 "started_at": preview.get("created_at"), "completed_at": now.isoformat(), "status": "FAILED", "source_url": SOURCE_URL,
-                 "error": raw_error, "user_message": _friendly_error(raw_error), "records_received": counters.get("records_received", 0),
-                 "records_failed": counters.get("records_failed", 0), "records_skipped": counters.get("records_skipped", 0),
-                 "datasets_failed": counters.get("datasets_failed", 0), "pages_fetched": counters.get("pages_fetched", 0),
-                 "api_requests": counters.get("api_requests", 0), "retry_count": counters.get("retry_count", 0),
-                 "training_triggered": False, "risk_analysis_triggered": False, "error_count": max(1, len(fetch.get("errors", []))),
-                 "datasets": list(fetch.get("tables", {}).keys()), "counters": counters,
-                 "next_scheduled_sync": _next_scheduled_sync(now).isoformat()}
-        _write_history(entry)
-        _append_audit({"sync_id": entry["sync_id"], "event": "sync_failed", "status": "FAILED", "error": raw_error, "counters": counters})
+        error_msg = str(exc)
+        friendly = _friendly_error(error_msg)
         _update_job_status(
             job_id,
             status="FAILED",
             completed_at=now.isoformat(),
-            message=entry["user_message"],
-            counters=counters,
-            error_count=entry["error_count"],
-            technical_error=raw_error,
+            message=friendly,
+            technical_error=error_msg,
         )
         if progress_callback:
-            progress_callback({"event": "sync_failed", "message": entry["user_message"], "error": raw_error})
-        return {"success": False, "sync": entry, "fetch": preview.get("fetch")}
-    result = commit_preview(preview["preview_token"], progress_callback=emit)
-    if result.get("success"):
-        _update_job_status(
-            job_id,
-            status="COMPLETED",
-            completed_at=_now().isoformat(),
-            message="Synchronization completed. Validated data was published and analysis was queued.",
-            snapshot_id=result.get("sync", {}).get("snapshot_id"),
-            sync_id=result.get("sync", {}).get("sync_id"),
-            counters=result.get("sync", {}).get("counters", {}),
-            training=result.get("training"),
-        )
-    return result
+            progress_callback({"event": "sync_failed", "message": friendly, "error": error_msg})
+        return {"success": False, "error": error_msg, "user_message": friendly}
 
 
-def start_sync_job() -> dict:
-    """Queue one non-blocking synchronization job and return its live status."""
+def reset_sync_job() -> dict:
+    """Explicitly reset any synchronization job back to IDLE."""
+    global _current_job_future, _current_job_id
     with _sync_job_lock:
-        current = _read_job_status()
-        if current.get("status") in {"QUEUED", "RUNNING"}:
+        if _current_job_future and hasattr(_current_job_future, "cancel") and not _current_job_future.done():
+            try:
+                _current_job_future.cancel()
+            except Exception:
+                pass
+        _current_job_future = None
+        _current_job_id = None
+        now = _now()
+        cleared = {
+            "status": "IDLE",
+            "message": "Synchronization was reset. Ready to sync.",
+            "datasets": [],
+            "counters": {},
+            "reset_at": now.isoformat(),
+        }
+        with _job_status_lock:
+            return _write_job_status(cleared)
+
+
+def reconcile_sync_state() -> dict:
+    """Public helper to reconcile sync state on startup or API call."""
+    with _job_status_lock:
+        return _read_job_status(reconcile=True)
+
+
+def start_sync_job(force: bool = False) -> dict:
+    """Queue one non-blocking synchronization job and return its live status."""
+    global _current_job_future, _current_job_id
+    with _sync_job_lock:
+        current = _read_job_status(reconcile=True)
+        is_active = (
+            _current_job_id == current.get("job_id") and
+            _current_job_future is not None and
+            hasattr(_current_job_future, "done") and
+            not _current_job_future.done()
+        )
+        if not force and current.get("status") in {"QUEUED", "RUNNING"} and is_active:
             return current
         job_id = f"SYNCJOB-{uuid.uuid4().hex[:12].upper()}"
-        queued = _write_job_status({
+        _current_job_id = job_id
+        queued = {
             "job_id": job_id,
             "status": "QUEUED",
             "message": "Synchronization queued.",
             "queued_at": _now().isoformat(),
             "datasets": [],
             "counters": {},
-        })
-        _sync_executor.submit(run_sync_job, None, job_id)
+        }
+        with _job_status_lock:
+            _write_job_status(queued)
+        _current_job_future = _sync_executor.submit(run_sync_job, None, job_id)
         return queued
 
 
@@ -409,9 +524,19 @@ def get_sync_status() -> dict:
     latest = history[0] if history else {}
     successful = next((item for item in history if item.get("status") == "SUCCESS"), {})
     snapshot_history = get_snapshot_history()
-    # Counts are written when the local pipeline completes. Do not recompute
-    # six large Parquet deltas on every dashboard refresh; the history entry
-    # is the durable, auditable source for the displayed counters.
+    current_snapshot = successful.get("snapshot_id", snapshot_history[0].get("snapshot_id") if snapshot_history else "NONE")
+
+    # Auto-initialize baseline snapshot if NONE but processed files exist
+    if current_snapshot == "NONE":
+        has_processed = any(os.path.exists(os.path.join(PROCESSED_DIR, f)) for f in MONITORED_FILES.values())
+        if has_processed:
+            try:
+                base_snap = create_snapshot()
+                current_snapshot = base_snap["snapshot_id"]
+                snapshot_history = get_snapshot_history()
+            except Exception:
+                pass
+
     local_delta = latest.get("delta") if latest.get("data_origin") == "local_dataset_files" else None
     return {
         "operational_status": "healthy" if latest.get("status", "SUCCESS") != "FAILED" else "degraded",
@@ -419,7 +544,7 @@ def get_sync_status() -> dict:
         "source_url": SOURCE_URL,
         "data_origin": latest.get("data_origin") or ("official_api" if latest else None),
         "last_sync": latest.get("timestamp"), "next_scheduled_sync": latest.get("next_scheduled_sync"),
-        "current_snapshot_id": successful.get("snapshot_id", snapshot_history[0].get("snapshot_id") if snapshot_history else "NONE"),
+        "current_snapshot_id": current_snapshot,
         "total_records_processed": latest.get("total_records", 0),
         "new_records_since_last_sync": latest.get("new_records_count", 0),
         "updated_records_since_last_sync": latest.get("updated_records_count", 0),
@@ -427,9 +552,9 @@ def get_sync_status() -> dict:
         "pending_local_dataset_changes": False,
         "local_dataset_delta": local_delta,
         "snapshot_count": len(snapshot_history), "training": TRAINING_MANAGER.status(),
-        "job": _read_job_status(),
+        "job": _read_job_status(reconcile=True),
         "last_successful_sync": successful.get("completed_at") or successful.get("timestamp"),
-        "data_version": successful.get("snapshot_id") or (snapshot_history[0].get("snapshot_id") if snapshot_history else "NONE"),
+        "data_version": current_snapshot,
         "analysis_version": (TRAINING_MANAGER.status() or {}).get("snapshot_id") or "UNKNOWN",
         "analysis_generated_at": (TRAINING_MANAGER.status() or {}).get("completed_at"),
     }
