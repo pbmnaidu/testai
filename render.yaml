@@ -15,7 +15,8 @@ services:
         value: "3.11"
       - key: MPLADS_DATA_DIR
         value: /var/data
-  - type: static_site
+  - type: web
+    runtime: static
     name: mplads-frontend
     buildCommand: "cd frontend && npm ci --legacy-peer-deps && npm run build"
     staticPublishPath: frontend/dist
