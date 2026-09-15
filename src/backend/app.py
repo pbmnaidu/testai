@@ -800,13 +800,19 @@ def get_mp_intelligence(
     constituency: str = None,
     mp_name: str = None
 ):
-    data = get_data()
-    master = data["master"]
-    
-    # Cascading Dropdown List Helpers
-    filtered_df = master.copy()
+    master_path = os.path.join(FEATURES_DIR, "master_project_risk_scores.parquet")
+    cols = [
+        "work_id", "state", "constituency", "mp_name", "sanction_amount",
+        "effective_expenditure", "completion_date", "composite_risk_score",
+        "description", "work_category", "overall_risk_level"
+    ]
+    try:
+        filtered_df = pd.read_parquet(master_path, columns=cols) if os.path.exists(master_path) else pd.DataFrame()
+    except Exception:
+        filtered_df = pd.DataFrame()
+        
     if state and state.strip():
-        filtered_df = filtered_df[filtered_df["state"].str.upper() == state.strip().upper()]
+        filtered_df = filtered_df[filtered_df["state"].fillna("").astype(str).str.upper() == state.strip().upper()]
     
     available_constituencies = sorted([str(c) for c in filtered_df["constituency"].dropna().unique() if str(c).strip()])
     
@@ -1420,7 +1426,7 @@ def get_risk_monitor_queue(
     limit: int = Query(50, ge=1, le=200)
 ):
     data = get_data()
-    df = data["master"].copy()
+    df = data["master"]
     
     if state and state.strip():
         df = df[df["state"].str.upper() == state.strip().upper()]
@@ -1763,23 +1769,42 @@ def _unique_filter_values(series, *, skip_numeric: bool = False):
     return sorted(values.values(), key=lambda value: value.casefold())
 
 
+_FILTER_CACHE = {}
+
+
 @app.get("/api/filters")
 def get_filter_options(state: str = None, scope: str = "risk"):
-    data = get_data()
-    master = _all_records_frame(data) if scope.strip().lower() == "all" else data["master"]
+    cache_key = f"filters_{state or 'all'}_{scope or 'risk'}"
+    if cache_key in _FILTER_CACHE:
+        return _FILTER_CACHE[cache_key]
+
+    master_path = os.path.join(FEATURES_DIR, "master_project_risk_scores.parquet")
+    cols = ["state", "constituency", "work_status", "mp_name", "work_category", "overall_risk_level"]
+    try:
+        master = pd.read_parquet(master_path, columns=cols) if os.path.exists(master_path) else pd.DataFrame()
+    except Exception:
+        master = pd.DataFrame()
+
+    if master.empty:
+        return {
+            "states": [], "constituencies": [], "mps": [], "categories": [],
+            "severities": ["CRITICAL", "HIGH", "MEDIUM", "LOW"],
+            "statuses": [], "risk_levels": ["CRITICAL", "HIGH", "MEDIUM", "LOW"],
+            "expenditure_options": ["WITH", "WITHOUT"],
+        }
 
     states = _unique_filter_values(master["state"])
     constituency_master = master
     if state and state.strip():
-        constituency_master = master[master["state"].str.upper() == state.strip().upper()]
+        constituency_master = master[master["state"].fillna("").astype(str).str.upper() == state.strip().upper()]
     constituencies = _unique_filter_values(constituency_master["constituency"])
     statuses = _unique_filter_values(constituency_master["work_status"], skip_numeric=True)
     mps = _unique_filter_values(master["mp_name"])
     categories = _unique_filter_values(master["work_category"])
     severities = ["CRITICAL", "HIGH", "MEDIUM", "LOW"]
+    risk_levels = _unique_filter_values(master["overall_risk_level"]) if "overall_risk_level" in master.columns else severities
 
-    risk_levels = _unique_filter_values(master["overall_risk_level"]) if "overall_risk_level" in master.columns else []
-    return {
+    result = {
         "states": states,
         "constituencies": constituencies,
         "mps": mps,
@@ -1789,6 +1814,8 @@ def get_filter_options(state: str = None, scope: str = "risk"):
         "risk_levels": risk_levels,
         "expenditure_options": ["WITH", "WITHOUT"],
     }
+    _FILTER_CACHE[cache_key] = result
+    return result
 
 
 
