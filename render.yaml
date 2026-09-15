@@ -3,7 +3,7 @@ services:
     name: mplads-backend
     env: python
     # A paid instance is required for a persistent disk.
-    plan: starter
+    plan: free
     buildCommand: "pip install -r requirements.txt"
     startCommand: "uvicorn src.backend.app:app --host 0.0.0.0 --port 8000"
     disk:
