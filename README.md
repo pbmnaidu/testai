@@ -98,4 +98,13 @@ SIH2026/
 - `GET /api/risk-monitor` - Filterable audit queue sorted by composite risk score.
 - `GET /api/work-detail?work_id=WS/...` - 360° decision-support profile and evidence audit matrix for a specific work record.
 - `GET /api/duplicate-candidates` - Candidate duplicate pairs extracted via NLP cosine text similarity.
+- `GET /api/citizen/works` and `GET /api/citizen/works/{work_id}` - Public Citizen Protocol work register and source-backed detail projection.
+
+### Citizen Protocol
+
+The Citizen Protocol page exposes the public work register, published work coordinates only, and a separate evidence store at `data/citizen_evidence.json` with media under `data/citizen_evidence_media/`. Live evidence requests fresh browser GPS permission; existing uploads are retained as non-live observations. GPS accuracy and distance thresholds can be configured with `MPLADS_GPS_ACCURACY_THRESHOLD_METERS`, `MPLADS_ALLOWED_EVIDENCE_RADIUS_METERS`, and `MPLADS_CITIZEN_MAX_UPLOAD_BYTES`.
+
+Officer review updates require `MPLADS_CITIZEN_REVIEW_TOKEN` and a bearer token. For local-only development, `MPLADS_ALLOW_LOCAL_OFFICER_REVIEW=true` enables the explicit officer role-header adapter; keep that flag disabled in deployed environments.
+
+"# testai"
 "# testai" 

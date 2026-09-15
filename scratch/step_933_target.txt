@@ -1,0 +1,96 @@
+@app.post("/api/citizen-evidence")
+async def create_citizen_evidence(
+    request: Request,
+    work_id: str = Form(..., min_length=1, max_length=160),
+    category: str = Form(..., min_length=1, max_length=100),
+    description: str = Form(..., min_length=1, max_length=4000),
+    latitude: str = Form(None),
+    longitude: str = Form(None),
+    gps_accuracy: str = Form(None),
+    captured_at: str = Form(None),
+    live_capture: str = Form("false"),
+    image: UploadFile = File(...),
+):
+    _enforce_citizen_rate_limit(request)
+    category = category.strip()
+    if category not in CITIZEN_EVIDENCE_CATEGORIES:
+        raise HTTPException(status_code=422, detail="Choose a supported observation category.")
+    description = description.strip()
+    if len(description) < 10:
+        raise HTTPException(status_code=422, detail="Please describe what you personally observed in at least 10 characters.")
+    data = get_data()
+    works, _ = _citizen_work_records()
+    work = next((record for record in works if record["work_id"] == work_id.strip()), None)
+    if not work:
+        raise HTTPException(status_code=404, detail="The selected work no longer exists in the public work register.")
+    parsed_latitude = _parse_optional_float(latitude, "latitude")
+    parsed_longitude = _parse_optional_float(longitude, "longitude")
+    parsed_accuracy = _parse_optional_float(gps_accuracy, "gps_accuracy")
+    if parsed_latitude is not None and not -90 <= parsed_latitude <= 90:
+        raise HTTPException(status_code=422, detail="latitude is outside the valid range.")
+    if parsed_longitude is not None and not -180 <= parsed_longitude <= 180:
+        raise HTTPException(status_code=422, detail="longitude is outside the valid range.")
+    is_live_capture = str(live_capture).strip().lower() in {"true", "1", "yes"}
+    if not is_live_capture:
+        raise HTTPException(status_code=422, detail="Citizen proof accepts live camera captures only; local uploads are not accepted.")
+    if parsed_latitude is None or parsed_longitude is None or parsed_accuracy is None:
+        raise HTTPException(status_code=422, detail="Live proof requires device latitude, longitude, and GPS accuracy.")
+    if not captured_at:
+        raise HTTPException(status_code=422, detail="Live proof requires a camera capture timestamp.")
+    try:
+        datetime.fromisoformat(captured_at.replace("Z", "+00:00"))
+    except ValueError:
+        raise HTTPException(status_code=422, detail="captured_at must be an ISO timestamp.")
+    image_bytes = await image.read()
+    if not image_bytes:
+        raise HTTPException(status_code=422, detail="The uploaded image is empty.")
+    if len(image_bytes) > CITIZEN_MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail=f"Images must be smaller than {CITIZEN_MAX_UPLOAD_BYTES // (1024 * 1024)} MB.")
+    image_type = _detect_image_type(image_bytes)
+    if not image_type:
+        raise HTTPException(status_code=415, detail="Upload a valid JPEG, PNG, or WebP image.")
+    now = datetime.now().astimezone().isoformat()
+    location_status, distance = _record_location_status(parsed_latitude, parsed_longitude, parsed_accuracy, work)
+    content_hash = hashlib.sha256(image_bytes).hexdigest()
+    submission_id = f"CIT-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+    extension = "jpg" if image_type == "jpg" else image_type
+    filename = f"{submission_id}.{extension}"
+    os.makedirs(CITIZEN_EVIDENCE_MEDIA_DIR, exist_ok=True)
+    media_path = os.path.join(CITIZEN_EVIDENCE_MEDIA_DIR, filename)
+    with open(media_path, "wb") as handle:
+        handle.write(image_bytes)
+    with _CITIZEN_STORE_LOCK:
+        existing = _read_citizen_evidence()
+        duplicate_flag = any(record.get("work_id") == work["work_id"] and record.get("image_sha256") == content_hash for record in existing)
+        record = {
+            "submission_id": submission_id,
+            "work_id": work["work_id"],
+            "category": category,
+            "description": description,
+            "image_reference": f"/api/citizen-evidence/media/{filename}",
+            "image_original_reference": f"/api/citizen-evidence/media/{filename}",
+            "image_processed_reference": None,
+            "image_sha256": content_hash,
+            "latitude": parsed_latitude,
+            "longitude": parsed_longitude,
+            "gps_accuracy": parsed_accuracy,
+            "official_work_latitude": work.get("latitude"),
+            "official_work_longitude": work.get("longitude"),
+            "distance_from_work": distance,
+            "location_validation_status": location_status,
+            "captured_at": captured_at,
+            "uploaded_at": now,
+            "server_received_at": now,
+            "live_capture": is_live_capture,
+            "review_status": "SUBMITTED",
+            "reviewed_by": None,
+            "reviewed_at": None,
+            "review_comment": None,
+            "duplicate_flag": duplicate_flag,
+            "audit_events": [{"event": "created", "at": now, "status": "SUBMITTED"}],
+            "created_at": now,
+            "updated_at": now,
+        }
+        existing.append(record)
+        _write_citizen_evidence(existing)
+    return record

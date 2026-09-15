@@ -18,6 +18,10 @@ import { StateRiskAnalyticsPage } from './pages/StateRiskAnalyticsPage';
 import { FinancialBenchmarkPage } from './pages/FinancialBenchmarkPage';
 import { GeotagEvidenceAuditPage } from './pages/GeotagEvidenceAuditPage';
 import { ComplianceMonitorPage } from './pages/ComplianceMonitorPage';
+import { CitizenProtocolPage } from './pages/CitizenProtocolPage';
+import { AttendancePage } from './pages/AttendancePage';
+import { MaterialFairnessPage } from './pages/MaterialFairnessPage';
+import { OfficerDashboardPage } from './pages/OfficerDashboardPage';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<string>('overview');
@@ -122,6 +126,10 @@ export function App() {
           ) : (
             <>
               {activeTab === 'geotag-evidence' && <GeotagEvidenceAuditPage onSelectWork={handleSelectWork} onOpenEvidence={handleOpenEvidence} />}
+              {activeTab === 'citizen-protocol' && <CitizenProtocolPage />}
+              {activeTab === 'attendance' && <AttendancePage />}
+              {activeTab === 'material-fairness' && <MaterialFairnessPage />}
+              {activeTab === 'officer-dashboard' && <OfficerDashboardPage onSelectWork={handleSelectWork} />}
               {activeTab === 'overview' && <OverviewPage onNavigateToRiskMonitor={handleNavigateToRiskMonitor} />}
               {activeTab === 'mp-intelligence' && <MpIntelligencePage onSelectWork={handleSelectWork} />}
               {activeTab === 'risk-monitor' && <RiskMonitorPage initialSeverity={initialSeverity} initialDimension="all" totalWorks={livePortfolio.totalWorks} onSelectWork={handleSelectWork} />}

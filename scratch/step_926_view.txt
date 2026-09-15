@@ -1,0 +1,89 @@
+Created At: 2026-09-13T17:28:07+05:30
+Completed At: 2026-09-13T17:28:07+05:30
+File Path: `file:///p:/SIH/mplads_updated-main/src/backend/app.py`
+Total Lines: 2783
+Total Bytes: 130362
+Showing lines 1675 to 1755
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1675: 
+1676: 
+1677: def _officer_evidence_for_work(work_id: str) -> tuple[list[dict], list[dict]]:
+1678:     """Read the existing citizen/attendance stores for the same complete Work ID."""
+1679:     clean_id = str(work_id or "").strip()
+1680:     citizen = [clean_record_for_json(record) for record in _read_citizen_evidence() if str(record.get("work_id") or "").strip() == clean_id]
+1681:     attendance = [clean_record_for_json(record) for record in _read_attendance_records() if str(record.get("work_id") or "").strip() == clean_id]
+1682:     return citizen, attendance
+1683: 
+1684: 
+1685: @app.get("/api/officer/dashboard")
+1686: def get_officer_dashboard(
+1687:     state: str = None,
+1688:     constituency: str = None,
+1689:     work_status: str = None,
+1690:     severity: str = None,
+1691:     search: str = None,
+1692:     limit: int = Query(25, ge=1, le=100),
+1693: ):
+1694:     """Return a read-only implementing-officer queue over existing analytical data."""
+1695:     data = get_data()
+1696:     master = _officer_filter_master(data["master"], state, constituency, work_status, severity, search)
+1697:     risk_levels = master.get("overall_risk_level", pd.Series("", index=master.index)).fillna("").astype(str).str.upper()
+1698:     priority = []
+1699:     queue_fields = [
+1700:         "work_id", "state", "constituency", "description", "work_status",
+1701:         "overall_risk_level", "overall_risk_score", "composite_risk_score",
+1702:         "financial_risk_score", "financial_explanation",
+1703:         "compliance_risk_score", "compliance_explanation",
+1704:         "schedule_risk_score", "schedule_explanation",
+1705:         "duplicate_risk_score", "duplicate_explanation",
+1706:         "recommended_reviewer_action",
+1707:     ]
+1708:     queue_fields = [field for field in queue_fields if field in master.columns]
+1709:     for row in master[queue_fields].to_dict(orient="records"):
+1710:         record = clean_record_for_json(row)
+1711:         signals = _officer_issue_signals(record)
+1712:         if signals or str(record.get("overall_risk_level") or "").upper() in {"MEDIUM", "HIGH", "CRITICAL"}:
+1713:             priority.append({
+1714:                 "work_id": record.get("work_id"),
+1715:                 "state": record.get("state"),
+1716:                 "constituency": record.get("constituency"),
+1717:                 "description": record.get("description"),
+1718:                 "work_status": record.get("work_status"),
+1719:                 "overall_risk": record.get("overall_risk_level") or "UNASSESSED",
+1720:                 "overall_risk_score": record.get("overall_risk_score") or record.get("composite_risk_score") or 0,
+1721:                 "signals": signals,
+1722:                 "why_flagged": signals[0]["explanation"] if signals else "Overall analytical risk level requires officer review.",
+1723:                 "recommended_action": signals[0]["recommended_action"] if signals else record.get("recommended_reviewer_action") or "Review work monitoring record",
+1724:                 "officer_review_status": "UNREVIEWED",
+1725:             })
+1726:     priority.sort(key=lambda row: (float(row["overall_risk_score"] or 0), max([signal["score"] for signal in row["signals"]] or [0])), reverse=True)
+1727: 
+1728:     states = sorted(data["master"].get("state", pd.Series(dtype=str)).dropna().astype(str).loc[lambda series: series.str.strip().ne("")].unique().tolist())
+1729:     constituency_source = data["master"]
+1730:     if state and str(state).strip() and "state" in constituency_source:
+1731:         constituency_source = constituency_source[constituency_source["state"].fillna("").astype(str).str.casefold().eq(str(state).strip().casefold())]
+1732:     constituencies = sorted(constituency_source.get("constituency", pd.Series(dtype=str)).dropna().astype(str).loc[lambda series: series.str.strip().ne("")].unique().tolist())
+1733:     statuses = sorted(data["master"].get("work_status", pd.Series(dtype=str)).dropna().astype(str).loc[lambda series: series.str.strip().ne("")].unique().tolist())
+1734: 
+1735:     selected_work_ids = set(master.get("work_id", pd.Series(dtype=str)).dropna().astype(str))
+1736:     citizen_records = [record for record in _read_citizen_evidence() if not selected_work_ids or str(record.get("work_id") or "") in selected_work_ids]
+1737:     attendance_records = [record for record in _read_attendance_records() if not selected_work_ids or str(record.get("work_id") or "") in selected_work_ids]
+1738:     attendance_issues = sum(1 for record in attendance_records if record.get("review_status") in {"SUBMITTED", "UNDER_REVIEW"} or record.get("location_validation_status") != "WITHIN_EXPECTED_RADIUS")
+1739:     material_eligible = master.get("unit_price_comparison_eligible", pd.Series(False, index=master.index)).fillna(False).astype(bool) if "unit_price_comparison_eligible" in master else pd.Series(False, index=master.index)
+1740: 
+1741:     return {
+1742:         "selected_filters": {"state": state or None, "constituency": constituency or None, "work_status": work_status or None, "severity": severity or None, "search": search or None},
+1743:         "available": {"states": states, "constituencies": constituencies, "statuses": statuses, "severities": ["LOW", "MEDIUM", "HIGH", "CRITICAL"]},
+1744:         "summary": {
+1745:             "total_works": int(len(master)),
+1746:             "high_priority_works": int(risk_levels.isin(["HIGH", "CRITICAL"]).sum()),
+1747:             "financial_reviews": _officer_score_count(master, "financial_risk_score"),
+1748:             "material_price_reviews": int(material_eligible.sum()) or _officer_score_count(master, "financial_risk_score"),
+1749:             "attendance_issues": int(attendance_issues),
+1750:             "citizen_complaints": int(len(citizen_records)),
+1751:             "compliance_issues": _officer_score_count(master, "compliance_risk_score"),
+1752:             "schedule_risks": _officer_score_count(master, "schedule_risk_score"),
+1753:             "duplicate_candidates": _officer_score_count(master, "duplicate_risk_score"),
+1754:         },
+1755:         "data_availability": {
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

@@ -1,0 +1,4 @@
+@app.on_event("startup")
+def start_automatic_sync_scheduler():
+    reconcile_sync_state()
+    start_scheduler()

@@ -1,0 +1,16 @@
+@app.post("/api/sync/run-now")
+def sync_run_now():
+    """Compatibility alias for the non-blocking Sync Now action."""
+    try:
+        return start_sync_job()
+    except Exception:
+        raise HTTPException(
+            status_code=503,
+            detail="A synchronization job could not be started. The previous validated dataset remains available.",
+        )
+
+
+@app.post("/api/sync/reset")
+def sync_reset():
+    """Reset or clear an interrupted/stale synchronization job."""
+    return reset_sync_job()

@@ -2,9 +2,20 @@ services:
   - type: web
     name: mplads-backend
     env: python
-    plan: free
+    # A paid instance is required for a persistent disk.
+    plan: starter
     buildCommand: "pip install -r requirements.txt"
     startCommand: "uvicorn src.backend.app:app --host 0.0.0.0 --port 8000"
+    disk:
+      name: mplads-data
+      mountPath: /var/data
+      sizeGB: 1
     envVars:
       - key: PYTHON_VERSION
         value: "3.11"
+      - key: MPLADS_DATA_DIR
+        value: /var/data
+  - type: static
+    name: mplads-frontend
+    buildCommand: "cd frontend && npm ci --legacy-peer-deps && npm run build"
+    staticPublishPath: frontend/dist

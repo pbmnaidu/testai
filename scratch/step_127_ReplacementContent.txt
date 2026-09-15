@@ -1,0 +1,38 @@
+from src.data.sync.snapshot_manager import get_snapshot_history
+from src.data.sync.sync_runner import (
+    get_sync_status as get_automation_status,
+    get_sync_health,
+    preview_diff,
+    commit_preview,
+    run_sync_job,
+    start_sync_job,
+    reset_sync_job,
+    reconcile_sync_state,
+    start_scheduler,
+)
+from src.data.sync.training_manager import TRAINING_MANAGER
+from src.utils.mlflow_tracker import MLflowTracker
+from src.modules.material_context import analyze_material_context
+from src.modules.work_classifier import classify_work_descriptions
+from src.modules.compliance_engine import GUIDELINE_SOURCE, public_scope_matrix
+
+app = FastAPI(
+    title="MPLADS AI Monitoring & Risk Intelligence Platform API",
+    description="Backend decision-support API for MPLADS public works monitoring",
+    version="2.0.0"
+)
+
+# Enable CORS for React frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.on_event("startup")
+def start_automatic_sync_scheduler():
+    reconcile_sync_state()
+    start_scheduler()

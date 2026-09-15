@@ -7,6 +7,7 @@ import {
   PieChart, 
   CheckSquare, 
   Clock,
+  ClipboardCheck,
   RefreshCw,
   Cpu,
   ChevronRight,
@@ -14,6 +15,8 @@ import {
   Sparkles,
   Map,
   MapPin,
+  Camera,
+  Scale,
   X
 } from 'lucide-react';
 
@@ -29,6 +32,12 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpen = false, onClose, collapsed = false, totalWorks }) => {
   const sections = [
     {
+      title: 'Officer Workspace',
+      items: [
+        { id: 'officer-dashboard', label: 'Implementing Officer Center', icon: ClipboardCheck },
+      ]
+    },
+    {
       title: 'Core Portfolio',
       items: [
         { id: 'overview', label: 'Executive Dashboard', icon: BarChart3 },
@@ -38,9 +47,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
       ]
     },
     {
+      title: 'Citizen Access',
+      items: [
+        { id: 'citizen-protocol', label: 'Citizen Protocol', icon: MapPin },
+      ]
+    },
+    {
+      title: 'Contractor Access',
+      items: [
+        { id: 'attendance', label: 'Attendance Capture', icon: Camera },
+      ]
+    },
+    {
       title: 'Anomaly & Audits',
       items: [
         { id: 'geotag-evidence', label: 'Field Photographic Evidence', icon: MapPin },
+        { id: 'material-fairness', label: 'Material Quality & Price Fairness', icon: Scale },
         { id: 'duplicate-inspector', label: 'Candidate Duplicate Inspector', icon: Copy },
         { id: 'financial-analytics', label: 'Financial Anomaly Analytics', icon: PieChart },
         { id: 'compliance-monitor', label: 'Compliance Evidence Gaps', icon: CheckSquare },

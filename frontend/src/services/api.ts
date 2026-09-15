@@ -10,8 +10,16 @@ import {
   DuplicateCluster,
   ConstituencyComplianceRecord,
   FinancialBenchmarkResponse,
+  OfficerDashboardResponse,
+  OfficerWorkResponse,
   FilterOptions,
-  SyncPreviewResponse
+  SyncPreviewResponse,
+  PublicWorkRecord,
+  CitizenEvidenceConfig,
+  CitizenEvidenceRecord,
+  CitizenEvidenceStats,
+  AttendanceRecord,
+  AttendanceStats
 } from '../types';
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || '/api';
@@ -51,6 +59,25 @@ export async function fetchOverview(): Promise<NationalOverviewResponse> {
     financial_summary: { flagged_financial_outliers: 0, historical_comparison_available: 0, unit_price_comparisons: 0 },
   };
   return safeFetchJson<NationalOverviewResponse>(`${API_BASE}/overview`, fallback);
+}
+
+export async function fetchOfficerDashboard(params: { state?: string; constituency?: string; work_status?: string; severity?: string; search?: string; focus?: string; limit?: number } = {}): Promise<OfficerDashboardResponse> {
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => { if (value !== undefined && value !== null && value !== '') query.append(key, String(value)); });
+  return safeFetchJson<OfficerDashboardResponse>(`${API_BASE}/officer/dashboard?${query.toString()}`, {
+    selected_filters: {},
+    available: { states: [], constituencies: [], statuses: [], severities: [] },
+    summary: { total_works: 0, high_priority_works: 0, material_price_reviews: 0, attendance_issues: 0, citizen_complaints: 0, compliance_issues: 0, schedule_risks: 0, duplicate_candidates: 0, financial_reviews: 0 },
+    data_availability: {},
+    queue_total: 0,
+    priority_works: [],
+  });
+}
+
+export async function fetchOfficerWork(workId: string): Promise<OfficerWorkResponse> {
+  const res = await fetch(`${API_BASE}/officer/work?${new URLSearchParams({ work_id: workId }).toString()}`);
+  if (!res.ok) throw new Error(`Work record '${workId}' could not be loaded.`);
+  return res.json() as Promise<OfficerWorkResponse>;
 }
 
 export async function fetchStateRiskSummary(state: string): Promise<StateRiskSummary> {
@@ -363,4 +390,229 @@ export async function fetchConstituencyCompliance(params: {
     API_BASE + '/compliance/constituency?' + query.toString(),
     { total: 0, page: 1, limit: 25, records: [] },
   );
+}
+
+export interface CitizenWorksResponse {
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+  records: PublicWorkRecord[];
+  stats: {
+    total_works: number;
+    ongoing_works: number;
+    completed_works: number;
+    works_with_coordinates: number;
+    citizen_evidence: number;
+    categories: string[];
+  };
+  config: CitizenEvidenceConfig;
+}
+
+const citizenConfigFallback: CitizenEvidenceConfig = {
+  gps_accuracy_threshold_meters: 50,
+  allowed_evidence_radius_meters: 250,
+  max_upload_bytes: 10 * 1024 * 1024,
+  allowed_categories: [],
+};
+
+const citizenWorksFallback: CitizenWorksResponse = {
+  total: 0,
+  page: 1,
+  limit: 100,
+  total_pages: 0,
+  records: [],
+  stats: { total_works: 0, ongoing_works: 0, completed_works: 0, works_with_coordinates: 0, citizen_evidence: 0, categories: [] },
+  config: citizenConfigFallback,
+};
+
+export async function fetchCitizenWorks(params: {
+  status?: string;
+  category?: string;
+  search?: string;
+  latitude?: number;
+  longitude?: number;
+  nearby_radius_meters?: number;
+  page?: number;
+  limit?: number;
+} = {}): Promise<CitizenWorksResponse> {
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') query.append(key, String(value));
+  });
+  return safeFetchJson<CitizenWorksResponse>(`${API_BASE}/citizen/works?${query.toString()}`, citizenWorksFallback);
+}
+
+export async function fetchCitizenEvidence(workId?: string, params: {
+  review_status?: string;
+  category?: string;
+  sort_by?: string;
+  page?: number;
+  limit?: number;
+} = {}): Promise<{ total: number; page: number; limit: number; total_pages: number; records: CitizenEvidenceRecord[] }> {
+  const query = new URLSearchParams();
+  if (workId) query.append('work_id', workId);
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') query.append(key, String(value));
+  });
+  return safeFetchJson(`${API_BASE}/citizen-evidence?${query.toString()}`, { total: 0, page: 1, limit: 50, total_pages: 0, records: [] });
+}
+
+export async function fetchCitizenEvidenceStats(): Promise<CitizenEvidenceStats> {
+  return safeFetchJson<CitizenEvidenceStats>(`${API_BASE}/citizen-evidence/stats`, {
+    total_submissions: 0,
+    submitted_today: 0,
+    submitted_this_week: 0,
+    within_expected_radius: 0,
+    needs_review: 0,
+    outside_expected_radius: 0,
+    categories: {},
+  });
+}
+
+export async function submitCitizenEvidence(fields: {
+  workId: string;
+  category: string;
+  description: string;
+  evidenceType?: string;
+  staffCount?: number | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  gpsAccuracy?: number | null;
+  capturedAt?: string | null;
+  liveCapture: boolean;
+  image: File;
+}): Promise<CitizenEvidenceRecord> {
+  const body = new FormData();
+  body.append('work_id', fields.workId);
+  body.append('category', fields.category);
+  body.append('description', fields.description);
+  body.append('live_capture', String(fields.liveCapture));
+  if (fields.evidenceType) body.append('evidence_type', fields.evidenceType);
+  if (fields.staffCount != null) body.append('staff_count', String(fields.staffCount));
+  if (fields.latitude != null) body.append('latitude', String(fields.latitude));
+  if (fields.longitude != null) body.append('longitude', String(fields.longitude));
+  if (fields.gpsAccuracy != null) body.append('gps_accuracy', String(fields.gpsAccuracy));
+  if (fields.capturedAt) body.append('captured_at', fields.capturedAt);
+  body.append('image', fields.image, fields.image.name);
+
+  const response = await fetch(`${API_BASE}/citizen-evidence`, { method: 'POST', body });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload?.detail || `Evidence upload failed (${response.status})`);
+  return payload as CitizenEvidenceRecord;
+}
+
+export async function reviewCitizenEvidence(submissionId: string, reviewStatus: string, reviewComment = '', reviewToken = ''): Promise<CitizenEvidenceRecord> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json', 'X-MPLADS-Role': 'officer' };
+  if (reviewToken.trim()) headers.Authorization = `Bearer ${reviewToken.trim()}`;
+  const response = await fetch(`${API_BASE}/citizen-evidence/${encodeURIComponent(submissionId)}/review`, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify({ review_status: reviewStatus, review_comment: reviewComment }),
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload?.detail || `Review update failed (${response.status})`);
+  return payload as CitizenEvidenceRecord;
+}
+
+export async function fetchAttendance(workId?: string): Promise<{ total: number; records: AttendanceRecord[] }> {
+  const query = new URLSearchParams();
+  if (workId) query.append('work_id', workId);
+  return safeFetchJson(`${API_BASE}/attendance?${query.toString()}`, { total: 0, records: [] });
+}
+
+export async function fetchAttendanceStats(): Promise<AttendanceStats> {
+  return safeFetchJson<AttendanceStats>(`${API_BASE}/attendance/stats`, {
+    total_submissions: 0,
+    total_staff_reported: 0,
+    pending_review: 0,
+    within_expected_radius: 0,
+    outside_expected_radius: 0,
+    low_gps_accuracy: 0,
+  });
+}
+
+export async function submitAttendance(fields: {
+  workId: string;
+  staffCount: number;
+  latitude: number;
+  longitude: number;
+  gpsAccuracy?: number | null;
+  capturedAt: string;
+  image: File;
+}): Promise<AttendanceRecord> {
+  const body = new FormData();
+  body.append('work_id', fields.workId);
+  body.append('staff_count', String(fields.staffCount));
+  body.append('capture_source', 'LIVE_CAMERA');
+  body.append('camera_capture_only', 'true');
+  body.append('latitude', String(fields.latitude));
+  body.append('longitude', String(fields.longitude));
+  if (fields.gpsAccuracy != null) body.append('gps_accuracy', String(fields.gpsAccuracy));
+  body.append('captured_at', fields.capturedAt);
+  body.append('image', fields.image, fields.image.name || 'attendance-camera-capture.jpg');
+
+  const response = await fetch(`${API_BASE}/attendance`, { method: 'POST', body });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(payload?.detail || `Attendance upload failed (${response.status})`);
+  return payload as AttendanceRecord;
+}
+
+export async function analyzeMaterialDocument(options: {
+  file?: File;
+  sample_id?: string;
+  raw_text?: string;
+  quoted_price?: number;
+  state?: string;
+}): Promise<any> {
+  try {
+    const formData = new FormData();
+    if (options.file) formData.append('file', options.file);
+    if (options.sample_id) formData.append('sample_id', options.sample_id);
+    if (options.raw_text) formData.append('raw_text', options.raw_text);
+    if (options.quoted_price !== undefined && options.quoted_price !== null) formData.append('quoted_price', options.quoted_price.toString());
+    if (options.state) formData.append('state', options.state);
+
+    const res = await fetch(`${API_BASE}/material-fairness/analyze-document`, { method: 'POST', body: formData });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn('Material document analysis failed:', err);
+    return {
+      status: 'ERROR',
+      extracted_attributes: { material: 'Unidentified', grade: 'Not Specified', is_code: 'Not Specified', quality_attributes: [] },
+      price_comparison: { quoted_unit_price: options.quoted_price || null, reference_unit_price: null, price_difference: null, price_difference_pct: null },
+      fairness_assessment: { status: 'INSUFFICIENT_DATA', label: 'Requires Review (Insufficient Data)', severity: 'MEDIUM', color_theme: 'slate', explanation: 'Failed to communicate with analysis server.' },
+      auditor_guidance: ['Verify connection to backend server and try again.'],
+    };
+  }
+}
+
+export async function fetchMaterialFairnessBenchmarks(params: { state?: string; material?: string } = {}): Promise<any> {
+  const query = new URLSearchParams();
+  if (params.state) query.append('state', params.state);
+  if (params.material) query.append('material', params.material);
+  const suffix = query.toString();
+  return safeFetchJson(`${API_BASE}/material-fairness/benchmarks${suffix ? `?${suffix}` : ''}`, { total: 0, benchmarks: [] });
+}
+
+export async function fetchMaterialSampleDocs(): Promise<any> {
+  return safeFetchJson(`${API_BASE}/material-fairness/sample-documents`, { total: 0, samples: [] });
+}
+
+export async function searchMaterialWorks(query: string = ''): Promise<any> {
+  const q = new URLSearchParams({ query });
+  return safeFetchJson(`${API_BASE}/material-fairness/search-works?${q.toString()}`, { total: 0, works: [] });
+}
+
+export async function uploadBenchmarkModule(file: File): Promise<any> {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`${API_BASE}/material-fairness/upload-benchmark-module`, { method: 'POST', body: formData });
+    return await res.json();
+  } catch (err) {
+    console.error('Failed uploading benchmark module:', err);
+    return { status: 'ERROR', message: 'Network request failed' };
+  }
 }

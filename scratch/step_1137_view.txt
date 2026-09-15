@@ -1,0 +1,39 @@
+Created At: 2026-09-13T17:50:59+05:30
+Completed At: 2026-09-13T17:50:59+05:30
+File Path: `file:///p:/SIH/mplads_updated-main/src/backend/app.py`
+Total Lines: 2946
+Total Bytes: 137716
+Showing lines 1620 to 1650
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1620:         "candidate_duplicates": cand_dup
+1621:     }
+1622: 
+1623: @app.get("/api/work-detail")
+1624: def _officer_issue_signals(work_record: dict) -> list[dict]:
+1625:     """Translate existing analytical scores into review signals without changing risk math."""
+1626:     signals = []
+1627:     dimensions = (
+1628:         ("financial", "Financial anomaly", "financial_risk_score", "financial_explanation", "Review financial details"),
+1629:         ("compliance", "Compliance evidence", "compliance_risk_score", "compliance_explanation", "Verify compliance evidence"),
+1630:         ("schedule", "Schedule / progress", "schedule_risk_score", "schedule_explanation", "Review progress evidence"),
+1631:         ("duplicate", "Candidate duplicate", "duplicate_risk_score", "duplicate_explanation", "Review candidate"),
+1632:     )
+1633:     for key, label, score_field, explanation_field, action in dimensions:
+1634:         raw_score = work_record.get(score_field)
+1635:         try:
+1636:             score = float(raw_score) if raw_score is not None and not pd.isna(raw_score) else 0.0
+1637:         except (TypeError, ValueError):
+1638:             score = 0.0
+1639:         if score >= 35:
+1640:             signals.append({
+1641:                 "key": key,
+1642:                 "label": label,
+1643:                 "score": round(score, 1),
+1644:                 "explanation": work_record.get(explanation_field) or f"{label} indicator is above the configured review threshold.",
+1645:                 "recommended_action": action,
+1646:             })
+1647:     return sorted(signals, key=lambda signal: signal["score"], reverse=True)
+1648: 
+1649: 
+1650: def _officer_filter_master(master: pd.DataFrame, state=None, constituency=None, work_status=None, severity=None, search=None):
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

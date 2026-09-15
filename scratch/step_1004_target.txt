@@ -1,0 +1,8 @@
+        target["review_status"] = status
+        target["reviewed_by"] = reviewer
+        target["reviewed_at"] = now
+        target["review_comment"] = payload.review_comment.strip() or None
+        target["updated_at"] = now
+        target.setdefault("audit_events", []).append({"event": "status_changed", "at": now, "status": status, "comment": target["review_comment"]})
+        _write_citizen_evidence(records)
+        return target

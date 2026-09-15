@@ -68,6 +68,8 @@ interface AuditRecord {
     reason?: string;
   } | null;
   attached_files?: AuditAttachedFile[];
+  handwritten_bills?: HandwrittenBillRecord[];
+  handwritten_bills_count?: number;
   pdf_audit?: {
     file_name?: string | null;
     file_size_kb?: number;
@@ -79,7 +81,27 @@ interface AuditRecord {
     bill_proof_keywords?: string[];
     geotag_status?: string;
     sample_images?: AuditSampleImage[];
+    handwritten_bills?: HandwrittenBillRecord[];
+    handwritten_bills_count?: number;
   };
+}
+
+export interface HandwrittenBillRecord {
+  work_id: string;
+  filename: string;
+  page: string;
+  bill_category: string;
+  bill_no: string;
+  date: string;
+  contractor: string;
+  amount: string;
+  all_amounts: string[];
+  work_description: string;
+  signatures: string[];
+  handwriting_evidence: string[];
+  image_url: string;
+  lines_count: number;
+  key_text_snippets: string[];
 }
 
 interface ManifestRecord {
@@ -129,6 +151,8 @@ export interface GeotagEvidenceRecord {
     collisionType?: string;
   };
   attachedFiles: AuditAttachedFile[];
+  handwrittenBills: HandwrittenBillRecord[];
+  handwrittenBillsCount: number;
   images: EvidenceImage[];
   gpsImages: EvidenceImage[];
   gps?: GeotagStamp;
@@ -222,6 +246,8 @@ const buildEvidenceRecord = (audit: AuditRecord): GeotagEvidenceRecord => {
     riskLevel: audit.risk_level,
     workRiskDescription: audit.work_risk_description,
     attachedFiles: audit.attached_files || [],
+    handwrittenBills: audit.handwritten_bills || audit.pdf_audit?.handwritten_bills || [],
+    handwrittenBillsCount: audit.handwritten_bills_count ?? audit.pdf_audit?.handwritten_bills_count ?? (audit.handwritten_bills?.length || 0),
     images,
     gpsImages,
     gps: firstGps,

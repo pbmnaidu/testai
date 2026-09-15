@@ -98,6 +98,14 @@ def run_audit():
         with open(ocr_path, "r", encoding="utf-8") as f:
             ocr_results = json.load(f)
 
+    # Load Extracted Handwritten Bills if available
+    handwritten_bills_db = {}
+    bills_db_path = "data/processed/extracted_handwritten_bills.json"
+    if os.path.exists(bills_db_path):
+        print("[*] Loading extracted handwritten bills database...")
+        with open(bills_db_path, "r", encoding="utf-8") as f:
+            handwritten_bills_db = json.load(f)
+
     intermediate_works = []
     manifest = {}
     file_hash_map = {}  # sha256 -> list of (work_id, filename)
@@ -493,6 +501,8 @@ def run_audit():
             "is_fraud_suspected": is_fraud,
             "fraud_details": fraud_info if is_fraud else None,
             "attached_files": iw["attached_files"],
+            "handwritten_bills": handwritten_bills_db.get(str(wid), []),
+            "handwritten_bills_count": len(handwritten_bills_db.get(str(wid), [])),
             "pdf_audit": {
                 "file_name": iw["pdf_file"],
                 "file_size_kb": iw["pdf_size_kb"],
@@ -504,7 +514,9 @@ def run_audit():
                 "bill_proof_keywords": matched_bill_kws[:6],
                 "geotag_status": geotag_status,
                 "gps": gps_data,
-                "sample_images": iw["sample_images"]
+                "sample_images": iw["sample_images"],
+                "handwritten_bills": handwritten_bills_db.get(str(wid), []),
+                "handwritten_bills_count": len(handwritten_bills_db.get(str(wid), []))
             }
         }
         updated_works.append(updated_work)

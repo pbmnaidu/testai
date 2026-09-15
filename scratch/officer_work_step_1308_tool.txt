@@ -1,0 +1,8 @@
+{
+  "CodeContent": "import os\n\nbrain = r'C:\\Users\\bhanu\\.gemini\\antigravity-ide\\brain'\nfor root, dirs, files in os.walk(brain):\n    for f in files:\n        if f.endswith('.jsonl') or f.endswith('.txt') or f.endswith('.py'):\n            p = os.path.join(root, f)\n            try:\n                with open(p, 'r', encoding='utf-8', errors='ignore') as fp:\n                    for line in fp:\n                        if 'get_officer_work_monitoring' in line or 'def get_officer_work' in line:\n                            print(f\"FOUND in {p}\")\n                            break\n            except Exception:\n                pass\n",
+  "Description": "Search all brain files for get_officer_work",
+  "Overwrite": true,
+  "TargetFile": "p:\\SIH\\mplads_updated-main\\scratch\\find_officer_work.py",
+  "toolAction": "Writing file",
+  "toolSummary": "Write find_officer_work.py"
+}

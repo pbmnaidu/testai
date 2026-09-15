@@ -1,0 +1,40 @@
+Created At: 2026-09-13T17:47:26+05:30
+Completed At: 2026-09-13T17:47:26+05:30
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":84,"LineContent":"CITIZEN_ALLOW_LOCAL_OFFICER_REVIEW = os.getenv(\"MPLADS_ALLOW_LOCAL_OFFICER_REVIEW\", \"\").strip().casefold() in {\"1\", \"true\", \"yes\", \"on\"}"}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":1624,"LineContent":"def _officer_issue_signals(work_record: dict) -\u003e list[dict]:"}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":1650,"LineContent":"def _officer_filter_master(master: pd.DataFrame, state=None, constituency=None, work_status=None, severity=None, search=None):"}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":1671,"LineContent":"def _officer_score_count(frame: pd.DataFrame, field: str, threshold: float = 35) -\u003e int:"}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":1677,"LineContent":"def _officer_work_key(value) -\u003e str:"}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":1687,"LineContent":"def _officer_evidence_for_work(work_id: str) -\u003e tuple[list[dict], list[dict]]:"}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":1730,"LineContent":"@app.get(\"/api/officer/dashboard\")"}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":1731,"LineContent":"def get_officer_dashboard("}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":1740,"LineContent":"    \"\"\"Return a read-only implementing-officer queue over existing analytical data.\"\"\""}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":1742,"LineContent":"    master = _officer_filter_master(data[\"master\"], state, constituency, work_status, severity, search)"}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":1746,"LineContent":"    master_work_keys = set(master.get(\"work_id\", pd.Series(dtype=str)).map(_officer_work_key))"}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":1747,"LineContent":"    citizen_records = [record for record in all_citizen_records if _officer_work_key(record.get(\"work_id\")) in master_work_keys]"}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":1748,"LineContent":"    attendance_records = [record for record in all_attendance_records if _officer_work_key(record.get(\"work_id\")) in master_work_keys]"}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":1749,"LineContent":"    citizen_work_keys = {_officer_work_key(record.get(\"work_id\")) for record in citizen_records}"}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":1750,"LineContent":"    attendance_work_keys = {_officer_work_key(record.get(\"work_id\")) for record in attendance_records}"}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":1771,"LineContent":"        work_keys = master.get(\"work_id\", pd.Series(\"\", index=master.index)).map(_officer_work_key)"}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":1774,"LineContent":"        work_keys = master.get(\"work_id\", pd.Series(\"\", index=master.index)).map(_officer_work_key)"}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":1798,"LineContent":"        signals = _officer_issue_signals(record)"}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":1809,"LineContent":"            }.get(focus_key, \"Overall analytical risk level requires officer review.\")"}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":1821,"LineContent":"                \"officer_review_status\": \"UNREVIEWED\","}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":1841,"LineContent":"            \"financial_reviews\": _officer_score_count(master, \"financial_risk_score\"),"}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":1842,"LineContent":"            \"material_price_reviews\": int(material_eligible.sum()) or _officer_score_count(master, \"financial_risk_score\"),"}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":1845,"LineContent":"            \"compliance_issues\": _officer_score_count(master, \"compliance_risk_score\"),"}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":1846,"LineContent":"            \"schedule_risks\": _officer_score_count(master, \"schedule_risk_score\"),"}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":1847,"LineContent":"            \"duplicate_candidates\": _officer_score_count(master, \"duplicate_risk_score\"),"}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":1860,"LineContent":"@app.get(\"/api/officer/work\")"}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":1861,"LineContent":"def get_officer_work_monitoring(work_id: str = Query(..., min_length=1)):"}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":1862,"LineContent":"    \"\"\"Return a 360-degree officer view, including existing citizen/attendance images.\"\"\""}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":1865,"LineContent":"    signals = _officer_issue_signals(work)"}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":1866,"LineContent":"    citizen_records, attendance_records = _officer_evidence_for_work(work.get(\"work_id\"))"}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":1914,"LineContent":"        \"officer_review\": {\"status\": \"UNREVIEWED\", \"persistence_available\": False, \"message\": \"Officer action persistence is not configured in the current backend.\"},"}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":2447,"LineContent":"def _require_citizen_officer(request: Request) -\u003e str:"}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":2450,"LineContent":"        return \"configured_officer\""}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":2451,"LineContent":"    if CITIZEN_ALLOW_LOCAL_OFFICER_REVIEW and request.headers.get(\"x-mplads-role\", \"\").casefold() == \"officer\":"}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":2452,"LineContent":"        return \"local_officer\""}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":2453,"LineContent":"    raise HTTPException(status_code=403, detail=\"Officer authorization is required to update evidence review status.\")"}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":2746,"LineContent":"    reviewer = _require_citizen_officer(request)"}
+{"File":"p:\\SIH\\mplads_updated-main\\src\\backend\\app.py","LineNumber":2933,"LineContent":"            \"integrity_note\": \"Camera-only UI assertion with server receipt, GPS metadata, and SHA-256 image hash; officer verification remains required.\","}

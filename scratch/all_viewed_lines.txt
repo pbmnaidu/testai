@@ -1,0 +1,2144 @@
+1: Created At: 2026-09-13T17:22:54+05:30
+2: Completed At: 2026-09-13T17:22:54+05:30
+3: File Path: `file:///p:/SIH/mplads_updated-main/src/backend/app.py`
+4: Total Lines: 2783
+5: Total Bytes: 130362
+6: Showing lines 1751 to 1840
+7: The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+8: 1751:             "compliance_issues": _officer_score_count(master, "compliance_risk_score"),
+9: 1752:             "schedule_risks": _officer_score_count(master, "schedule_risk_score"),
+10: 1753:             "duplicate_candidates": _officer_score_count(master, "duplicate_risk_score"),
+11: 1754:         },
+12: 1755:         "data_availability": {
+13: 1756:             "material": {"available": True, "source": "Material Quality & Price Fairness Engine"},
+14: 1757:             "attendance": {"available": True, "source": "Attendance capture records", "warning": None if attendance_records else "No attendance captures are currently stored."},
+15: 1758:             "citizen": {"available": True, "source": "Citizen evidence records", "warning": None if citizen_records else "No citizen evidence is currently stored."},
+16: 1759:         },
+17: 1760:         "priority_works": priority[:limit],
+18: 1761:         "metadata": _analytics_metadata(),
+19: 1762:     }
+20: 1763: 
+21: 1764: 
+22: 1765: @app.get("/api/officer/work")
+23: 1766: def get_officer_work_monitoring(work_id: str = Query(..., min_length=1)):
+24: 1767:     """Return a 360-degree officer view, including existing citizen/attendance images."""
+25: 1768:     detail = _fetch_work_detail_internal(work_id)
+26: 1769:     work = detail["work"]
+27: 1770:     signals = _officer_issue_signals(work)
+28: 1771:     citizen_records, attendance_records = _officer_evidence_for_work(work.get("work_id"))
+29: 1772:     material = None
+30: 1773:     material_warning = None
+31: 1774:     try:
+32: 1775:         material = clean_record_for_json(analyze_material_context(pd.DataFrame([work]), _BACKEND_ROOT).iloc[0].to_dict())
+33: 1776:     except Exception:
+34: 1777:         material_warning = "Material benchmark context could not be loaded. Manual verification is required."
+35: 1778: 
+36: 1779:     timeline = []
+37: 1780:     for label, field, source in (
+38: 1781:         ("Work recommended", "recommended_date", "Project source record"),
+39: 1782:         ("Work sanctioned", "sanction_date", "Project source record"),
+40: 1783:         ("Expected completion", "estimated_completion_date", "Schedule analysis"),
+41: 1784:         ("Work completed", "completion_date", "Project source record"),
+42: 1785:         ("Risk analysis", "last_analyzed_at", "Risk engines"),
+43: 1786:     ):
+44: 1787:         if work.get(field):
+45: 1788:             timeline.append({"event": label, "date": work.get(field), "source": source})
+46: 1789:     for payment in work.get("expenditure_trips") or []:
+47: 1790:         if payment.get("expenditure_date"):
+48: 1791:             timeline.append({"event": "Expenditure update", "date": payment.get("expenditure_date"), "source": "Expenditure records", "detail": payment.get("payment_status")})
+49: 1792:     timeline.sort(key=lambda item: str(item.get("date") or ""))
+50: 1793: 
+51: 1794:     risk_components = [
+52: 1795:         {"key": "financial", "label": "Financial risk", "score": work.get("financial_risk_score") or 0, "source": "Financial Anomaly Engine"},
+53: 1796:         {"key": "compliance", "label": "Compliance risk", "score": work.get("compliance_risk_score") or 0, "source": "Compliance Engine"},
+54: 1797:         {"key": "schedule", "label": "Schedule risk", "score": work.get("schedule_risk_score") or 0, "source": "Schedule / Progress Analysis"},
+55: 1798:         {"key": "duplicate", "label": "Duplicate risk", "score": work.get("duplicate_risk_score") or 0, "source": "Duplicate Detection"},
+56: 1799:     ]
+57: 1800:     return {
+58: 1801:         "work": work,
+59: 1802:         "risk_components": risk_components,
+60: 1803:         "evidence_summary": signals,
+61: 1804:         "material": material,
+62: 1805:         "material_warning": material_warning,
+63: 1806:         "attendance": {
+64: 1807:             "available": bool(attendance_records),
+65: 1808:             "records": attendance_records,
+66: 1809:             "warning": None if attendance_records else "No current attendance capture is available for this Work ID.",
+67: 1810:         },
+68: 1811:         "citizen_feedback": {
+69: 1812:             "available": bool(citizen_records),
+70: 1813:             "records": citizen_records,
+71: 1814:             "warning": None if citizen_records else "No citizen evidence is associated with this Work ID.",
+72: 1815:         },
+73: 1816:         "candidate_duplicates": detail["candidate_duplicates"],
+74: 1817:         "compliance_findings": work.get("compliance_findings") or work.get("compliance_rule_results") or [],
+75: 1818:         "timeline": timeline,
+76: 1819:         "officer_review": {"status": "UNREVIEWED", "persistence_available": False, "message": "Officer action persistence is not configured in the current backend."},
+77: 1820:         "traceability": [
+78: 1821:             {"label": "Financial risk", "source": "Financial Anomaly Engine", "dataset": "master_project_risk_scores.parquet"},
+79: 1822:             {"label": "Compliance risk", "source": "Compliance Engine", "dataset": "master_project_risk_scores.parquet"},
+80: 1823:             {"label": "Schedule risk", "source": "Schedule / Progress Analysis", "dataset": "master_project_risk_scores.parquet"},
+81: 1824:             {"label": "Duplicate candidates", "source": "Duplicate Detection", "dataset": "duplicate_work_candidates.parquet"},
+82: 1825:             {"label": "Material context", "source": "Material Quality & Price Fairness Engine", "dataset": "material_specification_benchmarks.csv"},
+83: 1826:             {"label": "Citizen evidence", "source": "Citizen Protocol", "dataset": "data/citizen_evidence.json"},
+84: 1827:             {"label": "Attendance evidence", "source": "Attendance Capture", "dataset": "data/attendance_records.json"},
+85: 1828:         ],
+86: 1829:         "metadata": _analytics_metadata(),
+87: 1830:     }
+88: 1831: 
+89: 1832: 
+90: 1833: @app.get("/api/work-detail")
+91: 1834: def get_work_detail_by_query(work_id: str = Query(...)):
+92: 1835:     return _fetch_work_detail_internal(work_id)
+93: 1836: 
+94: 1837: @app.get("/api/work-detail/{work_id:path}")
+95: 1838: def get_work_detail_by_path(work_id: str):
+96: 1839:     return _fetch_work_detail_internal(work_id)
+97: 1840: 
+98: The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+99: 
+100:       .then((result) => {
+101:         setDashboard(result);
+102:         setLoading(false);
+103:       })
+104:       .catch(() => {
+105:         setLoading(false);
+106:       });
+107:   };
+108: 
+109:   useEffect(() => {
+110:     let active = true;
+111:     setLoading(true);
+112:     fetchOfficerDashboard({ ...filters, focus: focusDimension, limit: 100 })
+113:       .then((result) => {
+114:         if (active) {
+115:           setDashboard(result);
+116:           setLoading(false);
+117:         }
+118:       })
+119:       .catch(() => {
+120:         if (active) setLoading(false);
+121:       });
+122:     return () => {
+123:       active = false;
+124:     };
+125:   }, [filters, focusDimension]);
+126: 
+127:   const loadWorkDetail = (workId: string) => {
+128:     setDetail(null);
+129:     setDetailError('');
+130:     setActionNotice('');
+131:     fetchOfficerWork(workId)
+132:       .then((result) => {
+133:         setDetail(result);
+134:       })
+135:       .catch((error) => {
+136:         setDetailError(error.message || 'Unable to load work monitoring record.');
+137:       });
+138:   };
+139: 
+140:   useEffect(() => {
+141:     if (!selectedWorkId) return;
+142:     loadWorkDetail(selectedWorkId);
+143:   }, [selectedWorkId]);
+144: 
+145:   const setFilter = (key: keyof typeof filters, value: string) =>
+146:     setFilters((current) => ({
+147:       ...current,
+148:       [key]: value,
+149:       ...(key === 'state' ? { constituency: '' } : {}),
+150: }
+151: 
+152: export async function fetchAnalyticsStates(): Promise<any> {
+153:   return safeFetchJson(API_BASE + '/analytics/states', { metadata: undefined, states: [], methodology: {} });
+154: }
+155: 
+156: export async function fetchHighestRiskWorksByState(state: string, limit = 10): Promise<any> {
+157:   const query = new URLSearchParams({ limit: String(limit) });
+158:   return safeFetchJson(API_BASE + '/analytics/states/' + encodeURIComponent(state) + '/highest-risk?' + query.toString(), {
+159:     state,
+160:     total_works: 0,
+161:     records: [],
+162:     metadata: undefined,
+163:   });
+164: }
+165: 
+166: export async function previewSyncDiff(filters: { state?: string; constituency?: string; work_ids?: string[]; page?: number; limit?: number } = {}): Promise<SyncPreviewResponse> {
+167:   return postJson<SyncPreviewResponse>(`${API_BASE}/sync/preview-diff`, filters);
+168: }
+169: 
+170: export async function commitSyncDiff(preview_token: string): Promise<any> {
+171:   return postJson(`${API_BASE}/sync/commit-diff`, { preview_token });
+172: }
+173: 
+174: export async function fetchTrainingStatus(): Promise<any> {
+175:   return safeFetchJson(`${API_BASE}/sync/training-status`, { status: 'UNKNOWN', progress: 0, message: 'Training status unavailable.' });
+176: }
+177: 
+178: export async function startTraining(): Promise<any> {
+179:   return postJson(`${API_BASE}/sync/training/start`, {});
+180: }
+181: 
+182: export async function fetchSyncHealth(): Promise<any> {
+183:   return safeFetchJson(`${API_BASE}/sync/health`, {
+184:     source_url: '', status: 'unknown', last_successful_request: null, last_failure: null,
+185:     response_time_ms: null, records_fetched: 0, request_count: 0, error_count: 0, error_rate: 0,
+186:   });
+187: }
+188: 
+189: export async function fetchSyncHistory(): Promise<any[]> {
+190:   return safeFetchJson(`${API_BASE}/sync/history`, []);
+191: }
+192: 
+193: export async function fetchModelStatus(): Promise<ModelStatusResponse> {
+194:   const fallback: ModelStatusResponse = {
+195:     experiment_name: '',
+196:     registered_model: '',
+197:     production_model: {
+198:       model_name: '',
+199:       model_version: '',
+200:       run_id: '',
+201:       stage: 'UNAVAILABLE',
+202:       dataset_version: '',
+203:       last_trained_at: ''
+204:     },
+205:     runs: []
+206:   };
+207:   return safeFetchJson<ModelStatusResponse>(`${API_BASE}/model/status`, fallback);
+208: }
+209: 
+210: export async function fetchRiskQueue(params: {
+211:   state?: string;
+212:   constituency?: string;
+213:   work_status?: string;
+214:   category?: string;
+215:   severity?: string;
+216:   search?: string;
+217:   min_financial_risk?: number;
+218:   financial_only?: boolean;
+219:   min_compliance_risk?: number;
+220:   sort_by?: string;
+221:           </div>
+222:           <div className="flex items-center gap-3">
+223:             <button
+224:               onClick={loadDashboard}
+225:               className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+226:             >
+227:               <RefreshCw className="h-3.5 w-3.5" /> Refresh Center
+228:             </button>
+229:             <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+230:               <span className="h-2 w-2 rounded-full bg-emerald-500" />
+231:               Live Evidence &amp; Attendance Connected
+232:             </div>
+233:           </div>
+234:         </div>
+235: 
+236:         <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+237:           <select
+238:             value={filters.state}
+239:             onChange={(e) => setFilter('state', e.target.value)}
+240:             className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+241:           >
+242:             <option value="">All states</option>
+243:             {dashboard.available.states.map((item) => (
+244:               <option key={item}>{item}</option>
+245:             ))}
+246:           </select>
+247:           <select
+248:             value={filters.constituency}
+249:             onChange={(e) => setFilter('constituency', e.target.value)}
+250:             className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+251:           >
+252:             <option value="">All constituencies</option>
+253:             {dashboard.available.constituencies.map((item) => (
+254:               <option key={item}>{item}</option>
+255:             ))}
+256:           </select>
+257:           <select
+258:             value={filters.work_status}
+259:             onChange={(e) => setFilter('work_status', e.target.value)}
+260:             className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+261:           >
+262:             <option value="">All work statuses</option>
+263:             {dashboard.available.statuses.map((item) => (
+264:               <option key={item}>{item}</option>
+265:             ))}
+266:           </select>
+267:           <select
+268:             value={filters.severity}
+269:             onChange={(e) => setFilter('severity', e.target.value)}
+270:             className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+271:           >
+272:             <option value="">All risk levels</option>
+273:             {dashboard.available.severities.map((item) => (
+274:               <option key={item}>{item}</option>
+275:             ))}
+276:           </select>
+277:           <label className="relative">
+278:             <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+279:             <input
+280:               value={filters.search}
+281:               onChange={(e) => setFilter('search', e.target.value)}
+282:               placeholder="Search Work ID or project"
+283:               className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-xs outline-none focus:border-emerald-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+284:             />
+285:           </label>
+286:         </div>
+287:       </div>
+288: 
+289:       {/* Summary Stat Cards */}
+290:       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-8">
+291:         {cards.map(([label, value, Icon, tone]) => (
+292:           <button
+293:             type="button"
+294:             key={label}
+295:             onClick={() => setFocusDimension(cardFocus[label])}
+296:             className={`rounded-2xl border bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-slate-400 dark:bg-[#0f172a] ${
+297:               focusDimension === cardFocus[label]
+298:                 ? 'border-slate-900 ring-2 ring-slate-200 dark:border-slate-400 dark:ring-slate-800'
+299:                 : 'border-slate-200/80 dark:border-slate-800'
+300:             }`}
+301:           >
+302:             <div
+303:               className={`mb-3 inline-flex rounded-lg p-2 ${
+304:                 tone === 'rose'
+305:                   ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300'
+306:                   : tone === 'indigo'
+307:                     ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-300'
+308:                     : tone === 'orange'
+309:                       ? 'bg-orange-50 text-orange-600 dark:bg-orange-950/40 dark:text-orange-300'
+310:                       : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+311:               }`}
+312:             >
+313:               <Icon className="h-4 w-4" />
+314:             </div>
+315:             <p className="text-2xl font-black text-slate-900 dark:text-slate-100">{loading ? '—' : value}</p>
+316:             <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</p>
+317:             <p className="mt-2 text-[10px] font-semibold text-indigo-600 dark:text-indigo-400">Filter queue →</p>
+318:           </button>
+319:         ))}
+320:       </div>
+321: 
+322:       {/* Focus Pill Bar */}
+323:       <div className="flex flex-wrap items-center gap-2">
+324:         <span className="mr-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Queue focus</span>
+325:           {[
+326:             ['priority', 'Current priority'],
+327:             ['all', 'All works'],
+328:             ['high_priority', 'High priority'],
+329:             ['material', 'Material price'],
+330:             ['attendance', 'Attendance'],
+331:             ['citizen', 'Citizen complaints'],
+332:             ['compliance', 'Compliance'],
+333:             ['schedule', 'Schedule'],
+334:             ['duplicate', 'Duplicates'],
+335:           ].map(([key, label]) => (
+336:           <button
+337:             type="button"
+338:             key={key}
+339:             onClick={() => setFocusDimension(key as QueueFocus)}
+340:             className={`rounded-lg border px-3 py-1.5 text-[11px] font-bold transition ${
+341:               focusDimension === key
+342:                 ? 'border-slate-900 bg-slate-900 text-white dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900'
+343:                 : 'border-slate-200 bg-white text-slate-600 hover:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300'
+344:             }`}
+345:           >
+346:             {label}
+347:           </button>
+348:         ))}
+349:       </div>
+350: 
+351:       {/* Priority Work Review Table */}
+352:       <section className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden dark:border-slate-800 dark:bg-[#0f172a]">
+353:         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 dark:border-slate-800">
+354:           <div>
+355:             <h3 className="text-sm font-black text-slate-900 dark:text-slate-100">Priority Work Review &amp; Monitoring Queue</h3>
+356:             <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+357:               Ranked by analytical risk indicators. Open the 360° view or direct Work Risk Profile for any project.
+358:             </p>
+359:           </div>
+360:           <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+361:             {visiblePriority.length}{dashboard.queue_total && dashboard.queue_total > visiblePriority.length ? ` of ${dashboard.queue_total}` : ''} works shown
+362:           </span>
+363:         </div>
+364: 
+365:         {visiblePriority.length === 0 && !loading ? (
+366:           <div className="p-8 text-center text-xs text-slate-500">No works match the selected filters.</div>
+367:         ) : (
+368:           <div className="overflow-x-auto">
+369:             <table className="w-full min-w-[960px] text-left text-xs">
+370:               <thead className="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-500 dark:bg-slate-900/80 dark:text-slate-400">
+371:                 <tr>
+372:                   <th className="px-5 py-3">Work ID / Project</th>
+373:                   <th className="px-4 py-3">Why flagged</th>
+374:                   <th className="px-4 py-3">Severity</th>
+375:                   <th className="px-4 py-3">Officer status</th>
+376:                   <th className="px-5 py-3 text-right">Actions &amp; Risk Link</th>
+377:                 </tr>
+378:               </thead>
+379:               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+380:                 {visiblePriority.map((item) => (
+381:                   <tr key={item.work_id} className="hover:bg-slate-50/70 dark:hover:bg-slate-900/40">
+382:                     <td className="px-5 py-4">
+383:                       <button
+384:                         onClick={() => setSelectedWorkId(item.work_id)}
+385:                         className="font-mono font-bold text-indigo-700 hover:underline dark:text-indigo-400"
+386:                       >
+387:                         {item.work_id}
+388:                       </button>
+389:                       <p className="mt-1 max-w-xs truncate text-slate-500 dark:text-slate-400">
+390:                         {item.description || 'Description unavailable'}
+391:                       </p>
+392:                       <p className="mt-1 text-[10px] text-slate-400">
+393:                         {item.state} · {item.constituency}
+394:                       </p>
+395:                     </td>
+396:                     <td className="max-w-sm px-4 py-4 leading-relaxed text-slate-600 dark:text-slate-300">
+397:                       {item.why_flagged}
+398:                     </td>
+399:                     <td className="px-4 py-4">
+400:                       <RiskBadge level={item.overall_risk} score={item.overall_risk_score} />
+401:                     </td>
+402:                     <td className="px-4 py-4">
+403:                       <span className="font-semibold text-slate-700 dark:text-slate-300">{item.recommended_action}</span>
+404:                       <p className="mt-1 text-[10px] font-bold uppercase text-slate-400">{item.officer_review_status}</p>
+405:                     </td>
+406:                     <td className="px-5 py-4 text-right">
+407:                       <div className="inline-flex items-center justify-end gap-2">
+408:                         {onSelectWork && (
+409:                           <button
+410:                             type="button"
+411:                             onClick={() => onSelectWork(item.work_id)}
+412:                             className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1.5 text-xs font-bold text-indigo-700 shadow-sm hover:bg-indigo-100 dark:border-indigo-800/80 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-900/60"
+413:                             title={`Open respected risk profile for ${item.work_id}`}
+414:                           >
+415:                             <ExternalLink className="h-3.5 w-3.5" />
+416:                             <span>Risk Profile ↗</span>
+417:                           </button>
+418:                         )}
+419:                         <button
+420:                           type="button"
+421:                           onClick={() => setSelectedWorkId(item.work_id)}
+422:                           className="inline-flex items-center gap-1 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900"
+423:                         >
+424:                           Review <ChevronRight className="h-3.5 w-3.5" />
+425:                         </button>
+426:                       </div>
+427:                     </td>
+428:                   </tr>
+429:                 ))}
+430:               </tbody>
+431:             </table>
+432:           </div>
+433:         )}
+434:       </section>
+435:     </div>
+436:   );
+437: };
+438: 
+439: // ==========================================
+440: // 360° Work Detail Component
+441: // ==========================================
+442: 
+443: const OfficerWorkView: React.FC<{
+444:   detail: OfficerWorkResponse;
+445:   onBack: () => void;
+446:   actionNotice: string;
+447:   onAction: (label: string) => void;
+448:   onSelectWork?: (workId: string) => void;
+449:   onRefreshDetail?: () => void;
+450: }> = ({ detail, onBack, actionNotice, onAction, onSelectWork, onRefreshDetail }) => {
+451:   );
+452: };
+453: 
+454: export default LeafletGeotagMap;
+455: 
+456:             risk_level = "HIGH"
+457:             work_risk_desc = f"Physical & financial verification gap. {missing_summary}"
+458:         else:
+459:             # No files at all
+460: export async function fetchCitizenEvidenceStats(): Promise<CitizenEvidenceStats> {
+461:   return safeFetchJson<CitizenEvidenceStats>(`${API_BASE}/citizen-evidence/stats`, {
+462:     total_submissions: 0,
+463:     submitted_today: 0,
+464:     submitted_this_week: 0,
+465:     within_expected_radius: 0,
+466:     needs_review: 0,
+467:     outside_expected_radius: 0,
+468:     categories: {},
+469:   });
+470: }
+471: 
+472: export async function submitCitizenEvidence(fields: {
+473:   workId: string;
+474:   category: string;
+475:   description: string;
+476:   evidenceType?: string;
+477:   staffCount?: number | null;
+478:   latitude?: number | null;
+479:   longitude?: number | null;
+480:   gpsAccuracy?: number | null;
+481:   capturedAt?: string | null;
+482:   liveCapture: boolean;
+483:   image: File;
+484: }): Promise<CitizenEvidenceRecord> {
+485:   const body = new FormData();
+486:   body.append('work_id', fields.workId);
+487:   body.append('category', fields.category);
+488:   body.append('description', fields.description);
+489:   body.append('live_capture', String(fields.liveCapture));
+490:   if (fields.evidenceType) body.append('evidence_type', fields.evidenceType);
+491:   if (fields.staffCount != null) body.append('staff_count', String(fields.staffCount));
+492:   if (fields.latitude != null) body.append('latitude', String(fields.latitude));
+493:   if (fields.longitude != null) body.append('longitude', String(fields.longitude));
+494:   if (fields.gpsAccuracy != null) body.append('gps_accuracy', String(fields.gpsAccuracy));
+495:   if (fields.capturedAt) body.append('captured_at', fields.capturedAt);
+496:   body.append('image', fields.image, fields.image.name);
+497: 
+498:   const response = await fetch(`${API_BASE}/citizen-evidence`, { method: 'POST', body });
+499:   const payload = await response.json().catch(() => ({}));
+500:   if (!response.ok) throw new Error(payload?.detail || `Evidence upload failed (${response.status})`);
+501:   return payload as CitizenEvidenceRecord;
+502: }
+503: 
+504: export async function reviewCitizenEvidence(submissionId: string, reviewStatus: string, reviewComment = '', reviewToken = ''): Promise<CitizenEvidenceRecord> {
+505:   const headers: Record<string, string> = { 'Content-Type': 'application/json', 'X-MPLADS-Role': 'officer' };
+506:   if (reviewToken.trim()) headers.Authorization = `Bearer ${reviewToken.trim()}`;
+507:   const response = await fetch(`${API_BASE}/citizen-evidence/${encodeURIComponent(submissionId)}/review`, {
+508:     method: 'PATCH',
+509:     headers,
+510:     signals: OfficerSignal[];
+511:     why_flagged: string;
+512:     recommended_action: string;
+513:     officer_review_status: string;
+514:   }>;
+515:   metadata?: AnalyticsMetadata;
+516: }
+517: 
+518: export interface OfficerWorkResponse {
+519:   work: WorkRecord;
+520:   risk_components: Array<{ key: string; label: string; score: number; source: string }>;
+521:   evidence_summary: OfficerSignal[];
+522:   material?: any;
+523:   material_warning?: string | null;
+524:   attendance: { available: boolean; warning?: string; records?: AttendanceRecord[]; summary?: AttendanceStats };
+525:   citizen_feedback: { available: boolean; warning?: string; records?: CitizenEvidenceRecord[]; summary?: CitizenEvidenceStats };
+526:   candidate_duplicates: CandidateDuplicatePair[];
+527:   compliance_findings: ComplianceFinding[];
+528:   timeline: Array<{ event: string; date: string; source: string; detail?: string }>;
+529:   officer_review: { status: string; persistence_available: boolean; message?: string };
+530:   traceability: Array<{ label: string; source: string; dataset: string }>;
+531:   metadata?: AnalyticsMetadata;
+532: }
+533: 
+534: export interface PublicWorkRecord {
+535:   work_id: string;
+536:   description: string;
+537:   work_category: string;
+538:   state: string;
+539:   constituency: string;
+540:   mp_name?: string;
+541:   work_status: string;
+542:   sanction_amount?: number;
+543:   effective_expenditure?: number;
+544:   recommended_date?: string;
+545:   sanction_date?: string;
+546:   completion_date?: string;
+547:   estimated_completion_date?: string;
+548:   progress_pct?: number | null;
+549:   latitude?: number | null;
+550:   longitude?: number | null;
+551:   coordinate_source?: string | null;
+552:   coordinate_available: boolean;
+553:   normalized_status: 'ONGOING' | 'COMPLETED' | 'NOT_STARTED' | 'OTHER' | string;
+554:   citizen_evidence_count: number;
+555: }
+556: 
+557: export interface CitizenEvidenceConfig {
+558:   gps_accuracy_threshold_meters: number;
+559:   allowed_evidence_radius_meters: number;
+560:   max_upload_bytes: number;
+561:   allowed_categories: string[];
+562: }
+563: 
+564: export interface CitizenEvidenceRecord {
+565:   submission_id: string;
+566:   work_id: string;
+567:   evidence_type?: 'citizen' | 'contractor_attendance' | 'contractor_progress' | 'officer_inspection' | string;
+568:   staff_count?: number | null;
+569:   category: string;
+570:   description: string;
+571:   latitude?: number | null;
+572:   longitude?: number | null;
+573:   gps_accuracy?: number | null;
+574:   official_work_latitude?: number | null;
+575:   official_work_longitude?: number | null;
+576:   distance_from_work?: number | null;
+577:   location_validation_status: 'WITHIN_EXPECTED_RADIUS' | 'OUTSIDE_EXPECTED_RADIUS' | 'LOW_GPS_ACCURACY' | 'LOCATION_NOT_AVAILABLE' | string;
+578:   captured_at?: string | null;
+579:   uploaded_at: string;
+580:   live_capture: boolean;
+581:   review_status: 'SUBMITTED' | 'UNDER_REVIEW' | 'VERIFIED' | 'REJECTED' | 'NEEDS_MORE_INFORMATION' | string;
+582:   reviewed_by?: string | null;
+583:   reviewed_at?: string | null;
+584:   review_comment?: string | null;
+585:   duplicate_flag?: boolean;
+586:   created_at: string;
+587:   updated_at: string;
+588: }
+589: 
+590: export interface CitizenEvidenceStats {
+591:   total_submissions: number;
+592:   submitted_today: number;
+593:   submitted_this_week: number;
+594:   within_expected_radius: number;
+595:   needs_review: number;
+600: }
+601: 
+602: export interface AttendanceRecord {
+603:   attendance_id: string;
+604:   work_id: string;
+605:   staff_count: number;
+606:   image_reference: string;
+607:   image_sha256: string;
+608:   capture_source: 'LIVE_CAMERA' | string;
+609:   camera_capture_only: boolean;
+610:   latitude: number;
+611:   longitude: number;
+612:   gps_accuracy?: number | null;
+613:   official_work_latitude?: number | null;
+614:   official_work_longitude?: number | null;
+615:   distance_from_work?: number | null;
+616:   location_validation_status: 'WITHIN_EXPECTED_RADIUS' | 'OUTSIDE_EXPECTED_RADIUS' | 'LOW_GPS_ACCURACY' | 'LOCATION_NOT_AVAILABLE' | string;
+617:   captured_at: string;
+618:   server_received_at: string;
+619:   review_status: 'SUBMITTED' | 'UNDER_REVIEW' | 'VERIFIED' | 'REJECTED' | string;
+620:   reviewed_by?: string | null;
+621:   reviewed_at?: string | null;
+622:   review_comment?: string | null;
+623:   integrity_note?: string;
+624:   created_at: string;
+625:   updated_at: string;
+800:                           {new Date(record.captured_at).toLocaleString()}
+801:                         </p>
+802:                       </div>
+803: 
+804:                       {/* Review Buttons */}
+805:                       <div className="mt-3 flex items-center gap-1.5 border-t border-slate-100 pt-2.5 dark:border-slate-800">
+806:                         <button
+807:                           type="button"
+808:                           onClick={() => handleStatusReview(record.attendance_id.replace('att_sync_', ''), 'VERIFIED')}
+809:                           disabled={reviewingId === record.attendance_id.replace('att_sync_', '')}
+810:                           className="flex-1 rounded-lg border border-emerald-300 bg-emerald-50 py-1 text-center text-[10px] font-bold text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
+811:                         >
+812:                           Verify
+813:                         </button>
+814:                         <button
+815:                           type="button"
+816:                           onClick={() => handleStatusReview(record.attendance_id.replace('att_sync_', ''), 'UNDER_REVIEW')}
+817:                           disabled={reviewingId === record.attendance_id.replace('att_sync_', '')}
+818:                           className="flex-1 rounded-lg border border-slate-200 bg-slate-50 py-1 text-center text-[10px] font-bold text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+819:                         >
+820:                           Review
+821:                         </button>
+822:                         <button
+823:                           type="button"
+824:                           onClick={() => handleStatusReview(record.attendance_id.replace('att_sync_', ''), 'REJECTED')}
+825:                           disabled={reviewingId === record.attendance_id.replace('att_sync_', '')}
+826:                           className="flex-1 rounded-lg border border-rose-300 bg-rose-50 py-1 text-center text-[10px] font-bold text-rose-800 hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200"
+827:                         >
+828:                           Reject
+829:                         </button>
+830:                       </div>
+831:                     </article>
+832:                   ))}
+833:                 </div>
+834:               ) : (
+835:                 <div className="mt-3">
+836:                   <DataWarning>
+837:                     {detail.attendance.warning || 'No contractor attendance record is currently associated with this canonical Work ID.'}
+838:                   </DataWarning>
+839:                 </div>
+840:               )}
+841:             </div>
+842: 
+843:             {/* Field B: Citizen Evidence & Feedback Field */}
+844:             <div className="rounded-2xl border border-indigo-200 bg-indigo-50/40 p-4 dark:border-indigo-900/60 dark:bg-indigo-950/20">
+845:               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-indigo-200/80 pb-3 dark:border-indigo-900/40">
+846:                 <div>
+847:                   <div className="flex items-center gap-2">
+848:                     <MessageSquareWarning className="h-4 w-4 text-indigo-600" />
+849:                     <h3 className="text-xs font-black uppercase tracking-wider text-indigo-950 dark:text-indigo-100">
+850:                       Citizen Evidence &amp; Compliance Review Field
+851:                     </h3>
+852:                   </div>
+853:                   <p className="mt-0.5 text-[11px] text-indigo-900/80 dark:text-indigo-200/80">
+854:                     Live camera photographic proofs and observations submitted by community members.
+855:                   </p>
+856:                 </div>
+857:                 <div className="flex items-center gap-2">
+858:                   <span className="rounded-lg bg-indigo-100 px-2.5 py-1 text-[11px] font-bold text-indigo-900 dark:bg-indigo-900/50 dark:text-indigo-200">
+859:                     {citizenRecords.length} submissions stored
+860:                   </span>
+861:                   <button
+862:                     type="button"
+863:                     onClick={() => {
+864:                       setEvidenceInitialRole('citizen');
+865:                       setIsEvidenceModalOpen(true);
+866:                     }}
+867:                     className="inline-flex items-center gap-1 rounded-lg bg-indigo-600 px-2.5 py-1 text-[11px] font-bold text-white shadow-sm hover:bg-indigo-700"
+868:                   >
+869:                     <Camera className="h-3 w-3" /> + Submit Proof
+870:                   </button>
+871:                 </div>
+872:               </div>
+873: 
+874:               {citizenRecords.length ? (
+875:                 <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+876:                   {citizenRecords.map((record: CitizenEvidenceRecord) => (
+877:                     <article
+878:                       key={record.submission_id}
+879:                       className="flex flex-col justify-between overflow-hidden rounded-xl border border-indigo-200 bg-white p-3 shadow-sm dark:border-indigo-800/60 dark:bg-slate-900"
+880:                     >
+881:                       <div>
+882:                         {/* Image preview */}
+883:                         <div
+884:                           className="relative h-36 w-full cursor-pointer overflow-hidden rounded-lg bg-slate-950 group"
+885:                           onClick={() =>
+886:                             setSelectedPhoto({
+887:                               src: record.image_reference || '',
+888:                               title: `${record.category} (Citizen Observation)`,
+889:                               meta: `Work ID: ${record.work_id} · Submission ID: ${record.submission_id}`,
+890:                             })
+891:                           }
+892:                         >
+893:                           {record.image_reference ? (
+894:                             <img
+895:                               src={record.image_reference}
+896:                               alt={`Citizen Evidence ${record.submission_id}`}
+897:                               className="h-full w-full object-cover transition group-hover:scale-105"
+898:                             />
+899:                           ) : (
+900:                             <div className="flex h-full items-center justify-center text-xs text-slate-500">
+901:       padding: 14px 22px;
+902:       background: rgba(15, 23, 42, 0.95);
+903:       border-bottom: 1px solid var(--border-subtle);
+904:       display: flex;
+905:       justify-content: space-between;
+906:       align-items: center;
+907:       gap: 16px;
+908:     }}
+909: 
+910:     .preview-modal-body {{
+911:       flex: 1;
+912:       display: grid;
+913:       grid-template-columns: 1.6fr 1fr;
+914:       overflow: hidden;
+915:       background: #070B14;
+916:     }}
+917: 
+918:     @media (max-width: 1024px) {{
+919:       .preview-modal-body {{
+920:         grid-template-columns: 1fr;
+921:         overflow-y: auto;
+922:       }}
+923:     }}
+924: 
+925:     .preview-viewport-pane {{
+926:       display: flex;
+927:       flex-direction: column;
+928:       border-right: 1px solid var(--border-subtle);
+929:       background: #030712;
+930:       position: relative;
+931:       overflow: hidden;
+932:     }}
+933: 
+934:     .preview-tabs-bar {{
+935:       display: flex;
+936:       background: rgba(15, 23, 42, 0.85);
+937:       border-bottom: 1px solid var(--border-subtle);
+938:       padding: 8px 16px;
+939:       gap: 8px;
+940:     }}
+941: 
+942:     .prev-tab-btn {{
+943:       background: transparent;
+944:       border: 1px solid transparent;
+945:       color: var(--text-muted);
+946:       padding: 6px 14px;
+947:       border-radius: 8px;
+948:       font-size: 12px;
+949:       font-weight: 600;
+950:         raise HTTPException(status_code=409, detail="Analysis cannot start until a validated dataset snapshot is available.")
+951:     return TRAINING_MANAGER.start(snapshot_id, {"manual": True, "new_count": 0, "updated_count": 0, "removed_count": 0})
+952: 
+953: @app.get("/api/model/status")
+954: def get_model_status():
+955:     return MLflowTracker.get_status()
+956: 
+957: @app.get("/api/model/experiments")
+958: def get_model_experiments():
+959:     return MLflowTracker.get_status().get("runs", [])
+960: 
+961: @app.get("/api/analytics/material-context")
+962: def get_material_context(work_id: str = Query(...)):
+963:     """Return conservative material/benchmark context for one existing work."""
+964:     data = get_data()
+965:     record = data["work_index"].get(work_id.strip())
+966:     if not record:
+967:         raise HTTPException(status_code=404, detail=f"Work ID '{work_id}' not found.")
+968:     frame = pd.DataFrame([record])
+969:     result = analyze_material_context(frame, _BACKEND_ROOT).iloc[0].to_dict()
+970:     return clean_record_for_json(result)
+971: 
+972: @app.get("/api/analytics/classification")
+973: def get_classification(work_id: str = Query(...)):
+974:     """Expose source-backed work classification without changing the UI contract."""
+975:     data = get_data()
+976:     record = data["work_index"].get(work_id.strip())
+977:     if not record:
+978:         raise HTTPException(status_code=404, detail=f"Work ID '{work_id}' not found.")
+979:     frame = pd.DataFrame([record])
+980:     if "work_category" not in frame:
+981:         frame["work_category"] = ""
+982:     result = classify_work_descriptions(frame).iloc[0].to_dict()
+983:     return clean_record_for_json(result)
+984: 
+985: @app.get("/api/analytics/sector-cost")
+986: def get_sector_cost(work_id: str = Query(...)):
+987:     """Return the work's selected completed-work peer context."""
+988:     data = get_data()
+989:     record = data["work_index"].get(work_id.strip())
+990:     if not record:
+991:         raise HTTPException(status_code=404, detail=f"Work ID '{work_id}' not found.")
+992:     financial_fields = [
+993:         "comparison_state", "comparison_constituency", "comparison_scope", "comparison_level",
+994:         "comparison_group_label", "comparison_sector", "comparison_subsector", "comparison_work_type",
+995:         "comparison_peer_category", "peer_category", "peer_category_auto_generated",
+996:         "original_effective_work_category",
+997:         "unit_comparison_scope", "unit_price_comparison_eligible", "unit_price_skip_reason",
+998:         "current_cost", "current_unit_price", "quantity_detected", "quantity_unit",
+999:         "historical_cost_min", "historical_cost_max", "historical_cost_median", "historical_cost_count",
+1000:         "historical_unit_price_min", "historical_unit_price_max", "historical_unit_price_median",
+1001:         "historical_unit_price_count", "cost_comparison_status", "unit_comparison_status",
+1002:         "financial_explanation", "financial_what_happened", "financial_why_it_matters",
+1003:         "financial_supporting_details", "financial_risk_evidence", "financial_audit_interpretation",
+1004:     ]
+1005:     return clean_record_for_json({field: record.get(field) for field in financial_fields})
+1006: 
+1007: 
+1008: @app.get("/api/financial/benchmarks")
+1009: def get_financial_benchmarks(
+1010:     scope: str = None,
+1011:     state: str = None,
+1012:     constituency: str = None,
+1013:     main_sector: str = None,
+1014:     subsector: str = None,
+1015:     page: int = Query(1, ge=1),
+1016:     limit: int = Query(50, ge=1, le=200),
+1017: ):
+1018:     """Return auditable completed-work low/median/high peer statistics."""
+1019:     frame = get_data().get("financial_peer_benchmarks", pd.DataFrame()).copy()
+1020:     if frame.empty:
+1021:         return {"total": 0, "page": page, "limit": limit, "records": [], "available": {"states": [], "sectors": [], "subsectors": []}}
+1022:     for column, value in (("comparison_scope", scope), ("state", state), ("constituency", constituency), ("main_sector", main_sector), ("subsector", subsector)):
+1023:         if value and column in frame.columns:
+1024:             frame = frame[frame[column].fillna("").astype(str).str.upper().eq(value.strip().upper())]
+1025:     total = len(frame)
+1026:     sort_columns = [column for column in ["comparison_scope", "state", "constituency", "main_sector", "comparison_level", "subsector"] if column in frame.columns]
+1027:     if sort_columns:
+1028:         frame = frame.sort_values(sort_columns, kind="stable")
+1029:     start, end = (page - 1) * limit, page * limit
+1030:     source = get_data().get("financial_peer_benchmarks", pd.DataFrame())
+1031:     return {
+1032:         "total": total, "page": page, "limit": limit, "total_pages": int(np.ceil(total / limit)) if total else 0,
+1033:         "records": [clean_record_for_json(row) for row in frame.iloc[start:end].to_dict(orient="records")],
+1034:         "available": {
+1035:             "states": sorted(source.get("state", pd.Series(dtype=str)).dropna().astype(str).unique().tolist()),
+1036:             "sectors": sorted(source.get("main_sector", pd.Series(dtype=str)).dropna().astype(str).unique().tolist()),
+1037:             "subsectors": sorted(source.get("subsector", pd.Series(dtype=str)).dropna().astype(str).unique().tolist()),
+1038:         },
+1039:     }
+1040: 
+1041: @app.get("/api/sectors")
+1042: def get_sector_matrix():
+1043:     """Return classified sectors without exposing any price benchmark."""
+1044:     data = get_data()
+1045:     sectors = sorted({str(value).strip() for value in data["master"].get("main_sector", pd.Series(dtype=str)).dropna() if str(value).strip()})
+1046:     return {"sectors": sectors, "count": len(sectors)}
+1047: 
+1048: @app.get("/api/compliance/rules")
+1049: def get_compliance_rules():
+1050:     """Return source-backed rules with their work/constituency scope."""
+1150:         </ModuleCard>
+1151:       </section>
+1152: 
+1153:       {/* Modal for Live Field Evidence / Attendance Capture */}
+1154:       <CitizenEvidenceModal
+1155:         isOpen={isEvidenceModalOpen}
+1156:         work={work}
+1157:         initialRole={evidenceInitialRole}
+1158:         onClose={() => setIsEvidenceModalOpen(false)}
+1159:         onSubmitted={() => {
+1160:           setIsEvidenceModalOpen(false);
+1161:           onRefreshDetail?.();
+1162:         }}
+1163:       />
+1164: 
+1165:       {/* Photo Zoom Modal */}
+1166:       {selectedPhoto && (
+1167:         <div
+1168:           className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/85 p-4 backdrop-blur"
+1169:           role="dialog"
+1170:           aria-modal="true"
+1171:         >
+1172:           <div className="flex max-h-[90vh] max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-slate-900">
+1173:             <div className="flex items-center justify-between border-b border-slate-200 p-4 dark:border-slate-800">
+1174:               <div>
+1175:                 <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">{selectedPhoto.title}</h3>
+1176:                 {selectedPhoto.meta && <p className="text-[11px] text-slate-500 font-mono">{selectedPhoto.meta}</p>}
+1177:               </div>
+1178:               <button
+1179:                 type="button"
+1180:                 onClick={() => setSelectedPhoto(null)}
+1181:                 className="rounded-xl p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+1182:               >
+1183:                 <X className="h-5 w-5" />
+1184:               </button>
+1185:             </div>
+1186:             <div className="flex-1 overflow-auto bg-slate-950 p-4 text-center">
+1187:               <img src={selectedPhoto.src} alt={selectedPhoto.title} className="mx-auto max-h-[75vh] object-contain" />
+1188:             </div>
+1189:           </div>
+1190:         </div>
+1191:       )}
+1192:     </div>
+1193:   );
+1194: };
+1195: 
+1196: const Metric = ({ label, value }: { label: string; value: string }) => (
+1197:   <div>
+1198:     <dt className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{label}</dt>
+1199:     <dd className="mt-1 font-bold text-slate-800 dark:text-slate-200">{value}</dd>
+1200:   </div>
+1201: );
+1202: 
+1203: const ModuleCard = ({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) => (
+1204:   <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-[#0f172a]">
+1205:     <h2 className="flex items-center gap-2 text-sm font-black text-slate-900 dark:text-slate-100">
+1206:       {icon}
+1207:       {title}
+1208:     </h2>
+1209:     <div className="mt-4">{children}</div>
+1210:   </section>
+1211: );
+1212: 
+1580:         tail = parts[-1] if len(parts) > 1 else clean_id
+1581:         if tail and len(tail) >= 4 and tail.isdigit() and hasattr(work_index, "get_by_tail"):
+1582:             resolved_id = work_index.id_by_tail(tail)
+1583:             work_record = work_index.get_by_tail(tail)
+1584:             if work_record and resolved_id:
+1585:                 clean_id = resolved_id
+1586: 
+1587:     if not work_record:
+1588:         # Recommended-only and expenditure-only rows live outside the risk
+1589:         # master, but must still open from the complete-records view.
+1590:         all_index = data.get("all_work_index") or LazyWorkIndex(_all_records_frame(data))
+1591:         data["all_work_index"] = all_index
+1592:         work_index = all_index
+1593:         work_record = work_index.get(clean_id)
+1594:         if not work_record:
+1595:             if hasattr(work_index, "get_normalized"):
+1596:                 resolved_id = work_index.id_by_normalized(norm_target)
+1597:                 work_record = work_index.get_normalized(norm_target)
+1598:                 if work_record and resolved_id:
+1599:                     clean_id = resolved_id
+1600:         if not work_record:
+1601:             parts = clean_id.replace(" ", "-").split("/")
+1602:             tail = parts[-1] if len(parts) > 1 else clean_id
+1603:             if tail and len(tail) >= 4 and tail.isdigit() and hasattr(work_index, "get_by_tail"):
+1604:                 resolved_id = work_index.id_by_tail(tail)
+1605:                 work_record = work_index.get_by_tail(tail)
+1606:                 if work_record and resolved_id:
+1607:                     clean_id = resolved_id
+1608:                     
+1609:     if not work_record:
+1610:         raise HTTPException(status_code=404, detail=f"Work ID '{clean_id}' not found.")
+1611:         
+1612:     cand_dup = dup_index.get(clean_id, [])
+1613:             df["work_id"].str.lower().str.contains(q) |
+1614:             df["description"].fillna("").str.lower().str.contains(q) |
+1615:             df["mp_name"].fillna("").str.lower().str.contains(q)
+1616:         ]
+1617:         
+1618:     total_records = len(df)
+1619:     top_scores = {}
+1620:     for key, column in {
+1621:         "financial": "financial_risk_score",
+1622:         "duplicate": "duplicate_risk_score",
+1623:         "compliance": "compliance_risk_score",
+1624:         "schedule": "schedule_risk_score",
+1625:         "composite": "composite_risk_score",
+1626:     }.items():
+1627:         values = pd.to_numeric(df[column], errors="coerce").dropna() if column in df.columns else pd.Series(dtype=float)
+1628:         top_scores[key] = round(float(values.max()), 1) if len(values) else 0.0
+1629: 
+1630:     sort_col = sort_by if (sort_by and sort_by in df.columns) else "composite_risk_score"
+1631:     ascending = financial_only and sort_col == "financial_risk_rank"
+1632:     df_sorted = df.sort_values(sort_col, ascending=ascending, na_position="last")
+1633:     
+1634:     start = (page - 1) * limit
+1635:     end = start + limit
+1636:     paginated = df_sorted.iloc[start:end]
+1637:     
+1638:     records = [clean_record_for_json(r) for r in paginated.to_dict(orient="records")]
+1639:     
+1640:     return {
+1641:         "total": total_records,
+1642:         "page": page,
+1643:         "limit": limit,
+1644:         "total_pages": int(np.ceil(total_records / limit)) if total_records > 0 else 0,
+1645:         "top_scores": top_scores,
+1646:         "records": records,
+1647:         "metadata": _analytics_metadata(),
+1648:     }
+1649: 
+1650: 
+1651: @app.get("/api/all-records")
+1652: def get_all_records(
+1653:     state: str = None,
+1654:     constituency: str = None,
+1655:     work_status: str = None,
+1656:     category: str = None,
+1657:     risk_level: str = None,
+1658:     expenditure: str = None,
+1659:     search: str = None,
+1660:     sort_by: str = None,
+1661:     if search and str(search).strip():
+1662:         query = str(search).strip().casefold()
+1663:         searchable = pd.Series("", index=frame.index, dtype=str)
+1664:         for field in ("work_id", "description", "work_category"):
+1665:             if field in frame:
+1666:                 searchable = searchable + " " + frame[field].fillna("").astype(str)
+1667:         frame = frame[searchable.str.casefold().str.contains(query, regex=False)]
+1668:     return frame
+1669: 
+1670: 
+1671: def _officer_score_count(frame: pd.DataFrame, field: str, threshold: float = 35) -> int:
+1672:     if field not in frame:
+1673:         return 0
+1674:     return int(pd.to_numeric(frame[field], errors="coerce").fillna(0).ge(threshold).sum())
+1675: 
+1676: 
+1677: def _officer_evidence_for_work(work_id: str) -> tuple[list[dict], list[dict]]:
+1678:     """Read the existing citizen/attendance stores for the same complete Work ID."""
+1679:     clean_id = str(work_id or "").strip()
+1680:     citizen = [clean_record_for_json(record) for record in _read_citizen_evidence() if str(record.get("work_id") or "").strip() == clean_id]
+1681:     attendance = [clean_record_for_json(record) for record in _read_attendance_records() if str(record.get("work_id") or "").strip() == clean_id]
+1682:     return citizen, attendance
+1683: 
+1684: 
+1685: @app.get("/api/officer/dashboard")
+1686: def get_officer_dashboard(
+1687:     state: str = None,
+1688:     constituency: str = None,
+1689:     work_status: str = None,
+1690:     states = _unique_filter_values(master["state"])
+1691:     constituency_master = master
+1692:     if state and state.strip():
+1693:         constituency_master = master[master["state"].str.upper() == state.strip().upper()]
+1694:     constituencies = _unique_filter_values(constituency_master["constituency"])
+1695:     statuses = _unique_filter_values(constituency_master["work_status"], skip_numeric=True)
+1696:     mps = _unique_filter_values(master["mp_name"])
+1697:     categories = _unique_filter_values(master["work_category"])
+1698:     severities = ["CRITICAL", "HIGH", "MEDIUM", "LOW"]
+1699: 
+1700:     risk_levels = _unique_filter_values(master["overall_risk_level"]) if "overall_risk_level" in master.columns else []
+1701:     return {
+1702:         "states": states,
+1703:         "constituencies": constituencies,
+1704:         "mps": mps,
+1705:         "categories": categories,
+1706:         "severities": severities,
+1707:         "statuses": statuses,
+1708:         "risk_levels": risk_levels,
+1709:         "expenditure_options": ["WITH", "WITHOUT"],
+1710:     }
+1711: 
+1712: if __name__ == "__main__":
+1713:     import uvicorn
+1714:     print("Starting FastAPI server on http://127.0.0.1:8000 ...")
+1715:     uvicorn.run(app, host="127.0.0.1", port=8000)
+1716: 
+1717:                 "description": record.get("description"),
+1718:                 "work_status": record.get("work_status"),
+1719:                 "overall_risk": record.get("overall_risk_level") or "UNASSESSED",
+1720:                 "overall_risk_score": record.get("overall_risk_score") or record.get("composite_risk_score") or 0,
+1721:                 "signals": signals,
+1722:                 "why_flagged": signals[0]["explanation"] if signals else "Overall analytical risk level requires officer review.",
+1723:                 "recommended_action": signals[0]["recommended_action"] if signals else record.get("recommended_reviewer_action") or "Review work monitoring record",
+1724:                 "officer_review_status": "UNREVIEWED",
+1725:             })
+1726:     priority.sort(key=lambda row: (float(row["overall_risk_score"] or 0), max([signal["score"] for signal in row["signals"]] or [0])), reverse=True)
+1727: 
+1728:     states = sorted(data["master"].get("state", pd.Series(dtype=str)).dropna().astype(str).loc[lambda series: series.str.strip().ne("")].unique().tolist())
+1729:     constituency_source = data["master"]
+1730: @app.get("/api/officer/dashboard")
+1731: def get_officer_dashboard(
+1732:     state: str = None,
+1733:     constituency: str = None,
+1734:     work_status: str = None,
+1735:     severity: str = None,
+1736:     search: str = None,
+1737:     focus: str = None,
+1738:     limit: int = Query(25, ge=1, le=100),
+1739: ):
+1740:     """Return a read-only implementing-officer queue over existing analytical data."""
+1741:     data = get_data()
+1742:     master = _officer_filter_master(data["master"], state, constituency, work_status, severity, search)
+1743:     risk_levels = master.get("overall_risk_level", pd.Series("", index=master.index)).fillna("").astype(str).str.upper()
+1744:     all_citizen_records = _read_citizen_evidence()
+1745:     all_attendance_records = _read_attendance_records()
+1746:     master_work_keys = set(master.get("work_id", pd.Series(dtype=str)).map(_officer_work_key))
+1747:     citizen_records = [record for record in all_citizen_records if _officer_work_key(record.get("work_id")) in master_work_keys]
+1748:     attendance_records = [record for record in all_attendance_records if _officer_work_key(record.get("work_id")) in master_work_keys]
+1749:     citizen_work_keys = {_officer_work_key(record.get("work_id")) for record in citizen_records}
+1750:     attendance_work_keys = {_officer_work_key(record.get("work_id")) for record in attendance_records}
+1751:     material_eligible = master.get("unit_price_comparison_eligible", pd.Series(False, index=master.index)).fillna(False).astype(bool) if "unit_price_comparison_eligible" in master else pd.Series(False, index=master.index)
+1752:     material_mask = material_eligible if bool(material_eligible.any()) else pd.to_numeric(master.get("financial_risk_score", pd.Series(0, index=master.index)), errors="coerce").fillna(0).ge(35)
+1753:     score_mask = lambda field: pd.to_numeric(master.get(field, pd.Series(0, index=master.index)), errors="coerce").fillna(0).ge(35)
+1754:     focus_key = str(focus or "priority").strip().casefold().replace("-", "_").replace(" ", "_")
+1755:     focus_key = {
+1756:         "financial": "material",
+1757:         "material_price_reviews": "material",
+1758:         "high": "high_priority",
+1759:         "high_risk": "high_priority",
+1760:         "citizen_complaints": "citizen",
+1761:     }.get(focus_key, focus_key)
+1762:     include_all = focus_key != "priority"
+1763:     queue_master = master
+1764:     if focus_key == "all":
+1765:         queue_master = master
+1766:     elif focus_key == "high_priority":
+1767:         queue_master = master[risk_levels.isin(["HIGH", "CRITICAL"])]
+1768:     elif focus_key == "material":
+1769:         queue_master = master[material_mask]
+1770:     elif focus_key == "attendance":
+1771:         work_keys = master.get("work_id", pd.Series("", index=master.index)).map(_officer_work_key)
+1772:         queue_master = master[work_keys.isin(attendance_work_keys)]
+1773:     elif focus_key == "citizen":
+1774:         work_keys = master.get("work_id", pd.Series("", index=master.index)).map(_officer_work_key)
+1775:         queue_master = master[work_keys.isin(citizen_work_keys)]
+1776:     elif focus_key == "compliance":
+1777:         queue_master = master[score_mask("compliance_risk_score")]
+1778:     elif focus_key == "schedule":
+1779:         queue_master = master[score_mask("schedule_risk_score")]
+1780:     elif focus_key == "duplicate":
+1781:         queue_master = master[score_mask("duplicate_risk_score")]
+1782:     else:
+1783:         focus_key = "priority"
+1784:         include_all = False
+1785:     priority = []
+1786:     queue_fields = [
+1787:         "work_id", "state", "constituency", "description", "work_status",
+1788:         "overall_risk_level", "overall_risk_score", "composite_risk_score",
+1789:         "financial_risk_score", "financial_explanation",
+1790:         "compliance_risk_score", "compliance_explanation",
+1791:         "schedule_risk_score", "schedule_explanation",
+1792:         "duplicate_risk_score", "duplicate_explanation",
+1793:         "recommended_reviewer_action",
+1794:     ]
+1795:     queue_fields = [field for field in queue_fields if field in queue_master.columns]
+1796:     for row in queue_master[queue_fields].to_dict(orient="records"):
+1797:         record = clean_record_for_json(row)
+1798:         signals = _officer_issue_signals(record)
+1799:         if include_all or signals or str(record.get("overall_risk_level") or "").upper() in {"MEDIUM", "HIGH", "CRITICAL"}:
+1800:             focus_reason = {
+1801:                 "all": "Included in the all-works monitoring queue.",
+1802:                 "high_priority": "Overall analytical risk is HIGH or CRITICAL.",
+1803:                 "material": "Material quality or price-fairness review selected.",
+1804:                 "attendance": "Attendance evidence is linked to this Work ID.",
+1805:                 "citizen": "Citizen evidence is linked to this Work ID.",
+1806:                 "compliance": "Compliance risk is above the review threshold.",
+1807:                 "schedule": "Schedule risk is above the review threshold.",
+1808:                 "duplicate": "Duplicate-risk score is above the review threshold.",
+1809:             }.get(focus_key, "Overall analytical risk level requires officer review.")
+1810:             priority.append({
+1811:                 "work_id": record.get("work_id"),
+1812:                 "state": record.get("state"),
+1813:                 "constituency": record.get("constituency"),
+1814:                 "description": record.get("description"),
+1815:                 "work_status": record.get("work_status"),
+1816:                 "overall_risk": record.get("overall_risk_level") or "UNASSESSED",
+1817:                 "overall_risk_score": record.get("overall_risk_score") or record.get("composite_risk_score") or 0,
+1818:                 "signals": signals,
+1819:                 "why_flagged": signals[0]["explanation"] if signals else focus_reason,
+1820:                 "recommended_action": signals[0]["recommended_action"] if signals else record.get("recommended_reviewer_action") or "Review work monitoring record",
+1821:                 "officer_review_status": "UNREVIEWED",
+1822:             })
+1823:     priority.sort(key=lambda row: (float(row["overall_risk_score"] or 0), max([signal["score"] for signal in row["signals"]] or [0])), reverse=True)
+1824: 
+1825:     states = sorted(data["master"].get("state", pd.Series(dtype=str)).dropna().astype(str).loc[lambda series: series.str.strip().ne("")].unique().tolist())
+1826:     constituency_source = data["master"]
+1827:     if state and str(state).strip() and "state" in constituency_source:
+1828:         constituency_source = constituency_source[constituency_source["state"].fillna("").astype(str).str.casefold().eq(str(state).strip().casefold())]
+1829:     constituencies = sorted(constituency_source.get("constituency", pd.Series(dtype=str)).dropna().astype(str).loc[lambda series: series.str.strip().ne("")].unique().tolist())
+1830:     statuses = sorted(data["master"].get("work_status", pd.Series(dtype=str)).dropna().astype(str).loc[lambda series: series.str.strip().ne("")].unique().tolist())
+1831: 
+1832:     attendance_count = len(attendance_records)
+1833:     citizen_count = len(citizen_records)
+1834: 
+1835:     return {
+1836:         "selected_filters": {"state": state or None, "constituency": constituency or None, "work_status": work_status or None, "severity": severity or None, "search": search or None, "focus": focus_key},
+1837:         "available": {"states": states, "constituencies": constituencies, "statuses": statuses, "severities": ["LOW", "MEDIUM", "HIGH", "CRITICAL"]},
+1838:         "summary": {
+1839:             "total_works": int(len(master)),
+1840:             "high_priority_works": int(risk_levels.isin(["HIGH", "CRITICAL"]).sum()),
+1841:             "financial_reviews": _officer_score_count(master, "financial_risk_score"),
+1842:             "material_price_reviews": int(material_eligible.sum()) or _officer_score_count(master, "financial_risk_score"),
+1843:             "attendance_issues": int(attendance_count),
+1844:             "citizen_complaints": int(citizen_count),
+1845:             "compliance_issues": _officer_score_count(master, "compliance_risk_score"),
+1846:             "schedule_risks": _officer_score_count(master, "schedule_risk_score"),
+1847:             "duplicate_candidates": _officer_score_count(master, "duplicate_risk_score"),
+1848:         },
+1849:         "data_availability": {
+1850:             "material": {"available": True, "source": "Material Quality & Price Fairness Engine"},
+1851:             "attendance": {"available": True, "source": "Attendance capture records", "warning": None if attendance_records else "No attendance captures are currently stored for the selected works."},
+1852:             "citizen": {"available": True, "source": "Citizen evidence records", "warning": None if citizen_records else "No citizen evidence is currently stored for the selected works."},
+1853:         },
+1854:         "priority_works": priority[:limit],
+1855:         "queue_total": int(len(queue_master)),
+1856:         "metadata": _analytics_metadata(),
+1857:     }
+1858: 
+1859: 
+1860: @app.get("/api/officer/work")
+1861:         map.flyToBounds([
+1862:           [17.35, 82.65],
+1863:           [18.05, 83.35]
+1864:         ], {{ duration: 1.2, padding: [30, 30] }});
+1865:       }} else if (cName === 'Vijayawada') {{
+1930:             </div>
+1931:           `;
+1932:         }} else if (audit.total_images > 0) {{
+1933:           picturesHtml = `
+1934:             <div>
+1935:               <span style="font-size: 12px; font-weight: 600; color: #34D399;">📷 ${{audit.total_images}} Picture(s)</span>
+1936:               <div style="font-size: 10px; color: var(--text-dim); margin-top: 2px;">Untagged Photo</div>
+1937:             </div>
+1938:           `;
+1939:         }} else {{
+1940:           picturesHtml = `<span style="font-size: 11px; color: var(--text-dim);">0 (No Images)</span>`;
+1941:         }}
+1942: 
+1943:         // Render Bill Proof
+1944:         let billProofHtml = '';
+1945:         if (audit.has_bill_proof) {{
+1946:           billProofHtml = `<span style="font-size: 11px; font-weight: 600; color: #38BDF8;">🧾 Bills / UC Verified</span>`;
+1947:         }} else {{
+1948:           billProofHtml = `<span style="font-size: 11px; color: var(--text-dim);">None</span>`;
+1949:         }}
+1950: 
+1951:         tr.innerHTML = `
+1952:           <td>
+1953:             <span class="work-id-badge">${{w.work_id}}</span>
+1954:             <div style="font-size: 10px; font-weight: 700; color: ${{constBadgeColor}}; margin-top: 2px;">
+1955:               ${{w.constituency}}
+1956:             </div>
+1957:           </td>
+1958:           <td>
+1959:             <div style="font-weight: 600; color: #FFFFFF;">${{w.mandal}}</div>
+1960:             <div style="font-size: 12px; color: var(--text-muted); max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${{w.description}}">
+1961:               ${{w.description}}
+1962:             </div>
+1963:             <div style="font-size: 11px; color: var(--text-dim); margin-top: 2px;">
+1964:               Status: <span style="color: ${{statusText === 'Completed' ? '#34D399' : '#FBBF24'}}; font-weight: 600;">${{statusText}}</span>
+1965:             </div>
+1966:           </td>
+1967:           <td>${{filesHtml}}</td>
+1968:           <td>${{picturesHtml}}</td>
+1969:           <td>${{billProofHtml}}</td>
+1970:           <td><span class="status-pill ${{pillClass}}" title="${{w.audit_reason}}">${{pillText}}</span></td>
+1971:           <td>
+1972:             <div class="table-actions-cell">
+1973:               <button class="btn-table-preview" onclick="openPreviewModal('${{w.work_id}}', 0, '${{audit.total_images > 0 ? 'image' : 'pdf'}}')" title="Preview Attached Evidence">
+1974:                 👁️ Preview
+1975:               </button>
+1976:               <button class="btn-inspect" onclick="openDossier('${{w.work_id}}')" title="Inspect In-Memory Dossier">
+1977:                 Inspect ➔
+1978:               </button>
+1979:               ${{w.attached_files && w.attached_files.length > 0 ? `
+1980:                 <button class="btn-table-dl" onclick="downloadWorkAttachment('${{w.work_id}}')" title="Download Attached File">
+1981:                   📥 File
+1982:                 </button>
+1983:               ` : `
+1984:                 <button class="btn-table-dl" style="opacity: 0.35; cursor: not-allowed;" onclick="showToast('No files uploaded to MoSPI for Work ${{w.work_id}}', '⚠️')">
+1985:                   No File
+1986:                 </button>
+1987:               `}}
+1988:             </div>
+1989:           </td>
+1990:         `;
+1991:         tbody.appendChild(tr);
+1992:       }});
+1993:     }}
+1994: 
+1995:     function filterWorks(filter, btn) {{
+1996:       currentFilter = filter;
+1997:       document.querySelectorAll('.tab-btn').forEach(b => {{
+1998:         b.classList.remove('active', 'active-green', 'active-yellow', 'active-red');
+1999:       }});
+2000:       if (btn) {{
+2001:         btn.classList.add('active');
+2002:         if (filter === 'GREEN') btn.classList.add('active-green');
+2003:         if (filter === 'YELLOW') btn.classList.add('active-yellow');
+2004:         if (filter === 'RED') btn.classList.add('active-red');
+2005:       }}
+2006:       applyCombinedFilters();
+2007:     }}
+2008: 
+2009:     function handleSearch() {{
+2010:       applyCombinedFilters();
+2011:     }}
+2012: 
+2013:     function openDossier(workId) {{
+2014:       const work = AUDIT_DATA.find(w => w.work_id === String(workId));
+2015:       if (!work) return;
+2016: 
+2017:       currentActiveWorkId = String(workId);
+2018:       const audit = work.pdf_audit;
+2019:       document.getElementById('modal-work-id').textContent = `WORK ID: ${{work.work_id}} [${{work.constituency}}]`;
+2020:       document.getElementById('modal-mandal').textContent = `Mandal: ${{work.mandal}} | Const: ${{work.constituency}} | Status: ${{work.work_status || 'Active'}}`;
+2021:       document.getElementById('modal-title').textContent = work.description;
+2022: 
+2023:       const pill = document.getElementById('modal-status-pill');
+2024:       const vBox = document.getElementById('modal-verdict-box');
+2025:       const vIcon = document.getElementById('modal-verdict-icon');
+2026:       const vTitle = document.getElementById('modal-verdict-title');
+2027:       const vDesc = document.getElementById('modal-verdict-desc');
+2028: 
+2029:       if (work.audit_classification === 'GREEN') {{
+2030:           picturesHtml = `
+2031:             <div>
+2032:               <span style="font-size: 12px; font-weight: 600; color: #34D399;">📷 ${{audit.total_images}} Picture(s)</span>
+2033:               <div style="font-size: 10px; color: var(--text-dim); margin-top: 2px;">Untagged Photo</div>
+2034:             </div>
+2035:           picturesHtml = `
+2036:             <div>
+2037:               <span style="font-size: 12px; font-weight: 600; color: #34D399;">📷 ${{audit.total_images}} Picture(s)</span>
+2038:               <div style="font-size: 10px; color: var(--text-dim); margin-top: 2px;">Untagged Photo</div>
+2039:             </div>
+2040:           `;
+2041:         }} else {{
+2042:           picturesHtml = `<span style="font-size: 11px; color: var(--text-dim);">0 (No Images)</span>`;
+2043:         }}
+2044: 
+2045:         // Render Bill Proof
+2046:         let billProofHtml = '';
+2047:         if (audit.has_bill_proof) {{
+2048:           billProofHtml = `<span style="font-size: 11px; font-weight: 600; color: #38BDF8;">🧾 Bills / UC Verified</span>`;
+2049:         }} else {{
+2050:           billProofHtml = `<span style="font-size: 11px; color: var(--text-dim);">None</span>`;
+2051:         }}
+2052: 
+2053:         tr.innerHTML = `
+2054:           <td>
+2055:             <span class="work-id-badge">${{w.work_id}}</span>
+2056:             <div style="font-size: 10px; font-weight: 700; color: ${{constBadgeColor}}; margin-top: 2px;">
+2057:               ${{w.constituency}}
+2058:             </div>
+2059:           </td>
+2060:           <td>
+2061:             <div style="font-weight: 600; color: #FFFFFF;">${{w.mandal}}</div>
+2062:             <div style="font-size: 12px; color: var(--text-muted); max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${{w.description}}">
+2063:               ${{w.description}}
+2064:             </div>
+2065:             <div style="font-size: 11px; color: var(--text-dim); margin-top: 2px;">
+2066:               Status: <span style="color: ${{statusText === 'Completed' ? '#34D399' : '#FBBF24'}}; font-weight: 600;">${{statusText}}</span>
+2067:             </div>
+2068:           </td>
+2069:           <td>${{filesHtml}}</td>
+2070:           <td>${{picturesHtml}}</td>
+2071:           <td>${{billProofHtml}}</td>
+2072:           <td><span class="status-pill ${{pillClass}}" title="${{w.audit_reason}}">${{pillText}}</span></td>
+2073:           <td>
+2074:             <div class="table-actions-cell">
+2075:               <button class="btn-table-preview" onclick="openPreviewModal('${{w.work_id}}', 0, '${{audit.total_images > 0 ? 'image' : 'pdf'}}')" title="Preview Attached Evidence">
+2076:                 👁️ Preview
+2077:               </button>
+2078:               <button class="btn-inspect" onclick="openDossier('${{w.work_id}}')" title="Inspect In-Memory Dossier">
+2079:                 Inspect ➔
+2080:               </button>
+2081:               ${{w.attached_files && w.attached_files.length > 0 ? `
+2082:                 <button class="btn-table-dl" onclick="downloadWorkAttachment('${{w.work_id}}')" title="Download Attached File">
+2083:                   📥 File
+2084:                 </button>
+2085:               ` : `
+2086:                 <button class="btn-table-dl" style="opacity: 0.35; cursor: not-allowed;" onclick="showToast('No files uploaded to MoSPI for Work ${{w.work_id}}', '⚠️')">
+2087:                   No File
+2088:                 </button>
+2089:               `}}
+2090:             </div>
+2091:           </td>
+2092:         `;
+2093:         tbody.appendChild(tr);
+2094:       }});
+2095:     }}
+2096:       }} else {{
+2097:         latEl.textContent = 'Not Present in File';
+2098:         latEl.style.color = '#EF4444';
+2099:         lonEl.textContent = 'Not Present in File';
+2100:         lonEl.style.color = '#EF4444';
+2101:         dmsEl.textContent = 'None';
+2102:         srcEl.textContent = 'No GPS Metadata / EXIF Stripped';
+2103:         geoEl.textContent = '❌ Unverified (No Coordinates)';
+2104:         mapBtn.style.display = 'none';
+2105:       }}
+2106: 
+2107:       // Images in Dossier Modal
+2108:       const imgStrip = document.getElementById('modal-image-strip');
+2109:       imgStrip.innerHTML = '';
+2110:       
+2111:       const manifestItem = REAL_MANIFEST[String(work.work_id)];
+2112:       let imagesToShow = [];
+2113:       if (manifestItem && manifestItem.images && manifestItem.images.length > 0) {{
+2114:         imagesToShow = manifestItem.images.map((imgName, idx) => ({{
+2115:           name: imgName,
+2116:           url: `downloads/images/${{imgName}}`,
+2117:           is_photo: true,
+2118:           has_exif_gps: false,
+2119:           idx: idx
+2120:         }}));
+2121:       }}
+2122: 
+2123:       if (imagesToShow.length === 0) {{
+2124:         imgStrip.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 18px; color: var(--text-dim); font-size: 12px;">No photographs or document images attached to this work record.</div>';
+2125:       }} else {{
+2126:         imagesToShow.forEach((img) => {{
+2127:           const box = document.createElement('div');
+2128:           box.className = `img-box ${{img.is_photo ? 'is-photo' : ''}}`;
+2129:           box.innerHTML = `
+2130:             <div style="width: 100%; height: 90px; border-radius: 8px; overflow: hidden; margin-bottom: 8px; position: relative; background: #0F172A; cursor: pointer;" onclick="openPreviewModal('${{work.work_id}}', ${{img.idx}}, 'image')">
+2131:               <img src="${{img.url}}" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.06)'" onmouseout="this.style.transform='scale(1)'">
+2132:               <span style="position: absolute; bottom: 4px; left: 4px; background: rgba(0,0,0,0.78); color: #34D399; font-size: 9px; font-family: monospace; padding: 2px 6px; border-radius: 4px;">
+2133:                 🟢 SCANNED PICTURE
+2134:               </span>
+2135:             </div>
+2136:             <div>
+2137:               <div style="font-weight: 600; font-family: monospace; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${{img.name}}">${{img.name}}</div>
+2138:             </div>
+2139:             <div style="display: flex; gap: 6px; margin-top: 6px; width: 100%;">
+2140:               <button class="btn-preview-img" onclick="openPreviewModal('${{work.work_id}}', ${{img.idx}}, 'image')" style="
+2141:                 flex: 1; background: rgba(168, 85, 247, 0.2); border: 1px solid #A855F7; color: #C084FC; font-size: 10px; font-weight: 600; padding: 5px 4px; border-radius: 6px; cursor: pointer;
+2142:               ">
+2143:                 👁️ Preview
+2144:               </button>
+2145:               <button class="btn-download-img" onclick="downloadExtractedImage('${{work.work_id}}', '${{img.name}}')" style="
+2146:                 flex: 1; margin-top: 0; padding: 5px 4px; font-size: 10px;
+2147:               ">
+2148:                 💾 Download
+2149:               </button>
+2150:             </div>
+2151:           `;
+2152:           imgStrip.appendChild(box);
+2153:         }});
+2154:       }}
+2155: 
+2156:       document.getElementById('dossier-modal').style.display = 'flex';
+2157:     }}
+2158: 
+2159:     function closeModal() {{
+2160:         vBox.className = 'audit-verdict-box verdict-alert';
+2161:         vIcon.textContent = '🔴';
+2162:         vTitle.textContent = 'Missing Proof / Zero Scanned Images & Bills Attached';
+2163:         vDesc.textContent = work.audit_reason;
+2164:       }}
+2165: 
+2166:       // Attached Files Breakdown
+2167:       const fList = document.getElementById('modal-files-list');
+2168:       if (work.attached_files && work.attached_files.length > 0) {{
+2169:         fList.innerHTML = work.attached_files.map(f => `
+2170:           <div style="font-family: monospace; font-size: 12px; color: #38BDF8; margin-bottom: 4px;">
+2171:             📄 ${{f.name}} (${{f.size_kb}} KB - ${{f.type}})
+2172:           </div>
+2173:         `).join('');
+2174:       }} else {{
+2175:         fList.innerHTML = '<span style="color: #EF4444; font-size: 12px;">No document uploaded on MoSPI</span>';
+2176:       }}
+2177: 
+2178:       document.getElementById('modal-scanned-count').textContent = `${{audit.total_images}} Scanned Picture(s)`;
+2179:       document.getElementById('modal-bill-proof').textContent = audit.has_bill_proof ? 'Verified Proof Found' : 'None Detected';
+2180: 
+2181:       const secList = document.getElementById('modal-sections-list');
+2182:       secList.innerHTML = '';
+2183:       if (audit.bill_proof_keywords && audit.bill_proof_keywords.length > 0) {{
+2184:         audit.bill_proof_keywords.forEach(kw => {{
+2185:           const span = document.createElement('span');
+2186:           span.className = 'section-tag';
+2187:           span.textContent = `Keyword: ${{kw}}`;
+2188:           secList.appendChild(span);
+2189:         }});
+2190:       }} else {{
+2191: 
+2192:     function openPreviewModal(workId, imgIdx = 0, initialTab = 'image') {{
+2193:       const work = AUDIT_DATA.find(w => w.work_id === String(workId));
+2194:       if (!work) return;
+2195: 
+2196:       currentPreviewWorkId = String(workId);
+2197:       currentPreviewImgIdx = imgIdx;
+2198:       previewZoomLevel = 1;
+2199:       isHighlightVisible = true;
+2200: 
+2201:       // Smart index selection: prioritize geotagged inspection photo
+2202:       const manifestItem = REAL_MANIFEST[String(workId)];
+2203:       if (manifestItem && manifestItem.image_gps && manifestItem.images) {{
+2204:         const gpsPhotos = Object.keys(manifestItem.image_gps);
+2205:         if (gpsPhotos.length > 0 && imgIdx === 0) {{
+2206:           const foundIdx = manifestItem.images.indexOf(gpsPhotos[0]);
+2207:           if (foundIdx !== -1) {{
+2208:             currentPreviewImgIdx = foundIdx;
+2209:             imgIdx = foundIdx;
+2210:           }}
+2211:         }}
+2212:       }}
+2213: 
+2214:       // Update Header Text
+2215:       document.getElementById('prev-work-id').textContent = `WORK ID: ${{work.work_id}} [${{work.constituency}}]`;
+2216:       document.getElementById('prev-mandal').textContent = `${{work.mandal}} Mandal | Disbursed: ₹${{Number(work.amount_disbursed).toLocaleString('en-IN')}} | Status: ${{work.work_status || 'Active'}}`;
+2217:       document.getElementById('prev-title').textContent = work.title;
+2218: 
+2219:       // Status Pill
+2220:       const pill = document.getElementById('prev-status-badge');
+2221:       pill.textContent = work.audit_badge_text;
+2222:       pill.className = `status-pill ${{work.audit_classification === 'GREEN' ? 'pill-green' : (work.audit_classification === 'YELLOW' ? 'pill-yellow' : 'pill-red')}}`;
+2223: 
+2224:       const classPill = document.getElementById('prev-class-pill');
+2225:       classPill.textContent = work.audit_badge_text;
+2226:       classPill.className = `status-pill ${{work.audit_classification === 'GREEN' ? 'pill-green' : (work.audit_classification === 'YELLOW' ? 'pill-yellow' : 'pill-red')}}`;
+2227:       document.getElementById('prev-class-reason').textContent = work.audit_reason;
+2228: 
+2229:       // Setup PDF Iframe
+2230:       const imgCount = (manifestItem && manifestItem.images) ? manifestItem.images.length : 0;
+2231: 
+2232:       const imgTabBtn = document.getElementById('tab-btn-image');
+2233:       if (imgCount > 0) {{
+2234:         imgTabBtn.innerHTML = `📷 Scanned Pictures (${{imgCount}} Available)`;
+2235:         imgTabBtn.style.opacity = '1';
+2236:       }} else {{
+2237:         imgTabBtn.innerHTML = `🚫 Pictures (0 Found)`;
+2238:         imgTabBtn.style.opacity = '0.75';
+2239:       }}
+2240:         "description": text("description"),
+2241:         "work_category": text("work_category", "Unclassified"),
+2242:         "state": text("state"),
+2243:         "constituency": text("constituency"),
+2244:         "mp_name": text("mp_name") or None,
+2245:         "work_status": text("work_status", "Unknown"),
+2246:         "sanction_amount": sanction,
+2247:         "effective_expenditure": expenditure,
+2248:         "recommended_date": date_value("recommended_date"),
+2249:         "sanction_date": date_value("sanction_date"),
+2250:         "completion_date": date_value("completion_date"),
+2251:         "estimated_completion_date": date_value("estimated_completion_date"),
+2252:         "progress_pct": progress,
+2253:         "latitude": location.get("latitude"),
+2254:         "longitude": location.get("longitude"),
+2255:         "coordinate_source": location.get("coordinate_source"),
+2256:         "coordinate_available": location.get("latitude") is not None and location.get("longitude") is not None,
+2257:         "normalized_status": _normalized_citizen_work_status(text("work_status", "Unknown")),
+2258:         "citizen_evidence_count": 0,
+2259:     }
+2260: 
+2261: 
+2262: def _citizen_work_records() -> tuple[list[dict], dict]:
+2263:     data = get_data()
+2264:     coordinates = _load_published_work_coordinates(data)
+2265:     evidence = _read_citizen_evidence()
+2266:     evidence_counts = {}
+2267:     for record in evidence:
+2268:         key = str(record.get("work_id") or "").strip()
+2269:         evidence_counts[key] = evidence_counts.get(key, 0) + 1
+2270:     base_records = data.get("citizen_public_base_records")
+2271:     if base_records is None:
+2272:         frame = _all_records_frame(data).copy()
+2273:         if frame.empty:
+2274:             return [], {}
+2275:         # Avoid converting the analytical diagnostics columns (which include
+2276:         # nested arrays) for a public browsing endpoint. Only the public card
+2277:         # fields are needed here.
+2278:         public_columns = [
+2279:             "work_id", "description", "work_category", "state", "constituency", "mp_name",
+2280:             "work_status", "sanction_amount", "effective_expenditure", "recommended_date",
+2281:             "sanction_date", "completion_date", "estimated_completion_date", "expenditure_progress_pct",
+2282:         ]
+2283:         frame = frame[[column for column in public_columns if column in frame.columns]].copy()
+2284:         positions = {column: index for index, column in enumerate(frame.columns)}
+2285:         base_records = [_citizen_public_work_fast(row, positions, coordinates) for row in frame.itertuples(index=False, name=None)]
+2286:         data["citizen_public_base_records"] = base_records
+2287:     records = [dict(record, citizen_evidence_count=int(evidence_counts.get(record["work_id"], 0))) for record in base_records]
+2288:     # Put works with a real published position first so the first responsive
+2289:     # page can populate the map without loading thousands of unlocated rows.
+2290:     records.sort(key=lambda record: (not record["coordinate_available"], record["work_id"]))
+2291:     return records, evidence_counts
+2292: 
+2293: 
+2294: def _haversine_distance_meters(latitude_a: float, longitude_a: float, latitude_b: float, longitude_b: float) -> float:
+2295:     earth_radius_meters = 6371008.8
+2296:     lat_a, lat_b = math.radians(latitude_a), math.radians(latitude_b)
+2297:     delta_lat = math.radians(latitude_b - latitude_a)
+2298:     delta_lng = math.radians(longitude_b - longitude_a)
+2299:     haversine = math.sin(delta_lat / 2) ** 2 + math.cos(lat_a) * math.cos(lat_b) * math.sin(delta_lng / 2) ** 2
+2300:     return earth_radius_meters * 2 * math.atan2(math.sqrt(haversine), math.sqrt(max(0, 1 - haversine)))
+2301: 
+2302: 
+2303: def _parse_optional_float(value, field_name: str):
+2304:     if value in (None, ""):
+2305:         return None
+2306:     try:
+2307:         parsed = float(value)
+2308:     except (TypeError, ValueError):
+2309:         raise HTTPException(status_code=422, detail=f"{field_name} must be numeric.")
+2310:     if not math.isfinite(parsed):
+2311:         raise HTTPException(status_code=422, detail=f"{field_name} must be finite.")
+2312:     return parsed
+2313: 
+2314: 
+2315: def _detect_image_type(content: bytes) -> str | None:
+2316:     if content.startswith(b"\xff\xd8\xff"):
+2317:         return "jpg"
+2318:     if content.startswith(b"\x89PNG\r\n\x1a\n"):
+2319:         return "png"
+2320:     if content.startswith(b"RIFF") and content[8:12] == b"WEBP":
+2321:         return "webp"
+2322:     return None
+2323: 
+2324: 
+2325: def _record_location_status(latitude, longitude, gps_accuracy, work: dict) -> tuple[str, float | None]:
+2326:     if latitude is None or longitude is None:
+2327:         return "LOCATION_NOT_AVAILABLE", None
+2328:     if gps_accuracy is not None and gps_accuracy > CITIZEN_GPS_ACCURACY_THRESHOLD_METERS:
+2329:         return "LOW_GPS_ACCURACY", None
+2330:     work_latitude = work.get("latitude")
+2331:     work_longitude = work.get("longitude")
+2332:     if work_latitude is None or work_longitude is None:
+2333:         return "LOCATION_NOT_AVAILABLE", None
+2334:     distance = _haversine_distance_meters(float(latitude), float(longitude), float(work_latitude), float(work_longitude))
+2335:     return (
+2336:         "WITHIN_EXPECTED_RADIUS" if distance <= CITIZEN_ALLOWED_EVIDENCE_RADIUS_METERS else "OUTSIDE_EXPECTED_RADIUS",
+2337:         distance,
+2338:     )
+2339: 
+2340: 
+2341: def _enforce_citizen_rate_limit(request: Request) -> None:
+2342:     key = request.client.host if request.client else "unknown"
+2343:     now = datetime.now().astimezone()
+2344:     with _CITIZEN_STORE_LOCK:
+2345:         recent = [stamp for stamp in _CITIZEN_RATE_LIMIT.get(key, []) if (now - stamp).total_seconds() < 3600]
+2346:         if len(recent) >= 5:
+2347:             raise HTTPException(status_code=429, detail="Submission limit reached. Please try again later.")
+2348:         recent.append(now)
+2349:         _CITIZEN_RATE_LIMIT[key] = recent
+2350:     return parsed
+2351: 
+2352: 
+2353: def _detect_image_type(content: bytes) -> str | None:
+2354:     if content.startswith(b"\xff\xd8\xff"):
+2355:         return "jpg"
+2356:     if content.startswith(b"\x89PNG\r\n\x1a\n"):
+2357:         return "png"
+2358:     if content.startswith(b"RIFF") and content[8:12] == b"WEBP":
+2359:         return "webp"
+2360:     return None
+2361: 
+2362: 
+2363: def _record_location_status(latitude, longitude, gps_accuracy, work: dict) -> tuple[str, float | None]:
+2364:     if latitude is None or longitude is None:
+2365:         return "LOCATION_NOT_AVAILABLE", None
+2366:     if gps_accuracy is not None and gps_accuracy > CITIZEN_GPS_ACCURACY_THRESHOLD_METERS:
+2367:         return "LOW_GPS_ACCURACY", None
+2368:     work_latitude = work.get("latitude")
+2369:     work_longitude = work.get("longitude")
+2370:     if work_latitude is None or work_longitude is None:
+2371:         return "LOCATION_NOT_AVAILABLE", None
+2372:     distance = _haversine_distance_meters(float(latitude), float(longitude), float(work_latitude), float(work_longitude))
+2373:     return (
+2374:         "WITHIN_EXPECTED_RADIUS" if distance <= CITIZEN_ALLOWED_EVIDENCE_RADIUS_METERS else "OUTSIDE_EXPECTED_RADIUS",
+2375:         distance,
+2376:     )
+2377: 
+2378: 
+2379: def _enforce_citizen_rate_limit(request: Request) -> None:
+2380:     key = request.client.host if request.client else "unknown"
+2381:     now = datetime.now().astimezone()
+2382:     with _CITIZEN_STORE_LOCK:
+2383:         recent = [stamp for stamp in _CITIZEN_RATE_LIMIT.get(key, []) if (now - stamp).total_seconds() < 3600]
+2384:         if len(recent) >= 5:
+2385:             raise HTTPException(status_code=429, detail="Submission limit reached. Please try again later.")
+2386:         recent.append(now)
+2387:         _CITIZEN_RATE_LIMIT[key] = recent
+2388: 
+2389: 
+2390: def _require_citizen_officer(request: Request) -> str:
+2391:     authorization = request.headers.get("authorization", "")
+2392:     if CITIZEN_REVIEW_TOKEN and secrets.compare_digest(authorization, f"Bearer {CITIZEN_REVIEW_TOKEN}"):
+2393:         return "configured_officer"
+2394:     if CITIZEN_ALLOW_LOCAL_OFFICER_REVIEW and request.headers.get("x-mplads-role", "").casefold() == "officer":
+2395:         return "local_officer"
+2396:     raise HTTPException(status_code=403, detail="Officer authorization is required to update evidence review status.")
+2397: 
+2398: 
+2399: @app.get("/api/citizen/works")
+2400: def get_citizen_works(
+2401:         "total": total,
+2402:         "page": page,
+2403:         "limit": limit,
+2404:         "total_pages": int(math.ceil(total / limit)) if total else 0,
+2405:         "records": records[start:end],
+2406:         "stats": {
+2407:             "total_works": len(all_public_records),
+2408:             "ongoing_works": normalized_statuses.count("ONGOING"),
+2409:             "completed_works": normalized_statuses.count("COMPLETED"),
+2410:             "works_with_coordinates": sum(1 for record in all_public_records if record["coordinate_available"]),
+2411:             "citizen_evidence": len(_read_citizen_evidence()),
+2412:             "categories": available_categories,
+2413:         },
+2414:         "config": _citizen_config(),
+2415:     }
+2416: 
+2417: 
+2418: @app.get("/api/citizen/works/{work_id:path}")
+2419: def get_citizen_work(work_id: str):
+2420:     if latitude is not None or longitude is not None:
+2421:         if latitude is None or longitude is None:
+2422:             raise HTTPException(status_code=422, detail="latitude and longitude are both required for nearby search.")
+2423:         radius = nearby_radius_meters or CITIZEN_ALLOWED_EVIDENCE_RADIUS_METERS
+2424:         nearby = []
+2425:         for record in records:
+2426:             if record["latitude"] is None or record["longitude"] is None:
+2427:                 continue
+2428:             record = dict(record)
+2429:             record["distance_from_you_meters"] = _haversine_distance_meters(latitude, longitude, record["latitude"], record["longitude"])
+2430:             if record["distance_from_you_meters"] <= radius:
+2431:                 nearby.append(record)
+2432:         records = sorted(nearby, key=lambda record: record["distance_from_you_meters"])
+2433: 
+2434:     total = len(records)
+2435:     start, end = (page - 1) * limit, page * limit
+2436:     normalized_statuses = [record["normalized_status"] for record in all_public_records]
+2437:     available_categories = sorted({record["work_category"] for record in all_public_records if record.get("work_category")})
+2438:     return {
+2439:         "total": total,
+2440:         "page": page,
+2441:         "limit": limit,
+2442:         "total_pages": int(math.ceil(total / limit)) if total else 0,
+2443:         "records": records[start:end],
+2444:         "stats": {
+2445:             "total_works": len(all_public_records),
+2446:             "ongoing_works": normalized_statuses.count("ONGOING"),
+2447:             "completed_works": normalized_statuses.count("COMPLETED"),
+2448:             "works_with_coordinates": sum(1 for record in all_public_records if record["coordinate_available"]),
+2449:             "citizen_evidence": len(_read_citizen_evidence()),
+2450:             "categories": available_categories,
+2451:         },
+2452:         "config": _citizen_config(),
+2453:     }
+2454: 
+2455: 
+2456: @app.get("/api/citizen/works/{work_id:path}")
+2457: def get_citizen_work(work_id: str):
+2458:     requested_work_id = work_id.strip()
+2459:     records, _ = _citizen_work_records()
+2460:     record = next((item for item in records if item["work_id"] == requested_work_id), None)
+2461:     if not record:
+2462:         raise HTTPException(status_code=404, detail="The requested work was not found in the public register.")
+2463:     return record
+2464: 
+2465: 
+2466: @app.get("/api/citizen-evidence/stats")
+2467: def get_citizen_evidence_stats():
+2468:     records = _read_citizen_evidence()
+2469:     now = datetime.now().astimezone()
+2470:     today = now.date()
+2471:     week_start = today.fromordinal(today.toordinal() - today.weekday())
+2472:     categories = {}
+2473:     stats = {
+2474:         "total_submissions": len(records),
+2475:         "submitted_today": 0,
+2476:         "submitted_this_week": 0,
+2477:         "within_expected_radius": 0,
+2478:         "needs_review": 0,
+2479:         "outside_expected_radius": 0,
+2480:         "categories": categories,
+2481:     }
+2482:     for record in records:
+2483:         categories[record.get("category", "Other")] = categories.get(record.get("category", "Other"), 0) + 1
+2484:         uploaded = str(record.get("uploaded_at") or "")
+2485:         try:
+2490:     return {"total": total, "page": page, "limit": limit, "total_pages": int(math.ceil(total / limit)) if total else 0, "records": records[start:end]}
+2491: 
+2492: 
+2493: @app.post("/api/citizen-evidence")
+2494: async def create_citizen_evidence(
+2495:     request: Request,
+2496:     work_id: str = Form(..., min_length=1, max_length=160),
+2497:     category: str = Form(..., min_length=1, max_length=100),
+2498:     description: str = Form(..., min_length=1, max_length=4000),
+2499:     latitude: str = Form(None),
+2500:     longitude: str = Form(None),
+2501:     gps_accuracy: str = Form(None),
+2502:     captured_at: str = Form(None),
+2503:     live_capture: str = Form("false"),
+2504:     image: UploadFile = File(...),
+2505: ):
+2506:     _enforce_citizen_rate_limit(request)
+2507:     category = category.strip()
+2508:     if category not in CITIZEN_EVIDENCE_CATEGORIES:
+2509:         raise HTTPException(status_code=422, detail="Choose a supported observation category.")
+2510:     description = description.strip()
+2511:     if len(description) < 10:
+2512:         raise HTTPException(status_code=422, detail="Please describe what you personally observed in at least 10 characters.")
+2513:     data = get_data()
+2514:     works, _ = _citizen_work_records()
+2515:     work = next((record for record in works if record["work_id"] == work_id.strip()), None)
+2516:     if not work:
+2517:         raise HTTPException(status_code=404, detail="The selected work no longer exists in the public work register.")
+2518:     parsed_latitude = _parse_optional_float(latitude, "latitude")
+2519:     parsed_longitude = _parse_optional_float(longitude, "longitude")
+2520:     parsed_accuracy = _parse_optional_float(gps_accuracy, "gps_accuracy")
+2521:     if parsed_latitude is not None and not -90 <= parsed_latitude <= 90:
+2522:         raise HTTPException(status_code=422, detail="latitude is outside the valid range.")
+2523:     if parsed_longitude is not None and not -180 <= parsed_longitude <= 180:
+2524:         raise HTTPException(status_code=422, detail="longitude is outside the valid range.")
+2525:         records.sort(key=lambda record: str(record.get("uploaded_at") or ""), reverse=True)
+2526:     total = len(records)
+2527:     start, end = (page - 1) * limit, page * limit
+2528:     return {"total": total, "page": page, "limit": limit, "total_pages": int(math.ceil(total / limit)) if total else 0, "records": records[start:end]}
+2529: 
+2530: 
+2531: @app.post("/api/citizen-evidence")
+2532: async def create_citizen_evidence(
+2533:     request: Request,
+2534:     work_id: str = Form(..., min_length=1, max_length=160),
+2535:     category: str = Form(..., min_length=1, max_length=100),
+2536:     description: str = Form(..., min_length=1, max_length=4000),
+2537:     latitude: str = Form(None),
+2538:     longitude: str = Form(None),
+2539:     gps_accuracy: str = Form(None),
+2540:     captured_at: str = Form(None),
+2541:     live_capture: str = Form("false"),
+2542:     image: UploadFile = File(...),
+2543: ):
+2544:     _enforce_citizen_rate_limit(request)
+2545:     category = category.strip()
+2546:     if category not in CITIZEN_EVIDENCE_CATEGORIES:
+2547:         raise HTTPException(status_code=422, detail="Choose a supported observation category.")
+2548:     description = description.strip()
+2549:     if len(description) < 10:
+2550:         raise HTTPException(status_code=422, detail="Please describe what you personally observed in at least 10 characters.")
+2551:     data = get_data()
+2552:     works, _ = _citizen_work_records()
+2553:     work = next((record for record in works if record["work_id"] == work_id.strip()), None)
+2554:     if not work:
+2555:         raise HTTPException(status_code=404, detail="The selected work no longer exists in the public work register.")
+2556:     parsed_latitude = _parse_optional_float(latitude, "latitude")
+2557:     parsed_longitude = _parse_optional_float(longitude, "longitude")
+2558:     parsed_accuracy = _parse_optional_float(gps_accuracy, "gps_accuracy")
+2559:     if parsed_latitude is not None and not -90 <= parsed_latitude <= 90:
+2560:         raise HTTPException(status_code=422, detail="latitude is outside the valid range.")
+2561:     if parsed_longitude is not None and not -180 <= parsed_longitude <= 180:
+2562:         raise HTTPException(status_code=422, detail="longitude is outside the valid range.")
+2563:     is_live_capture = str(live_capture).strip().lower() in {"true", "1", "yes"}
+2564:     if not is_live_capture:
+2565:         raise HTTPException(status_code=422, detail="Citizen proof accepts live camera captures only; local uploads are not accepted.")
+2566:     if parsed_latitude is None or parsed_longitude is None or parsed_accuracy is None:
+2567:         raise HTTPException(status_code=422, detail="Live proof requires device latitude, longitude, and GPS accuracy.")
+2568:     if not captured_at:
+2569:         raise HTTPException(status_code=422, detail="Live proof requires a camera capture timestamp.")
+2570:     try:
+2571:         datetime.fromisoformat(captured_at.replace("Z", "+00:00"))
+2572:     except ValueError:
+2573:         raise HTTPException(status_code=422, detail="captured_at must be an ISO timestamp.")
+2574:     image_bytes = await image.read()
+2575:     if not image_bytes:
+2576:         raise HTTPException(status_code=422, detail="The uploaded image is empty.")
+2577:     if len(image_bytes) > CITIZEN_MAX_UPLOAD_BYTES:
+2578:         raise HTTPException(status_code=413, detail=f"Images must be smaller than {CITIZEN_MAX_UPLOAD_BYTES // (1024 * 1024)} MB.")
+2579:     image_type = _detect_image_type(image_bytes)
+2580:     if not image_type:
+2581:         raise HTTPException(status_code=415, detail="Upload a valid JPEG, PNG, or WebP image.")
+2582:     now = datetime.now().astimezone().isoformat()
+2583:     location_status, distance = _record_location_status(parsed_latitude, parsed_longitude, parsed_accuracy, work)
+2584:     content_hash = hashlib.sha256(image_bytes).hexdigest()
+2585:     submission_id = f"CIT-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+2586:     extension = "jpg" if image_type == "jpg" else image_type
+2587:     filename = f"{submission_id}.{extension}"
+2588:     os.makedirs(CITIZEN_EVIDENCE_MEDIA_DIR, exist_ok=True)
+2589:     media_path = os.path.join(CITIZEN_EVIDENCE_MEDIA_DIR, filename)
+2590:     with open(media_path, "wb") as handle:
+2591:         handle.write(image_bytes)
+2592:     with _CITIZEN_STORE_LOCK:
+2593:         existing = _read_citizen_evidence()
+2594:         duplicate_flag = any(record.get("work_id") == work["work_id"] and record.get("image_sha256") == content_hash for record in existing)
+2595:         record = {
+2596:             "submission_id": submission_id,
+2597:             "work_id": work["work_id"],
+2598:             "category": category,
+2599:             "description": description,
+2600:             "image_reference": f"/api/citizen-evidence/media/{filename}",
+2601:             "image_original_reference": f"/api/citizen-evidence/media/{filename}",
+2602:             "image_processed_reference": None,
+2603:             "image_sha256": content_hash,
+2604:             "latitude": parsed_latitude,
+2605:             "longitude": parsed_longitude,
+2606:             "gps_accuracy": parsed_accuracy,
+2607:             "official_work_latitude": work.get("latitude"),
+2608:             "official_work_longitude": work.get("longitude"),
+2609:             "distance_from_work": distance,
+2610:             "location_validation_status": location_status,
+2611:             "captured_at": captured_at,
+2612:             "uploaded_at": now,
+2613:             "server_received_at": now,
+2614:             "live_capture": is_live_capture,
+2615:             "review_status": "SUBMITTED",
+2616:             "reviewed_by": None,
+2617:             "reviewed_at": None,
+2618:             "review_comment": None,
+2619:             "duplicate_flag": duplicate_flag,
+2620:             "audit_events": [{"event": "created", "at": now, "status": "SUBMITTED"}],
+2621:             "created_at": now,
+2622:             "updated_at": now,
+2623:         }
+2624:         existing.append(record)
+2625:         _write_citizen_evidence(existing)
+2626:     return record
+2627: 
+2628: 
+2629: @app.patch("/api/citizen-evidence/{submission_id}/review")
+2630: def review_citizen_evidence(submission_id: str, payload: CitizenEvidenceReview, request: Request):
+2631:     reviewer = _require_citizen_officer(request)
+2632:     valid_statuses = {"SUBMITTED", "UNDER_REVIEW", "VERIFIED", "REJECTED", "NEEDS_MORE_INFORMATION"}
+2633:     status = payload.review_status.strip().upper()
+2634:     if status not in valid_statuses:
+2635:         raise HTTPException(status_code=422, detail="Unsupported evidence review status.")
+2636: 
+2637: def _attendance_location_status(latitude, longitude, gps_accuracy, work: dict) -> tuple[str, float | None]:
+2638:     # Attendance requires a live device fix. The comparison against the
+2639:     # published work coordinate remains a review signal, never an automatic
+2640:     # rejection of a capture.
+2641:     if latitude is None or longitude is None:
+2642:         return "LOCATION_NOT_AVAILABLE", None
+2643:     if gps_accuracy is not None and gps_accuracy > CITIZEN_GPS_ACCURACY_THRESHOLD_METERS:
+2644:         return "LOW_GPS_ACCURACY", None
+2645:     work_latitude = work.get("latitude")
+2646:     work_longitude = work.get("longitude")
+2647:     if work_latitude is None or work_longitude is None:
+2648:         return "LOCATION_NOT_AVAILABLE", None
+2649:     distance = _haversine_distance_meters(float(latitude), float(longitude), float(work_latitude), float(work_longitude))
+2650:     return (
+2651:         "WITHIN_EXPECTED_RADIUS" if distance <= CITIZEN_ALLOWED_EVIDENCE_RADIUS_METERS else "OUTSIDE_EXPECTED_RADIUS",
+2652:         distance,
+2653:     )
+2654: 
+2655: 
+2656: @app.get("/api/attendance")
+2657: def get_attendance(
+2658:     work_id: str = None,
+2659:     review_status: str = None,
+2660:                 "capture_source": "LIVE_CAMERA",
+2661:                 "camera_capture_only": True,
+2662:                 "latitude": parsed_latitude,
+2663:                 "longitude": parsed_longitude,
+2664:                 "gps_accuracy": parsed_accuracy,
+2665:                 "official_work_latitude": work.get("latitude"),
+2666:                 "official_work_longitude": work.get("longitude"),
+2667:                 "distance_from_work": distance,
+2668:                 "location_validation_status": location_status,
+2669:                 "captured_at": captured_at,
+2670:                 "server_received_at": now,
+2671:                 "review_status": "SUBMITTED",
+2672:                 "reviewed_by": None,
+2673:                 "reviewed_at": None,
+2674:                 "review_comment": None,
+2675:                 "duplicate_flag": duplicate_flag,
+2676:                 "notes": description,
+2677:                 "created_at": now,
+2678:                 "updated_at": now,
+2679:             }
+2680:             existing_att = _read_attendance_records()
+2681:             existing_att.append(att_record)
+2682:             _write_attendance_records(existing_att)
+2683: 
+2684:     return record
+2685: 
+2686: 
+2687: @app.patch("/api/citizen-evidence/{submission_id}/review")
+2688: def review_citizen_evidence(submission_id: str, payload: CitizenEvidenceReview, request: Request):
+2689:     reviewer = _require_citizen_officer(request)
+2690:     valid_statuses = {"SUBMITTED", "UNDER_REVIEW", "VERIFIED", "REJECTED", "NEEDS_MORE_INFORMATION"}
+2691:     status = payload.review_status.strip().upper()
+2692:     if status not in valid_statuses:
+2693:         raise HTTPException(status_code=422, detail="Unsupported evidence review status.")
+2694:     now = datetime.now().astimezone().isoformat()
+2695:     with _CITIZEN_STORE_LOCK:
+2696:         records = _read_citizen_evidence()
+2697:         target = next((record for record in records if record.get("submission_id") == submission_id), None)
+2698:         if not target:
+2699:             raise HTTPException(status_code=404, detail="Evidence submission was not found.")
+2700:         target["review_status"] = status
+2701:         target["reviewed_by"] = reviewer
+2702:         target["reviewed_at"] = now
+2703:         target["review_comment"] = payload.review_comment.strip() or None
+2704:         target["updated_at"] = now
+2705:         target.setdefault("audit_events", []).append({"event": "status_changed", "at": now, "status": status, "comment": target["review_comment"]})
+2706:         _write_citizen_evidence(records)
+2707:         return target
+2708: 
+2709: 
+2710: def _read_attendance_records() -> list[dict]:
+2711:     if not os.path.exists(ATTENDANCE_RECORDS_PATH):
+2712:         return []
+2713:     try:
+2714:         with open(ATTENDANCE_RECORDS_PATH, "r", encoding="utf-8") as handle:
+2715:             payload = json.load(handle)
+2716:         return payload if isinstance(payload, list) else []
+2717:     except (OSError, json.JSONDecodeError):
+2718:         return []
+2719: 
+2720: 
+2721: def _write_attendance_records(records: list[dict]) -> None:
+2722:     temporary_path = f"{ATTENDANCE_RECORDS_PATH}.tmp"
+2723:     with open(temporary_path, "w", encoding="utf-8") as handle:
+2724:         json.dump(records, handle, ensure_ascii=False, indent=2)
+2725:     os.replace(temporary_path, ATTENDANCE_RECORDS_PATH)
+2726: 
+2727: 
+2728: def _attendance_work_lookup() -> dict[str, dict]:
+2729:     records, _ = _citizen_work_records()
+2730:     return {record["work_id"]: record for record in records}
+2731:     if len(content) > ATTENDANCE_MAX_UPLOAD_BYTES:
+2732:         raise HTTPException(status_code=413, detail="The attendance image is larger than the configured limit.")
+2733:     image_type = _detect_image_type(content)
+2734:     if image_type not in {"jpg", "png", "webp"}:
+2735:         raise HTTPException(status_code=415, detail="Only a valid camera JPEG, PNG, or WebP image is accepted.")
+2736: 
+2737:     now = datetime.now().astimezone().isoformat()
+2738:     attendance_id = f"ATT-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:10].upper()}"
+2739:     image_hash = hashlib.sha256(content).hexdigest()
+2740:     filename = f"{attendance_id}.{image_type}"
+2741:     image_path = os.path.join(ATTENDANCE_MEDIA_DIR, filename)
+2742:     location_status, distance = _attendance_location_status(latitude, longitude, gps_accuracy, work)
+2743:     with _CITIZEN_STORE_LOCK:
+2744:         existing = _read_attendance_records()
+2745:         duplicate_flag = any(record.get("work_id") == clean_work_id and record.get("image_sha256") == image_hash for record in existing)
+2746:         with open(image_path, "wb") as handle:
+2747:             handle.write(content)
+2748:         record = {
+2749:             "attendance_id": attendance_id,
+2750:             "work_id": clean_work_id,
+2751:             "staff_count": int(staff_count),
+2752:             "image_reference": f"/api/attendance/media/{filename}",
+2753:             "image_sha256": image_hash,
+2754:             "capture_source": "LIVE_CAMERA",
+2755:             "camera_capture_only": True,
+2756:             "latitude": float(latitude),
+2757:             "longitude": float(longitude),
+2758:             "gps_accuracy": float(gps_accuracy) if gps_accuracy is not None else None,
+2759:             "official_work_latitude": work.get("latitude"),
+2760:             "official_work_longitude": work.get("longitude"),
+2761:             "distance_from_work": distance,
+2762:             "location_validation_status": location_status,
+2763:             "captured_at": captured_datetime.isoformat(),
+2764:             "server_received_at": now,
+2765:             "review_status": "SUBMITTED",
+2766:             "reviewed_by": None,
+2767:             "reviewed_at": None,
+2768:             "review_comment": None,
+2769:             "duplicate_flag": duplicate_flag,
+2770:             "integrity_note": "Camera-only UI assertion with server receipt, GPS metadata, and SHA-256 image hash; officer verification remains required.",
+2771:             "audit_events": [{"event": "created", "at": now, "status": "SUBMITTED", "source": "LIVE_CAMERA"}],
+2772:             "created_at": now,
+2773:             "updated_at": now,
+2774:         }
+2775:         existing.append(record)
+2776:         _write_attendance_records(existing)
+2777:     return record
+2778: 
+2779: if __name__ == "__main__":
+2780:     import uvicorn
+2800:         const d = document.createElement('div');
+2801:         d.className = `terminal-line ${{cls}}`;
+2802:         d.textContent = txt;
+2803:         log.appendChild(d);
+2804:         log.scrollTop = log.scrollHeight;
+2805:       }}
+2806: 
+2807:       addLine(`[0.05s] Initiating forensic evidence audit for Work ID: ${{wid}} (${{work.constituency}})...`, 't-cyan');
+2808:       addLine(`[0.18s] Connecting to MoSPI attachment stream endpoint (FLAG=1..6)...`, 't-dim');
+2809: 
+2810:       setTimeout(() => {{
+2811:         if (work.attached_files && work.attached_files.length > 0) {{
+2812:           addLine(`[0.45s] Resolved ${{work.attached_files.length}} file attachment(s): ${{work.attached_files.map(f => f.name).join(', ')}}`, 't-cyan');
+2813:           addLine(`[0.72s] Inspecting payload binary headers...`, 't-dim');
+2814:         }} else {{
+2815:           addLine(`[0.45s] MoSPI endpoint response: ATTACH_ID is null / No document uploaded.`, 't-danger');
+2816:         }}
+2817:       }}, 400);
+2818: 
+2819:       setTimeout(() => {{
+2820:         if (work.pdf_audit.total_images > 0) {{
+2821:           addLine(`[1.10s] Raster picture inspection: ${{work.pdf_audit.total_images}} scanned image(s)/photo(s) detected.`, 't-success');
+2822:         }} else if (work.pdf_audit.has_bill_proof) {{
+2823:           addLine(`[1.10s] Text stream check: 0 images found. Verified completion keywords: ${{work.pdf_audit.bill_proof_keywords.join(', ')}}`, 't-warn');
+2824:         }} else {{
+2825:           addLine(`[1.10s] Verification result: 0 pictures and 0 bill proof keywords found.`, 't-danger');
+2826:         }}
+2827:       }}, 900);
+2828: 
+2829:       setTimeout(() => {{
+2830:         if (work.audit_classification === 'GREEN') {{
+2831:           addLine(`[1.95s] AUDIT VERDICT: 🟢 GREEN - Scanned Image / Picture Evidence Present.`, 't-success');
+2832:           addLine(`[2.10s] Details: ${{work.audit_reason}}`, 't-dim');
+2833:         }} else if (work.audit_classification === 'YELLOW') {{
+2834:           addLine(`[1.95s] AUDIT VERDICT: 🟡 YELLOW - Bill / Completion Proof Only (No Images).`, 't-warn');
+2835:           addLine(`[2.10s] Details: ${{work.audit_reason}}`, 't-dim');
+2836:         }} else {{
+2837:           addLine(`[1.95s] AUDIT VERDICT: 🔴 RED - Missing Proof / No Document Uploaded.`, 't-danger');
+2838:           addLine(`[2.10s] Details: ${{work.audit_reason}}`, 't-dim');
+2839:         }}
+2840:         addLine(`[2.35s] Forensic scan complete. Pure ground truth.`, 't-cyan');
+2841:       }}, 1600);
+2842:     }}
+2843: 
+2844:     // Robust Boot sequence
+2845:     function bootDashboard() {{
+2846:       try {{ populateSelector(AUDIT_DATA); }} catch (e) {{ console.error('populateSelector error:', e); }}
+2847:       try {{ renderTable(AUDIT_DATA); }} catch (e) {{ console.error('renderTable error:', e); }}
+2848:       try {{ updateKpis(AUDIT_DATA); }} catch (e) {{ console.error('updateKpis error:', e); }}
+2849:       try {{ initLeafletMap(); }} catch (e) {{ console.error('initLeafletMap error:', e); }}
+2850:     }}
+2851: 
+2852:     if (document.readyState === 'loading') {{
+2853:       document.addEventListener('DOMContentLoaded', bootDashboard);
+2854:     }} else {{
+2855:       bootDashboard();
+2856:     }}
+2857:   </script>
+2858: </body>
+2859: </html>
+2860: '''
+2861: 
+2862: # Write to geotag_audit_dashboard.html
+2863: with open("geotag_audit_dashboard.html", "w", encoding="utf-8") as f:
+2864:     f.write(html_content)
+2865: 
+2866: # Write to frontend/public/geotag_dashboard.html
+2867: with open("frontend/public/geotag_dashboard.html", "w", encoding="utf-8") as f:
+2868:     f.write(html_content)
+2869: 
+2870: print("[SUCCESS] 3-Tier Classification Dashboard successfully generated!")
+2871: print(f"   - Total Works: {total_works}")
+2872: print(f"   - 🟢 GREEN (Scanned Pictures): {green_count}")
+2873: print(f"   - 🟡 YELLOW (Bill Proof Only): {yellow_count}")
+2874: print(f"   - 🔴 RED (Missing / Invalid): {red_count}")
+2875: 

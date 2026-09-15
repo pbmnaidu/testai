@@ -476,6 +476,166 @@ export interface FilterOptions {
   expenditure_options?: string[];
 }
 
+export interface OfficerSignal {
+  key: 'financial' | 'compliance' | 'schedule' | 'duplicate' | string;
+  label: string;
+  score: number;
+  explanation: string;
+  recommended_action: string;
+}
+
+export interface OfficerDashboardResponse {
+  selected_filters: { state?: string | null; constituency?: string | null; work_status?: string | null; severity?: string | null; search?: string | null; focus?: string | null };
+  available: { states: string[]; constituencies: string[]; statuses: string[]; severities: string[] };
+  summary: {
+    total_works: number;
+    high_priority_works: number;
+    material_price_reviews: number;
+    attendance_issues: number;
+    citizen_complaints: number;
+    compliance_issues: number;
+    schedule_risks: number;
+    duplicate_candidates: number;
+    financial_reviews: number;
+  };
+  data_availability: Record<string, { available: boolean; source?: string; warning?: string }>;
+  queue_total?: number;
+  priority_works: Array<{
+    work_id: string;
+    state?: string;
+    constituency?: string;
+    description?: string;
+    work_status?: string;
+    overall_risk: string;
+    overall_risk_score: number;
+    signals: OfficerSignal[];
+    why_flagged: string;
+    recommended_action: string;
+    officer_review_status: string;
+  }>;
+  metadata?: AnalyticsMetadata;
+}
+
+export interface OfficerWorkResponse {
+  work: WorkRecord;
+  risk_components: Array<{ key: string; label: string; score: number; source: string }>;
+  evidence_summary: OfficerSignal[];
+  material?: any;
+  material_warning?: string | null;
+  attendance: { available: boolean; warning?: string; records?: AttendanceRecord[]; summary?: AttendanceStats };
+  citizen_feedback: { available: boolean; warning?: string; records?: CitizenEvidenceRecord[]; summary?: CitizenEvidenceStats };
+  candidate_duplicates: CandidateDuplicatePair[];
+  compliance_findings: ComplianceFinding[];
+  timeline: Array<{ event: string; date: string; source: string; detail?: string }>;
+  officer_review: { status: string; persistence_available: boolean; message?: string };
+  traceability: Array<{ label: string; source: string; dataset: string }>;
+  metadata?: AnalyticsMetadata;
+}
+
+export interface PublicWorkRecord {
+  work_id: string;
+  description: string;
+  work_category: string;
+  state: string;
+  constituency: string;
+  mp_name?: string;
+  work_status: string;
+  sanction_amount?: number;
+  effective_expenditure?: number;
+  recommended_date?: string;
+  sanction_date?: string;
+  completion_date?: string;
+  estimated_completion_date?: string;
+  progress_pct?: number | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  coordinate_source?: string | null;
+  coordinate_available: boolean;
+  normalized_status: 'ONGOING' | 'COMPLETED' | 'NOT_STARTED' | 'OTHER' | string;
+  citizen_evidence_count: number;
+}
+
+export interface CitizenEvidenceConfig {
+  gps_accuracy_threshold_meters: number;
+  allowed_evidence_radius_meters: number;
+  max_upload_bytes: number;
+  allowed_categories: string[];
+}
+
+export interface CitizenEvidenceRecord {
+  submission_id: string;
+  work_id: string;
+  evidence_type?: 'citizen' | 'contractor_attendance' | 'contractor_progress' | 'officer_inspection' | string;
+  staff_count?: number | null;
+  category: string;
+  description: string;
+  image_reference?: string | null;
+  image_original_reference?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  gps_accuracy?: number | null;
+  official_work_latitude?: number | null;
+  official_work_longitude?: number | null;
+  distance_from_work?: number | null;
+  location_validation_status: 'WITHIN_EXPECTED_RADIUS' | 'OUTSIDE_EXPECTED_RADIUS' | 'LOW_GPS_ACCURACY' | 'LOCATION_NOT_AVAILABLE' | string;
+  captured_at?: string | null;
+  uploaded_at: string;
+  live_capture: boolean;
+  review_status: 'SUBMITTED' | 'UNDER_REVIEW' | 'VERIFIED' | 'REJECTED' | 'NEEDS_MORE_INFORMATION' | string;
+  reviewed_by?: string | null;
+  reviewed_at?: string | null;
+  review_comment?: string | null;
+  duplicate_flag?: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CitizenEvidenceStats {
+  total_submissions: number;
+  submitted_today: number;
+  submitted_this_week: number;
+  within_expected_radius: number;
+  needs_review: number;
+  outside_expected_radius: number;
+  categories: Record<string, number>;
+}
+
+export interface AttendanceRecord {
+  attendance_id: string;
+  work_id: string;
+  staff_count: number;
+  image_reference: string;
+  image_sha256: string;
+  capture_source: 'LIVE_CAMERA' | string;
+  camera_capture_only: boolean;
+  latitude: number;
+  longitude: number;
+  gps_accuracy?: number | null;
+  official_work_latitude?: number | null;
+  official_work_longitude?: number | null;
+  distance_from_work?: number | null;
+  location_validation_status: 'WITHIN_EXPECTED_RADIUS' | 'OUTSIDE_EXPECTED_RADIUS' | 'LOW_GPS_ACCURACY' | 'LOCATION_NOT_AVAILABLE' | string;
+  captured_at: string;
+  server_received_at: string;
+  review_status: 'SUBMITTED' | 'UNDER_REVIEW' | 'VERIFIED' | 'REJECTED' | string;
+  reviewed_by?: string | null;
+  reviewed_at?: string | null;
+  review_comment?: string | null;
+  integrity_note?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AttendanceStats {
+  total_submissions: number;
+  total_staff_reported: number;
+  pending_review: number;
+  within_expected_radius: number;
+  outside_expected_radius: number;
+  low_gps_accuracy: number;
+}
+
 export interface FinancialBenchmarkRecord {
   benchmark_id: string;
   comparison_scope: 'CONSTITUENCY' | 'STATE' | 'ALL_INDIA' | string;

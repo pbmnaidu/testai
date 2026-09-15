@@ -1,0 +1,7 @@
+    return {
+        "work": work_record,
+        "candidate_duplicates": cand_dup
+    }
+
+
+def _officer_issue_signals(work_record: dict) -> list[dict]:

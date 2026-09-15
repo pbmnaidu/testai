@@ -1,0 +1,910 @@
+{
+  "212960": [
+    {
+      "work_id": "212960",
+      "filename": "WORK_212960_page18_X1.jpg",
+      "page": "Page 18",
+      "bill_category": "Handwritten Cash/Cheque Payment Voucher",
+      "bill_no": "Not Specified",
+      "date": "N/A",
+      "contractor": "Executing Agency / Contractor",
+      "amount": "Document Tabular Verification",
+      "all_amounts": [],
+      "work_description": "MPLADS Sanctioned Project Works",
+      "signatures": [
+        "Contractor / Receiver Signature"
+      ],
+      "handwriting_evidence": [
+        "Pen-filled cash/cheque payment voucher entries",
+        "Handwritten receiver acknowledgment & official signature"
+      ],
+      "image_url": "/downloads/images/WORK_212960_page18_X1.jpg",
+      "lines_count": 14,
+      "key_text_snippets": [
+        "DIVISION",
+        "SUB. DIVISION",
+        "Cash Book Voucher No.",
+        "Schedule Docket No.",
+        "Month",
+        "Name of the work:•",
+        "Purpose of Supply:",
+        "Name of the Contractor:-"
+      ]
+    },
+    {
+      "work_id": "212960",
+      "filename": "WORK_212960_page22_X1.jpg",
+      "page": "Page 22",
+      "bill_category": "Measurement Book (M-Book) Work Bill",
+      "bill_no": "Not Specified",
+      "date": "N/A",
+      "contractor": "Executing Agency / Contractor",
+      "amount": "Document Tabular Verification",
+      "all_amounts": [],
+      "work_description": "MPLADS Sanctioned Project Works",
+      "signatures": [
+        "Contractor / Receiver Signature",
+        "Junior / Assistant Engineer"
+      ],
+      "handwriting_evidence": [
+        "Hand-calculated quantities, rates, and tabular item entries",
+        "Junior Engineer & Assistant Engineer ink certification signatures"
+      ],
+      "image_url": "/downloads/images/WORK_212960_page22_X1.jpg",
+      "lines_count": 39,
+      "key_text_snippets": [
+        "1. ACCOUNT OF WORK DONE OR SUPPLIES MADE",
+        "Amount",
+        "unit",
+        "1",
+        "upto",
+        "date as",
+        "2",
+        "Item of wort of Suplles (Grouped"
+      ]
+    },
+    {
+      "work_id": "212960",
+      "filename": "WORK_212960_page23_X1.jpg",
+      "page": "Page 23",
+      "bill_category": "PWD Running Account Bill (Form 27)",
+      "bill_no": "S",
+      "date": "N/A",
+      "contractor": "Executing Agency / Contractor",
+      "amount": "Document Tabular Verification",
+      "all_amounts": [],
+      "work_description": "MPLADS Sanctioned Project Works",
+      "signatures": [
+        "Divisional Accounts Officer"
+      ],
+      "handwriting_evidence": [
+        "Official PWD standard printed form filled with pen entries",
+        "Handwritten voucher registration & divisional docket numbers"
+      ],
+      "image_url": "/downloads/images/WORK_212960_page23_X1.jpg",
+      "lines_count": 42,
+      "key_text_snippets": [
+        "Ill MEMORANDUM OF PAYMENTS",
+        "1. Total value of ',wrk done as per account 1. column(5) entry (A)",
+        "2. Deduct amount Wthheld:•",
+        "• Figures for",
+        "a) From Previous bills as per Runnlng account BIII",
+        "works abstract",
+        "b) from thls blll",
+        "3. Balance I.e., up-to date payment"
+      ]
+    }
+  ],
+  "219710": [
+    {
+      "work_id": "219710",
+      "filename": "WORK_219710_page12_X1.jpg",
+      "page": "Page 12",
+      "bill_category": "Measurement Book (M-Book) Work Bill",
+      "bill_no": "Not Specified",
+      "date": "N/A",
+      "contractor": "Executing Agency / Contractor",
+      "amount": "Document Tabular Verification",
+      "all_amounts": [],
+      "work_description": "MPLADS Sanctioned Project Works",
+      "signatures": [
+        "Contractor / Receiver Signature",
+        "Junior / Assistant Engineer"
+      ],
+      "handwriting_evidence": [
+        "Hand-calculated quantities, rates, and tabular item entries",
+        "Junior Engineer & Assistant Engineer ink certification signatures"
+      ],
+      "image_url": "/downloads/images/WORK_219710_page12_X1.jpg",
+      "lines_count": 46,
+      "key_text_snippets": [
+        "1. ACCOUNT OF WORK DONE OR SUPPLIES MADE",
+        "Unit",
+        "Quantity",
+        "exectuted",
+        "sunlied) upto",
+        "date as",
+        "measurement",
+        "2"
+      ]
+    },
+    {
+      "work_id": "219710",
+      "filename": "WORK_219710_page13_X1.jpg",
+      "page": "Page 13",
+      "bill_category": "PWD Running Account Bill (Form 27)",
+      "bill_no": "S",
+      "date": "N/A",
+      "contractor": "Executing Agency / Contractor",
+      "amount": "Document Tabular Verification",
+      "all_amounts": [],
+      "work_description": "MPLADS Sanctioned Project Works",
+      "signatures": [
+        "Divisional Accounts Officer"
+      ],
+      "handwriting_evidence": [
+        "Official PWD standard printed form filled with pen entries",
+        "Handwritten voucher registration & divisional docket numbers"
+      ],
+      "image_url": "/downloads/images/WORK_219710_page13_X1.jpg",
+      "lines_count": 39,
+      "key_text_snippets": [
+        "Ill MEMORANDUM OF PAYMENTS",
+        "I. Total value of work done as per account I. column(5) entry (A)",
+        "2. Deduct amount withheld:-",
+        "• Figures for",
+        "works abstract",
+        "a) From Previous bills as per Running account Bill",
+        "b) from fis bill",
+        "3. Balance i.e., up-to date payment (item1-2)(K)"
+      ]
+    },
+    {
+      "work_id": "219710",
+      "filename": "WORK_219710_page1_X1.jpg",
+      "page": "Page 1",
+      "bill_category": "Contractor Final Bill Abstract",
+      "bill_no": "Not Specified",
+      "date": "30.07.2025",
+      "contractor": "Sri B. Prabhakar Reddy, Contractor",
+      "amount": "₹9,90,061.00",
+      "all_amounts": [
+        "₹9,90,061.00"
+      ],
+      "work_description": "MPLADS Sanctioned Project Works",
+      "signatures": [
+        "Executive Engineer (Disbursing Officer)"
+      ],
+      "handwriting_evidence": [
+        "Contractor work abstract and official fund disbursement sanction"
+      ],
+      "image_url": "/downloads/images/WORK_219710_page1_X1.jpg",
+      "lines_count": 36,
+      "key_text_snippets": [
+        "A.P.STATE COOPERATIVE RURAL RRIGATON CORPORATION",
+        "ANAKAPALLI DIVISION",
+        "Lr.N0.RIC/E.E/AKP,MPLADS/2025-26/",
+        "From:",
+        "Sri. B.Prabhakar Reddy",
+        "Executive Engineer.",
+        "Anakapalli Division.",
+        "PtØ.01.2025"
+      ]
+    },
+    {
+      "work_id": "219710",
+      "filename": "WORK_219710_page8_X1.jpg",
+      "page": "Page 8",
+      "bill_category": "Handwritten Cash/Cheque Payment Voucher",
+      "bill_no": "Not Specified",
+      "date": "14.08.2025",
+      "contractor": "M/s Murughan Constructions, Visakhapatnam",
+      "amount": "Document Tabular Verification",
+      "all_amounts": [],
+      "work_description": "in Anakapalli Town",
+      "signatures": [
+        "Contractor / Receiver Signature"
+      ],
+      "handwriting_evidence": [
+        "Pen-filled cash/cheque payment voucher entries",
+        "Handwritten receiver acknowledgment & official signature"
+      ],
+      "image_url": "/downloads/images/WORK_219710_page8_X1.jpg",
+      "lines_count": 20,
+      "key_text_snippets": [
+        "Old P.W.D. VI-75. New A.P.A.C.XX",
+        "(G.of I No 27 outer)",
+        "DIVISION Anakapa\"i",
+        "SUB - DIVISION",
+        "Cash Book Voucher No.",
+        "Schedule Docket No.",
+        "Month",
+        "Dec-25"
+      ]
+    }
+  ],
+  "219744": [
+    {
+      "work_id": "219744",
+      "filename": "WORK_219744_page12_X1.jpg",
+      "page": "Page 12",
+      "bill_category": "Measurement Book (M-Book) Work Bill",
+      "bill_no": "Not Specified",
+      "date": "N/A",
+      "contractor": "Executing Agency / Contractor",
+      "amount": "Document Tabular Verification",
+      "all_amounts": [],
+      "work_description": "MPLADS Sanctioned Project Works",
+      "signatures": [
+        "Contractor / Receiver Signature",
+        "Junior / Assistant Engineer"
+      ],
+      "handwriting_evidence": [
+        "Hand-calculated quantities, rates, and tabular item entries",
+        "Junior Engineer & Assistant Engineer ink certification signatures"
+      ],
+      "image_url": "/downloads/images/WORK_219744_page12_X1.jpg",
+      "lines_count": 45,
+      "key_text_snippets": [
+        "1. ACCOUNT OF WORK DONE OR SUPPLIES MADE",
+        "Amount",
+        "unit",
+        "Quantity",
+        "exectuted (dr",
+        "supplied) upto",
+        "date as",
+        "measuremehi"
+      ]
+    },
+    {
+      "work_id": "219744",
+      "filename": "WORK_219744_page13_X1.jpg",
+      "page": "Page 13",
+      "bill_category": "PWD Running Account Bill (Form 27)",
+      "bill_no": "S",
+      "date": "N/A",
+      "contractor": "Executing Agency / Contractor",
+      "amount": "Document Tabular Verification",
+      "all_amounts": [],
+      "work_description": "MPLADS Sanctioned Project Works",
+      "signatures": [
+        "Contractor / Receiver Signature",
+        "Divisional Accounts Officer"
+      ],
+      "handwriting_evidence": [
+        "Official PWD standard printed form filled with pen entries",
+        "Handwritten voucher registration & divisional docket numbers"
+      ],
+      "image_url": "/downloads/images/WORK_219744_page13_X1.jpg",
+      "lines_count": 51,
+      "key_text_snippets": [
+        "Ill MEMORANDUM OF PÅYMENTS",
+        "1. Total value of work done as per account 1. column(5) entry (A)",
+        "2. Deduct amount withheld:-",
+        "• Figures for",
+        "a) From Previous bills as per Running account Bill",
+        "works abstract",
+        "b) from this bill",
+        "3. Balance i.e., up-to date payment (item1-2)(K)"
+      ]
+    },
+    {
+      "work_id": "219744",
+      "filename": "WORK_219744_page1_X1.jpg",
+      "page": "Page 1",
+      "bill_category": "Contractor Final Bill Abstract",
+      "bill_no": "Not Specified",
+      "date": "30.07.2025",
+      "contractor": "Sri B. Prabhakar Reddy, Contractor",
+      "amount": "₹1329",
+      "all_amounts": [
+        "₹1329"
+      ],
+      "work_description": "MPLADS Sanctioned Project Works",
+      "signatures": [
+        "Executive Engineer (Disbursing Officer)"
+      ],
+      "handwriting_evidence": [
+        "Contractor work abstract and official fund disbursement sanction"
+      ],
+      "image_url": "/downloads/images/WORK_219744_page1_X1.jpg",
+      "lines_count": 37,
+      "key_text_snippets": [
+        "A.P.STATE COOPERATIVE RURAL IRRIGATON CORPORATION",
+        "ANAKAPALLI DIVISION",
+        "From:",
+        "Sri. B.Prabhakar Reddy",
+        "Executive Engineer.",
+        "Anakapalli Division.",
+        ".02.2026",
+        "To:"
+      ]
+    },
+    {
+      "work_id": "219744",
+      "filename": "WORK_219744_page5_X1.jpg",
+      "page": "Page 5",
+      "bill_category": "Contractor Final Bill Abstract",
+      "bill_no": "Not Specified",
+      "date": "30.07.2025",
+      "contractor": "Executing Agency / Contractor",
+      "amount": "Document Tabular Verification",
+      "all_amounts": [],
+      "work_description": "MPLADS Sanctioned Project Works",
+      "signatures": [
+        "Executive Engineer (Disbursing Officer)",
+        "Contractor / Receiver Signature"
+      ],
+      "handwriting_evidence": [
+        "Contractor work abstract and official fund disbursement sanction"
+      ],
+      "image_url": "/downloads/images/WORK_219744_page5_X1.jpg",
+      "lines_count": 34,
+      "key_text_snippets": [
+        "I.",
+        "MEMBER OF PARLIAMENT LOCAL AREA DEVELOPMENT",
+        "SCHEME (MPLADS)",
+        "WORK UNDER PROGRESS REPORT",
+        "(To be furnished by the implementing agency to the district authorities)",
+        "It is to certify that the work No: (07) \"Construction of Community Hall at",
+        "Gandhi Nagar habitation of Anakapalli.\" sanctioned Vide Proceeding No:",
+        "121/2024/CMR/CPO/DySO (Pig.l)/ Dt: 30.07.2025 of the District Collector, Anakapalli"
+      ]
+    },
+    {
+      "work_id": "219744",
+      "filename": "WORK_219744_page6_X1.jpg",
+      "page": "Page 6",
+      "bill_category": "Handwritten Cash/Cheque Payment Voucher",
+      "bill_no": "Not Specified",
+      "date": "N/A",
+      "contractor": "Executing Agency / Contractor",
+      "amount": "Document Tabular Verification",
+      "all_amounts": [],
+      "work_description": "MPLADS Sanctioned Project Works",
+      "signatures": [
+        "Contractor / Receiver Signature"
+      ],
+      "handwriting_evidence": [
+        "Pen-filled cash/cheque payment voucher entries",
+        "Handwritten receiver acknowledgment & official signature"
+      ],
+      "image_url": "/downloads/images/WORK_219744_page6_X1.jpg",
+      "lines_count": 15,
+      "key_text_snippets": [
+        "DIVISION",
+        "SUB - DIVISION",
+        "Cash Book Voucher No.",
+        "Schedule Docket No.",
+        "Month",
+        "Name of the Work:",
+        "Purpose of Supply:",
+        "Name of the Contractor"
+      ]
+    }
+  ],
+  "232408": [
+    {
+      "work_id": "232408",
+      "filename": "WORK_232408_page10_X1.jpg",
+      "page": "Page 10",
+      "bill_category": "Contractor Final Bill Abstract",
+      "bill_no": "Not Specified",
+      "date": "N/A",
+      "contractor": "A.P. State Co-operative Rural Irrigation Corp (APSCRIC)",
+      "amount": "Document Tabular Verification",
+      "all_amounts": [],
+      "work_description": "MPLADS Sanctioned Project Works",
+      "signatures": [
+        "Executive Engineer (Disbursing Officer)",
+        "Divisional Accounts Officer"
+      ],
+      "handwriting_evidence": [
+        "Contractor work abstract and official fund disbursement sanction"
+      ],
+      "image_url": "/downloads/images/WORK_232408_page10_X1.jpg",
+      "lines_count": 61,
+      "key_text_snippets": [
+        "In this context, after careful examination of the proposal of Hon'ble M.P (18th Lok Sabha),",
+        "Anakapalli Parliamentary Constituency under MPLADS funds, the Executing Agency. i.e Executive",
+        "Engineer, APSCRIC, Anakapalli has furnished the works feasibility and uploaded detailed estimates",
+        "through e-sakshi web portal i.e (https://mplads sbi) from their logins for the above works vide reference 3rd",
+        "cited.",
+        "In this regard administrative and financial sanctions are hereby accorded to the above works with",
+        "an estimated cost of Rs. 22.00 lakhs (Rupees Twenty two lakhs only) for the execution of the works",
+        "under MPLADS funds for the year 2025-26 and the executing agency is hereby directed to upload"
+      ]
+    },
+    {
+      "work_id": "232408",
+      "filename": "WORK_232408_page11_X1.jpg",
+      "page": "Page 11",
+      "bill_category": "Memorandum of Payments & Settlement",
+      "bill_no": "Not Specified",
+      "date": "N/A",
+      "contractor": "A.P. State Co-operative Rural Irrigation Corp (APSCRIC)",
+      "amount": "Document Tabular Verification",
+      "all_amounts": [],
+      "work_description": "MPLADS Sanctioned Project Works",
+      "signatures": [
+        "Executive Engineer (Disbursing Officer)",
+        "Contractor / Receiver Signature",
+        "Divisional Accounts Officer"
+      ],
+      "handwriting_evidence": [
+        "Handwritten net payable deductions, withholds, and cheque endorsements",
+        "Executive Engineer disbursement authorization stamp & ink signature"
+      ],
+      "image_url": "/downloads/images/WORK_232408_page11_X1.jpg",
+      "lines_count": 26,
+      "key_text_snippets": [
+        "religious faith group. There is no possibility Of payment Of land compensation etc.. in future or the",
+        "ownership of the asset created will always rest with the Government.",
+        "15. Estimations must be done in accordance with the existing rules and guidelines under MPLADS",
+        "for the full cost and no revision of the estimate be allowed.",
+        "16. The works sanctioned under SCIST areas should be executed in SCIST areas.",
+        "17. The works sanctioned should not be taken up if the same works are sanctioned in other schemes.",
+        "18. The Executive Agencies are requested to open the holding bank accounts in any scheduled",
+        "commercial bank for collection of statutory deductions such as TDS etc., under the MPLADS"
+      ]
+    }
+  ],
+  "243785": [
+    {
+      "work_id": "243785",
+      "filename": "WORK_243785_page11_X1.jpg",
+      "page": "Page 11",
+      "bill_category": "Contractor Final Bill Abstract",
+      "bill_no": "Not Specified",
+      "date": "N/A",
+      "contractor": "Executing Agency / Contractor",
+      "amount": "Document Tabular Verification",
+      "all_amounts": [],
+      "work_description": "MPLADS Sanctioned Project Works",
+      "signatures": [
+        "Divisional Accounts Officer"
+      ],
+      "handwriting_evidence": [
+        "Contractor work abstract and official fund disbursement sanction"
+      ],
+      "image_url": "/downloads/images/WORK_243785_page11_X1.jpg",
+      "lines_count": 58,
+      "key_text_snippets": [
+        "PLG02/8/2025-DYS05-ANKP",
+        "In this regard administrative and financial sanctions are hereby accorded to the",
+        "above work with an estimated cost of Rs.26.25 lakhs (In Rupees Twenty six lakhs",
+        "and Twenty five thousand only) for the execution of the work under MPLADS funds for",
+        "the year 2025-26 and the executing agency is hereby directed to upload detailed bills to",
+        "the extent of the gross value of the work done value through MPLADS web portal i.e",
+        "(https://mplads.sbi) and also insist that the executing agency is responsible for any lapses",
+        "under MPLADS guidelines."
+      ]
+    },
+    {
+      "work_id": "243785",
+      "filename": "WORK_243785_page12_X1.jpg",
+      "page": "Page 12",
+      "bill_category": "Memorandum of Payments & Settlement",
+      "bill_no": "Not Specified",
+      "date": "N/A",
+      "contractor": "A.P. State Co-operative Rural Irrigation Corp (APSCRIC)",
+      "amount": "Document Tabular Verification",
+      "all_amounts": [],
+      "work_description": "MPLADS Sanctioned Project Works",
+      "signatures": [
+        "Executive Engineer (Disbursing Officer)",
+        "Contractor / Receiver Signature",
+        "Divisional Accounts Officer"
+      ],
+      "handwriting_evidence": [
+        "Handwritten net payable deductions, withholds, and cheque endorsements",
+        "Executive Engineer disbursement authorization stamp & ink signature"
+      ],
+      "image_url": "/downloads/images/WORK_243785_page12_X1.jpg",
+      "lines_count": 49,
+      "key_text_snippets": [
+        "PLG02/8/2025-DYS05-ANKP",
+        "1/111403/2025",
+        "13.",
+        "14.",
+        "15.",
+        "16.",
+        "17.",
+        "18."
+      ]
+    },
+    {
+      "work_id": "243785",
+      "filename": "WORK_243785_page4_X1.jpg",
+      "page": "Page 4",
+      "bill_category": "Handwritten Cash/Cheque Payment Voucher",
+      "bill_no": "Not Specified",
+      "date": "N/A",
+      "contractor": "A.P. State Co-operative Rural Irrigation Corp (APSCRIC)",
+      "amount": "Document Tabular Verification",
+      "all_amounts": [],
+      "work_description": "MPLADS Sanctioned Project Works",
+      "signatures": [
+        "Executive Engineer (Disbursing Officer)",
+        "Junior / Assistant Engineer",
+        "Divisional Accounts Officer"
+      ],
+      "handwriting_evidence": [
+        "Pen-filled cash/cheque payment voucher entries",
+        "Handwritten receiver acknowledgment & official signature"
+      ],
+      "image_url": "/downloads/images/WORK_243785_page4_X1.jpg",
+      "lines_count": 28,
+      "key_text_snippets": [
+        "A.P. STATE CO OPERATIVE RURAL IRRIGATION CORPORATION",
+        "ANAKAPALLI DIVISION ANAKAPALLI",
+        "Bill No:",
+        "Dated :",
+        "Paid by Cash / Cheque to",
+        "Towards",
+        "PAYMEN",
+        "v"
+      ]
+    },
+    {
+      "work_id": "243785",
+      "filename": "WORK_243785_page5_X1.jpg",
+      "page": "Page 5",
+      "bill_category": "Handwritten Cash/Cheque Payment Voucher",
+      "bill_no": "Not Specified",
+      "date": "N/A",
+      "contractor": "Executing Agency / Contractor",
+      "amount": "Document Tabular Verification",
+      "all_amounts": [],
+      "work_description": "MPLADS Sanctioned Project Works",
+      "signatures": [
+        "Contractor / Receiver Signature"
+      ],
+      "handwriting_evidence": [
+        "Pen-filled cash/cheque payment voucher entries",
+        "Handwritten receiver acknowledgment & official signature"
+      ],
+      "image_url": "/downloads/images/WORK_243785_page5_X1.jpg",
+      "lines_count": 13,
+      "key_text_snippets": [
+        "Old P.W.D. VI-75, New A.P.ACXX",
+        "(G.of I No 27 Quter)",
+        "DIVISION",
+        "SUB - DIVISION",
+        "Cash Book Voucher No.",
+        "Schedule Docket No.",
+        "Month NO",
+        "Name of the Work:"
+      ]
+    },
+    {
+      "work_id": "243785",
+      "filename": "WORK_243785_page7_X1.jpg",
+      "page": "Page 7",
+      "bill_category": "Measurement Book (M-Book) Work Bill",
+      "bill_no": "Not Specified",
+      "date": "N/A",
+      "contractor": "preparing the bill",
+      "amount": "Document Tabular Verification",
+      "all_amounts": [],
+      "work_description": "MPLADS Sanctioned Project Works",
+      "signatures": [
+        "Contractor / Receiver Signature",
+        "Junior / Assistant Engineer"
+      ],
+      "handwriting_evidence": [
+        "Hand-calculated quantities, rates, and tabular item entries",
+        "Junior Engineer & Assistant Engineer ink certification signatures"
+      ],
+      "image_url": "/downloads/images/WORK_243785_page7_X1.jpg",
+      "lines_count": 39,
+      "key_text_snippets": [
+        "1. ACCOUNT OF WORK DONE OR SUPPLIES MADE",
+        "Amount",
+        "Unit",
+        "Quantity",
+        "exectuted (or",
+        "supplied) upto",
+        "date as",
+        "measurement"
+      ]
+    },
+    {
+      "work_id": "243785",
+      "filename": "WORK_243785_page8_X1.jpg",
+      "page": "Page 8",
+      "bill_category": "PWD Running Account Bill (Form 27)",
+      "bill_no": "S",
+      "date": "N/A",
+      "contractor": "Executing Agency / Contractor",
+      "amount": "Document Tabular Verification",
+      "all_amounts": [],
+      "work_description": "MPLADS Sanctioned Project Works",
+      "signatures": [
+        "Divisional Accounts Officer"
+      ],
+      "handwriting_evidence": [
+        "Official PWD standard printed form filled with pen entries",
+        "Handwritten voucher registration & divisional docket numbers"
+      ],
+      "image_url": "/downloads/images/WORK_243785_page8_X1.jpg",
+      "lines_count": 47,
+      "key_text_snippets": [
+        "Ill MEMORANDUM OF PAYMENTS",
+        "1. Total value of work done as per account 1. column(5) entry (A)",
+        "2. Deduct amount withheld:-",
+        "* Figures for",
+        "a) From Previous bills as per Running account B'",
+        "works abstract",
+        "b) from this bill",
+        "3. Balance i.e., up-to date payment (itemI-2)(K)"
+      ]
+    }
+  ],
+  "256736": [
+    {
+      "work_id": "256736",
+      "filename": "WORK_256736_page11_X1.jpg",
+      "page": "Page 11",
+      "bill_category": "Measurement Book (M-Book) Work Bill",
+      "bill_no": "Not Specified",
+      "date": "N/A",
+      "contractor": "Executing Agency / Contractor",
+      "amount": "Document Tabular Verification",
+      "all_amounts": [],
+      "work_description": "MPLADS Sanctioned Project Works",
+      "signatures": [
+        "Contractor / Receiver Signature",
+        "Junior / Assistant Engineer"
+      ],
+      "handwriting_evidence": [
+        "Hand-calculated quantities, rates, and tabular item entries",
+        "Junior Engineer & Assistant Engineer ink certification signatures"
+      ],
+      "image_url": "/downloads/images/WORK_256736_page11_X1.jpg",
+      "lines_count": 47,
+      "key_text_snippets": [
+        "1. ACCOUNT OF WORK DONE OR SUPPLIES MADE",
+        "Quantity",
+        "exectuted (or",
+        "supplied) upto",
+        "Unit",
+        "date as",
+        "measurement",
+        "Item of work of Supplies (Grouped"
+      ]
+    },
+    {
+      "work_id": "256736",
+      "filename": "WORK_256736_page12_X1.jpg",
+      "page": "Page 12",
+      "bill_category": "PWD Running Account Bill (Form 27)",
+      "bill_no": "Not Specified",
+      "date": "N/A",
+      "contractor": "Executing Agency / Contractor",
+      "amount": "Document Tabular Verification",
+      "all_amounts": [],
+      "work_description": "MPLADS Sanctioned Project Works",
+      "signatures": [
+        "Divisional Accounts Officer"
+      ],
+      "handwriting_evidence": [
+        "Official PWD standard printed form filled with pen entries",
+        "Handwritten voucher registration & divisional docket numbers"
+      ],
+      "image_url": "/downloads/images/WORK_256736_page12_X1.jpg",
+      "lines_count": 45,
+      "key_text_snippets": [
+        "Ill MéMORANbÜM PAYMENtS",
+        "I. Total value of work done as per account 1. column(5) entry (A)",
+        "2. Deduct amount withheld:-",
+        "a) From Previous bills as per Running account Bill",
+        "• Figures for",
+        "works abstract",
+        "b) from this bill",
+        "3. Balance I.e., up-to date payment (iteml"
+      ]
+    },
+    {
+      "work_id": "256736",
+      "filename": "WORK_256736_page1_X1.jpg",
+      "page": "Page 1",
+      "bill_category": "Contractor Final Bill Abstract",
+      "bill_no": "Not Specified",
+      "date": "06.02.2026",
+      "contractor": "Sri B. Prabhakar Reddy, Contractor",
+      "amount": "₹249,938.00",
+      "all_amounts": [
+        "₹249,938.00"
+      ],
+      "work_description": "MPLADS Sanctioned Project Works",
+      "signatures": [
+        "Executive Engineer (Disbursing Officer)"
+      ],
+      "handwriting_evidence": [
+        "Contractor work abstract and official fund disbursement sanction"
+      ],
+      "image_url": "/downloads/images/WORK_256736_page1_X1.jpg",
+      "lines_count": 37,
+      "key_text_snippets": [
+        "A.P.STATE CO-OPERATIVE RURAL IRRIGATON CORPORATION",
+        "ANAKAAPLLI DIVISION",
+        "5",
+        "From:",
+        "Sri. B. Prabhakar Reddy",
+        "Executive Engineer(FAC)",
+        "Sir,",
+        "6"
+      ]
+    },
+    {
+      "work_id": "256736",
+      "filename": "WORK_256736_page6_X1.jpg",
+      "page": "Page 6",
+      "bill_category": "Handwritten Cash/Cheque Payment Voucher",
+      "bill_no": "Not Specified",
+      "date": "09.02.2026",
+      "contractor": "Executing Agency / Contractor",
+      "amount": "Document Tabular Verification",
+      "all_amounts": [],
+      "work_description": "Providing lab requirements. Iron Almarahs. Lab tables and Chairs to Govt. Jr.colleee at Wo",
+      "signatures": [
+        "Contractor / Receiver Signature"
+      ],
+      "handwriting_evidence": [
+        "Pen-filled cash/cheque payment voucher entries",
+        "Handwritten receiver acknowledgment & official signature"
+      ],
+      "image_url": "/downloads/images/WORK_256736_page6_X1.jpg",
+      "lines_count": 19,
+      "key_text_snippets": [
+        "Old P.W.D. VI-75, New",
+        "(G.of I No 27 outer)",
+        "DIVISION",
+        "SUB - DIVISION",
+        "Cash Book Voucher NO.",
+        "Schedule Docket No.",
+        "Month",
+        "RUNNING ACCOUNT BILL"
+      ]
+    }
+  ],
+  "274759": [
+    {
+      "work_id": "274759",
+      "filename": "WORK_274759_page1_X1.jpg",
+      "page": "Page 1",
+      "bill_category": "Contractor Final Bill Abstract",
+      "bill_no": "Not Specified",
+      "date": "N/A",
+      "contractor": "Sri B. Prabhakar Reddy, Contractor",
+      "amount": "₹149",
+      "all_amounts": [
+        "₹149"
+      ],
+      "work_description": "MPLADS Sanctioned Project Works",
+      "signatures": [
+        "Executive Engineer (Disbursing Officer)"
+      ],
+      "handwriting_evidence": [
+        "Contractor work abstract and official fund disbursement sanction"
+      ],
+      "image_url": "/downloads/images/WORK_274759_page1_X1.jpg",
+      "lines_count": 35,
+      "key_text_snippets": [
+        "A.P.STATE CO-OPERATIVE RURAL IRRIGATON CORPORATION",
+        "ANAKAAPLLI DIVISION",
+        "-2",
+        "From:",
+        "Sri. B. Prabhakar Reddy",
+        "Executive Engineer(FAC)",
+        "APSCRIC,Anakapa11i",
+        "Sir,"
+      ]
+    }
+  ],
+  "274760": [
+    {
+      "work_id": "274760",
+      "filename": "WORK_274760_page1_X1.jpg",
+      "page": "Page 1",
+      "bill_category": "Contractor Final Bill Abstract",
+      "bill_no": "Not Specified",
+      "date": "10.04.2026",
+      "contractor": "Sri B. Prabhakar Reddy, Contractor",
+      "amount": "₹1149345",
+      "all_amounts": [
+        "₹1149345",
+        "₹1,49,845.00"
+      ],
+      "work_description": "MPLADS Sanctioned Project Works",
+      "signatures": [
+        "Executive Engineer (Disbursing Officer)"
+      ],
+      "handwriting_evidence": [
+        "Contractor work abstract and official fund disbursement sanction"
+      ],
+      "image_url": "/downloads/images/WORK_274760_page1_X1.jpg",
+      "lines_count": 35,
+      "key_text_snippets": [
+        "A.P.STATE CO-OPERATIVE RURAL IRRIGATON CORPORATION",
+        "ANAKAAPLLI DIVISION",
+        "2-2",
+        "To:",
+        "From:",
+        "Sri. B. Prabhakar Reddy",
+        "Executive Engineer(FAC)",
+        "APSCRIC,Anakapa11i"
+      ]
+    }
+  ],
+  "274772": [
+    {
+      "work_id": "274772",
+      "filename": "WORK_274772_page1_X1.jpg",
+      "page": "Page 1",
+      "bill_category": "Contractor Final Bill Abstract",
+      "bill_no": "Not Specified",
+      "date": "N/A",
+      "contractor": "Sri B. Prabhakar Reddy, Contractor",
+      "amount": "₹149.82",
+      "all_amounts": [
+        "₹149.82"
+      ],
+      "work_description": "MPLADS Sanctioned Project Works",
+      "signatures": [
+        "Executive Engineer (Disbursing Officer)"
+      ],
+      "handwriting_evidence": [
+        "Contractor work abstract and official fund disbursement sanction"
+      ],
+      "image_url": "/downloads/images/WORK_274772_page1_X1.jpg",
+      "lines_count": 35,
+      "key_text_snippets": [
+        "A.P.STATE CO-OPERATIVE RURAL IRRIGATON CORPORATION",
+        "ANAKAAPLLI DIVISION",
+        ".N .RI AKP LADS 02 -27",
+        "From:",
+        "Sri. B. Prabhakar Reddy",
+        "Executive Engineer(FAC)",
+        "APSCRIC,Anakapa11i",
+        "Sir,"
+      ]
+    }
+  ],
+  "274773": [
+    {
+      "work_id": "274773",
+      "filename": "WORK_274773_page1_X1.jpg",
+      "page": "Page 1",
+      "bill_category": "Contractor Final Bill Abstract",
+      "bill_no": "Not Specified",
+      "date": "10.04.2026",
+      "contractor": "Sri B. Prabhakar Reddy, Contractor",
+      "amount": "₹1,49.84",
+      "all_amounts": [
+        "₹1,49.84",
+        "₹1,49.84"
+      ],
+      "work_description": "MPLADS Sanctioned Project Works",
+      "signatures": [
+        "Executive Engineer (Disbursing Officer)"
+      ],
+      "handwriting_evidence": [
+        "Contractor work abstract and official fund disbursement sanction"
+      ],
+      "image_url": "/downloads/images/WORK_274773_page1_X1.jpg",
+      "lines_count": 34,
+      "key_text_snippets": [
+        "A.P.STATE CO-OPERATIVE RURAL IRRIGATON CORPORATION",
+        "From:",
+        "Sri. B. Prabhakar Reddy",
+        "Executive Engineer(FAC)",
+        "APSCRIC,Anakapalli",
+        "Sir,",
+        "ANAKAAPLLI DIVISION",
+        "To:"
+      ]
+    }
+  ]
+}

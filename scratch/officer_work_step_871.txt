@@ -1,0 +1,98 @@
+Created At: 2026-09-13T17:22:54+05:30
+Completed At: 2026-09-13T17:22:54+05:30
+File Path: `file:///p:/SIH/mplads_updated-main/src/backend/app.py`
+Total Lines: 2783
+Total Bytes: 130362
+Showing lines 1751 to 1840
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1751:             "compliance_issues": _officer_score_count(master, "compliance_risk_score"),
+1752:             "schedule_risks": _officer_score_count(master, "schedule_risk_score"),
+1753:             "duplicate_candidates": _officer_score_count(master, "duplicate_risk_score"),
+1754:         },
+1755:         "data_availability": {
+1756:             "material": {"available": True, "source": "Material Quality & Price Fairness Engine"},
+1757:             "attendance": {"available": True, "source": "Attendance capture records", "warning": None if attendance_records else "No attendance captures are currently stored."},
+1758:             "citizen": {"available": True, "source": "Citizen evidence records", "warning": None if citizen_records else "No citizen evidence is currently stored."},
+1759:         },
+1760:         "priority_works": priority[:limit],
+1761:         "metadata": _analytics_metadata(),
+1762:     }
+1763: 
+1764: 
+1765: @app.get("/api/officer/work")
+1766: def get_officer_work_monitoring(work_id: str = Query(..., min_length=1)):
+1767:     """Return a 360-degree officer view, including existing citizen/attendance images."""
+1768:     detail = _fetch_work_detail_internal(work_id)
+1769:     work = detail["work"]
+1770:     signals = _officer_issue_signals(work)
+1771:     citizen_records, attendance_records = _officer_evidence_for_work(work.get("work_id"))
+1772:     material = None
+1773:     material_warning = None
+1774:     try:
+1775:         material = clean_record_for_json(analyze_material_context(pd.DataFrame([work]), _BACKEND_ROOT).iloc[0].to_dict())
+1776:     except Exception:
+1777:         material_warning = "Material benchmark context could not be loaded. Manual verification is required."
+1778: 
+1779:     timeline = []
+1780:     for label, field, source in (
+1781:         ("Work recommended", "recommended_date", "Project source record"),
+1782:         ("Work sanctioned", "sanction_date", "Project source record"),
+1783:         ("Expected completion", "estimated_completion_date", "Schedule analysis"),
+1784:         ("Work completed", "completion_date", "Project source record"),
+1785:         ("Risk analysis", "last_analyzed_at", "Risk engines"),
+1786:     ):
+1787:         if work.get(field):
+1788:             timeline.append({"event": label, "date": work.get(field), "source": source})
+1789:     for payment in work.get("expenditure_trips") or []:
+1790:         if payment.get("expenditure_date"):
+1791:             timeline.append({"event": "Expenditure update", "date": payment.get("expenditure_date"), "source": "Expenditure records", "detail": payment.get("payment_status")})
+1792:     timeline.sort(key=lambda item: str(item.get("date") or ""))
+1793: 
+1794:     risk_components = [
+1795:         {"key": "financial", "label": "Financial risk", "score": work.get("financial_risk_score") or 0, "source": "Financial Anomaly Engine"},
+1796:         {"key": "compliance", "label": "Compliance risk", "score": work.get("compliance_risk_score") or 0, "source": "Compliance Engine"},
+1797:         {"key": "schedule", "label": "Schedule risk", "score": work.get("schedule_risk_score") or 0, "source": "Schedule / Progress Analysis"},
+1798:         {"key": "duplicate", "label": "Duplicate risk", "score": work.get("duplicate_risk_score") or 0, "source": "Duplicate Detection"},
+1799:     ]
+1800:     return {
+1801:         "work": work,
+1802:         "risk_components": risk_components,
+1803:         "evidence_summary": signals,
+1804:         "material": material,
+1805:         "material_warning": material_warning,
+1806:         "attendance": {
+1807:             "available": bool(attendance_records),
+1808:             "records": attendance_records,
+1809:             "warning": None if attendance_records else "No current attendance capture is available for this Work ID.",
+1810:         },
+1811:         "citizen_feedback": {
+1812:             "available": bool(citizen_records),
+1813:             "records": citizen_records,
+1814:             "warning": None if citizen_records else "No citizen evidence is associated with this Work ID.",
+1815:         },
+1816:         "candidate_duplicates": detail["candidate_duplicates"],
+1817:         "compliance_findings": work.get("compliance_findings") or work.get("compliance_rule_results") or [],
+1818:         "timeline": timeline,
+1819:         "officer_review": {"status": "UNREVIEWED", "persistence_available": False, "message": "Officer action persistence is not configured in the current backend."},
+1820:         "traceability": [
+1821:             {"label": "Financial risk", "source": "Financial Anomaly Engine", "dataset": "master_project_risk_scores.parquet"},
+1822:             {"label": "Compliance risk", "source": "Compliance Engine", "dataset": "master_project_risk_scores.parquet"},
+1823:             {"label": "Schedule risk", "source": "Schedule / Progress Analysis", "dataset": "master_project_risk_scores.parquet"},
+1824:             {"label": "Duplicate candidates", "source": "Duplicate Detection", "dataset": "duplicate_work_candidates.parquet"},
+1825:             {"label": "Material context", "source": "Material Quality & Price Fairness Engine", "dataset": "material_specification_benchmarks.csv"},
+1826:             {"label": "Citizen evidence", "source": "Citizen Protocol", "dataset": "data/citizen_evidence.json"},
+1827:             {"label": "Attendance evidence", "source": "Attendance Capture", "dataset": "data/attendance_records.json"},
+1828:         ],
+1829:         "metadata": _analytics_metadata(),
+1830:     }
+1831: 
+1832: 
+1833: @app.get("/api/work-detail")
+1834: def get_work_detail_by_query(work_id: str = Query(...)):
+1835:     return _fetch_work_detail_internal(work_id)
+1836: 
+1837: @app.get("/api/work-detail/{work_id:path}")
+1838: def get_work_detail_by_path(work_id: str):
+1839:     return _fetch_work_detail_internal(work_id)
+1840: 
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

@@ -1,0 +1,29 @@
+Created At: 2026-09-13T17:51:05+05:30
+Completed At: 2026-09-13T17:51:05+05:30
+File Path: `file:///p:/SIH/mplads_updated-main/src/backend/app.py`
+Total Lines: 2946
+Total Bytes: 137716
+Showing lines 1610 to 1630
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1610:         raise HTTPException(status_code=404, detail=f"Work ID '{clean_id}' not found.")
+1611:         
+1612:     cand_dup = dup_index.get(clean_id, [])
+1613:     # Do not mutate the cached master record: detail-only fields are attached
+1614:     # to a shallow copy so queue responses remain compact and stable.
+1615:     work_record = dict(work_record)
+1616:     work_record["expenditure_trips"] = data.get("expenditure_trips_index", {}).get(clean_id, [])
+1617:     
+1618:     return {
+1619:         "work": work_record,
+1620:         "candidate_duplicates": cand_dup
+1621:     }
+1622: 
+1623: @app.get("/api/work-detail")
+1624: def _officer_issue_signals(work_record: dict) -> list[dict]:
+1625:     """Translate existing analytical scores into review signals without changing risk math."""
+1626:     signals = []
+1627:     dimensions = (
+1628:         ("financial", "Financial anomaly", "financial_risk_score", "financial_explanation", "Review financial details"),
+1629:         ("compliance", "Compliance evidence", "compliance_risk_score", "compliance_explanation", "Verify compliance evidence"),
+1630:         ("schedule", "Schedule / progress", "schedule_risk_score", "schedule_explanation", "Review progress evidence"),
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

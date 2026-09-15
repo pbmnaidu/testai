@@ -1,0 +1,8 @@
+{
+  "CodeContent": "import os\nimport json\n\nbrain = r'C:\\Users\\bhanu\\.gemini\\antigravity-ide\\brain'\nfor root, dirs, files in os.walk(brain):\n    for f in files:\n        if f.endswith('.jsonl'):\n            p = os.path.join(root, f)\n            try:\n                with open(p, 'r', encoding='utf-8', errors='ignore') as fp:\n                    for line_no, line in enumerate(fp):\n                        if '_officer_evidence_for_work' in line and ('ReplacementContent' in line or 'CodeContent' in line):\n                            print(f\"File {p} line {line_no}\")\n                            data = json.loads(line)\n                            for tc in data.get('tool_calls', []):\n                                args = tc.get('args', {})\n                                if '_officer_evidence_for_work' in str(args):\n                                    print(\"  TOOL:\", tc.get('name'), args.get('Description'))\n                                    with open(f\"scratch/found_{line_no}.txt\", \"w\", encoding=\"utf-8\") as out:\n                                        out.write(json.dumps(args, indent=2))\n            except Exception:\n                pass\n",
+  "Description": "Search all jsonl for officer functions",
+  "Overwrite": true,
+  "TargetFile": "p:\\SIH\\mplads_updated-main\\scratch\\find_officer_origin.py",
+  "toolAction": "Writing file",
+  "toolSummary": "Write find_officer_origin.py"
+}

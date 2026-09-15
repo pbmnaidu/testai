@@ -10,6 +10,13 @@ with open("data/processed/combined_geotag_audit.json", "r", encoding="utf-8") as
 with open("data/processed/combined_download_manifest.json", "r", encoding="utf-8") as f:
     manifest_data = json.load(f)
 
+# Load Extracted Handwritten Bills Database
+bills_data = {}
+bills_file = "data/processed/extracted_handwritten_bills.json"
+if os.path.exists(bills_file):
+    with open(bills_file, "r", encoding="utf-8") as f:
+        bills_data = json.load(f)
+
 # Static Initial Counts for First Paint
 total_works = len(audit_data)
 anakapalli_works = [w for w in audit_data if "anakapall" in w.get("constituency", "").lower()]
@@ -1590,6 +1597,95 @@ html_content = f'''<!DOCTYPE html>
     </div>
   </div>
 
+  <!-- Dedicated Handwritten Bills & Vouchers Modal -->
+  <div class="modal-overlay" id="bills-modal" onclick="closeBillsModalOnOverlay(event)">
+    <div class="preview-modal-dialog" style="max-width: 1240px; height: 88vh;">
+      <div class="preview-modal-header" style="background: rgba(17, 24, 39, 0.98); border-bottom: 1px solid rgba(245, 158, 11, 0.3);">
+        <div>
+          <div style="font-size: 11px; font-weight: 700; color: #FBBF24; text-transform: uppercase; letter-spacing: 0.08em; display: flex; align-items: center; gap: 8px;">
+            <span>🧾 FORENSIC PHYSICAL EVIDENCE</span>
+            <span id="bm-count-badge" style="background: rgba(245, 158, 11, 0.2); border: 1px solid #F59E0B; padding: 2px 8px; border-radius: 9999px; font-size: 10px; color: #FDE68A;">0 Bills</span>
+          </div>
+          <div style="font-size: 17px; font-weight: 800; color: #FFFFFF; margin-top: 2px;" id="bm-header-work">
+            Handwritten Bills &amp; Payment Vouchers
+          </div>
+          <div style="font-size: 12px; color: var(--text-muted);" id="bm-header-meta">
+            Inspection
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeHandwrittenBillsModal()" title="Close (Esc)">✕</button>
+      </div>
+
+      <div class="preview-modal-body" style="grid-template-columns: 1.4fr 1fr;">
+        <!-- Left: Image Viewer with Zoom -->
+        <div style="display: flex; flex-direction: column; background: #030712; position: relative; overflow: hidden;">
+          <div style="position: absolute; top: 10px; left: 10px; z-index: 20; display: flex; gap: 6px; background: rgba(15, 23, 42, 0.9); padding: 4px 8px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.1);">
+            <button onclick="changeBillZoom(-0.2)" style="background: none; border: none; color: #fff; cursor: pointer; padding: 2px 6px; font-weight: bold;">−</button>
+            <span id="bm-zoom-text" style="color: #cbd5e1; font-size: 11px; font-family: monospace; display: flex; align-items: center;">100%</span>
+            <button onclick="changeBillZoom(0.2)" style="background: none; border: none; color: #fff; cursor: pointer; padding: 2px 6px; font-weight: bold;">+</button>
+            <button onclick="resetBillZoom()" style="background: none; border: none; color: #38bdf8; cursor: pointer; padding: 2px 6px; font-size: 11px;">Reset</button>
+            <a id="bm-fullres-link" href="#" target="_blank" style="color: #fbbf24; text-decoration: none; font-size: 11px; font-weight: 600; padding: 2px 6px; display: flex; align-items: center; gap: 4px;">↗ Full Res</a>
+          </div>
+
+          <div style="flex: 1; display: flex; align-items: center; justify-content: center; overflow: auto; padding: 16px;">
+            <img id="bm-image" src="" style="max-height: 68vh; max-width: 100%; object-fit: contain; border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); transition: transform 0.15s ease-out;" alt="Bill Image">
+          </div>
+
+          <!-- Bottom page switcher -->
+          <div id="bm-thumbnails-strip" style="display: flex; gap: 8px; overflow-x: auto; padding: 10px; background: rgba(15, 23, 42, 0.9); border-top: 1px solid var(--border-subtle);">
+          </div>
+        </div>
+
+        <!-- Right: Forensic Data Panel -->
+        <div style="padding: 20px; overflow-y: auto; background: #070B14; display: flex; flex-direction: column; gap: 16px;">
+          <div>
+            <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--text-dim); letter-spacing: 0.05em; margin-bottom: 4px;">Classification</div>
+            <div id="bm-category-badge" class="badge" style="background: rgba(245, 158, 11, 0.15); border: 1px solid #F59E0B; color: #FCD34D; font-size: 12px; font-weight: 700;">
+              Bill Type
+            </div>
+            <div id="bm-filename" style="font-size: 11px; color: var(--text-dim); margin-top: 4px; font-family: monospace;"></div>
+          </div>
+
+          <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 14px;">
+            <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #34D399;">Disbursed / Net Payable Amount</div>
+            <div id="bm-amount" style="font-size: 22px; font-weight: 900; color: #6EE7B7; font-family: monospace; margin-top: 2px;">₹0.00</div>
+          </div>
+
+          <div class="dossier-card" style="margin-bottom: 0; padding: 14px; background: rgba(15, 23, 42, 0.6);">
+            <div class="dossier-field">
+              <span class="field-label">Voucher / Bill No:</span>
+              <span class="field-value" id="bm-vr-no">N/A</span>
+            </div>
+            <div class="dossier-field">
+              <span class="field-label">Bill Date:</span>
+              <span class="field-value" id="bm-date">N/A</span>
+            </div>
+            <div class="dossier-field" style="flex-direction: column; gap: 4px;">
+              <span class="field-label">Contractor / Payee:</span>
+              <span class="field-value" id="bm-contractor" style="font-size: 12px; color: #F8FAFC;">-</span>
+            </div>
+            <div class="dossier-field" style="flex-direction: column; gap: 4px;">
+              <span class="field-label">Head of Account:</span>
+              <span style="font-size: 11px; color: #CBD5E1; line-height: 1.4;" id="bm-work-desc">-</span>
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px;">Verified Ink Signatures</div>
+            <div id="bm-signatures-list" style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #E2E8F0;">
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size: 11px; font-weight: 700; color: #F59E0B; text-transform: uppercase; margin-bottom: 6px;">Physical Handwriting Markers</div>
+            <div id="bm-evidence-list" style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: #FDE68A;">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Notification Toast -->
   <div class="toast" id="toast-msg">
     <span id="toast-icon">📥</span>
@@ -1600,6 +1696,7 @@ html_content = f'''<!DOCTYPE html>
   <script>
     const AUDIT_DATA = {json.dumps(audit_data, indent=2)};
     const REAL_MANIFEST = {json.dumps(manifest_data, indent=2)};
+    const HANDWRITTEN_BILLS = {json.dumps(bills_data, indent=2)};
 
     let map = null;
     let markersLayer = null;
@@ -1746,7 +1843,12 @@ html_content = f'''<!DOCTYPE html>
             <div style="display: flex; gap: 4px; margin-top: 6px;">
               <button onclick="openPreviewModal('${{w.work_id}}', 0, 'image')" style="
                 flex: 1; background: #8B5CF6; color: white; border: none; padding: 7px 4px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer;
-              ">👁️ View Geotagged Photo</button>
+              ">👁️ Photo</button>
+              ${{(HANDWRITTEN_BILLS[w.work_id] && HANDWRITTEN_BILLS[w.work_id].length > 0) ? `
+                <button onclick="openHandwrittenBillsModal('${{w.work_id}}')" style="
+                  flex: 1; background: #F59E0B; color: #000; border: none; padding: 7px 4px; border-radius: 6px; font-size: 11px; font-weight: 800; cursor: pointer;
+                ">🧾 Bills (${{HANDWRITTEN_BILLS[w.work_id].length}})</button>
+              ` : ''}}
               <button onclick="openDossier('${{w.work_id}}')" style="
                 flex: 1; background: #0284C7; color: white; border: none; padding: 7px 4px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer;
               ">Inspect</button>
@@ -1942,7 +2044,14 @@ html_content = f'''<!DOCTYPE html>
 
         // Render Bill Proof
         let billProofHtml = '';
-        if (audit.has_bill_proof) {{
+        const workBills = HANDWRITTEN_BILLS[w.work_id] || [];
+        if (workBills.length > 0) {{
+          billProofHtml = `
+            <button onclick="openHandwrittenBillsModal('${{w.work_id}}')" style="background: rgba(245, 158, 11, 0.18); border: 1px solid #F59E0B; color: #FCD34D; font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="View extracted physical bills">
+              🧾 ${{workBills.length}} Handwritten Bill(s)
+            </button>
+          `;
+        }} else if (audit.has_bill_proof) {{
           billProofHtml = `<span style="font-size: 11px; font-weight: 600; color: #38BDF8;">🧾 Bills / UC Verified</span>`;
         }} else {{
           billProofHtml = `<span style="font-size: 11px; color: var(--text-dim);">None</span>`;
@@ -1970,6 +2079,11 @@ html_content = f'''<!DOCTYPE html>
           <td><span class="status-pill ${{pillClass}}" title="${{w.audit_reason}}">${{pillText}}</span></td>
           <td>
             <div class="table-actions-cell">
+              ${{workBills.length > 0 ? `
+                <button class="btn-table-bills" onclick="openHandwrittenBillsModal('${{w.work_id}}')" style="background: rgba(245, 158, 11, 0.2); border: 1px solid #F59E0B; color: #FCD34D; font-size: 11px; font-weight: 800; padding: 5px 8px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" title="View extracted physical handwritten bills">
+                  🧾 Bills (${{workBills.length}})
+                </button>
+              ` : ''}}
               <button class="btn-table-preview" onclick="openPreviewModal('${{w.work_id}}', 0, '${{audit.total_images > 0 ? 'image' : 'pdf'}}')" title="Preview Attached Evidence">
                 👁️ Preview
               </button>
@@ -2062,7 +2176,16 @@ html_content = f'''<!DOCTYPE html>
       }}
 
       document.getElementById('modal-scanned-count').textContent = `${{audit.total_images}} Scanned Picture(s)`;
-      document.getElementById('modal-bill-proof').textContent = audit.has_bill_proof ? 'Verified Proof Found' : 'None Detected';
+      const bCount = (HANDWRITTEN_BILLS[work.work_id] || []).length;
+      if (bCount > 0) {{
+        document.getElementById('modal-bill-proof').innerHTML = `
+          <button onclick="openHandwrittenBillsModal('${{work.work_id}}')" style="background: rgba(245, 158, 11, 0.2); border: 1px solid #F59E0B; color: #FCD34D; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+            🧾 ${{bCount}} Handwritten Bill(s) Extracted ➔
+          </button>
+        `;
+      }} else {{
+        document.getElementById('modal-bill-proof').textContent = audit.has_bill_proof ? 'Verified Proof Found' : 'None Detected';
+      }}
 
       const secList = document.getElementById('modal-sections-list');
       secList.innerHTML = '';
@@ -2716,6 +2839,88 @@ html_content = f'''<!DOCTYPE html>
         }}
         addLine(`[2.35s] Forensic scan complete. Pure ground truth.`, 't-cyan');
       }}, 1600);
+    }}
+
+    /* =========================================================
+       HANDWRITTEN BILLS MODAL LOGIC
+       ========================================================= */
+    let currentBillsWorkId = null;
+    let currentBillIdx = 0;
+    let currentBillZoom = 1;
+
+    function openHandwrittenBillsModal(workId, billIdx = 0) {{
+      const bills = HANDWRITTEN_BILLS[String(workId)] || [];
+      const work = AUDIT_DATA.find(w => w.work_id === String(workId));
+      if (!bills || bills.length === 0) {{
+        showToast('No physical handwritten bills detected for this work', '⚠️');
+        return;
+      }}
+
+      currentBillsWorkId = String(workId);
+      currentBillIdx = billIdx;
+      currentBillZoom = 1;
+
+      document.getElementById('bm-header-work').textContent = `Handwritten Bills & Vouchers · Work ${{workId}}`;
+      document.getElementById('bm-header-meta').textContent = work ? `${{work.title}} · ${{work.mandal}} Mandal` : 'Audited Physical Evidence';
+      document.getElementById('bm-count-badge').textContent = `${{bills.length}} Bill(s) Extracted`;
+
+      loadBillDetails(bills, currentBillIdx);
+      document.getElementById('bills-modal').style.display = 'flex';
+    }}
+
+    function loadBillDetails(bills, idx) {{
+      const b = bills[idx] || bills[0];
+      if (!b) return;
+
+      const imgUrl = b.image_url.startsWith('/') ? b.image_url.substring(1) : b.image_url;
+      document.getElementById('bm-image').src = imgUrl;
+      document.getElementById('bm-fullres-link').href = imgUrl;
+      document.getElementById('bm-category-badge').textContent = b.bill_category;
+      document.getElementById('bm-filename').textContent = `${{b.filename}} (${{b.page}})`;
+      document.getElementById('bm-amount').textContent = b.amount;
+      document.getElementById('bm-vr-no').textContent = b.bill_no;
+      document.getElementById('bm-date').textContent = b.date;
+      document.getElementById('bm-contractor').textContent = b.contractor;
+      document.getElementById('bm-work-desc').textContent = b.work_description;
+
+      const sigList = document.getElementById('bm-signatures-list');
+      sigList.innerHTML = (b.signatures || []).map(s => `<div>✅ ${{s}}</div>`).join('');
+
+      const evList = document.getElementById('bm-evidence-list');
+      evList.innerHTML = (b.handwriting_evidence || []).map(e => `<div>✍️ ${{e}}</div>`).join('');
+
+      const strip = document.getElementById('bm-thumbnails-strip');
+      strip.innerHTML = '';
+      if (bills.length > 1) {{
+        bills.forEach((bill, i) => {{
+          const btn = document.createElement('button');
+          btn.style.cssText = `background: ${{i === idx ? 'rgba(245, 158, 11, 0.3)' : 'rgba(30, 41, 59, 0.6)'}}; border: 1px solid ${{i === idx ? '#F59E0B' : 'rgba(255, 255, 255, 0.1)'}}; color: white; padding: 6px 12px; border-radius: 8px; font-size: 11px; cursor: pointer; white-space: nowrap;`;
+          btn.innerHTML = `<strong>${{bill.page}}</strong>: ${{bill.bill_category.split(' ')[0]}}`;
+          btn.onclick = () => {{ currentBillIdx = i; resetBillZoom(); loadBillDetails(bills, i); }};
+          strip.appendChild(btn);
+        }});
+      }}
+    }}
+
+    function changeBillZoom(delta) {{
+      currentBillZoom = Math.max(0.6, Math.min(3, currentBillZoom + delta));
+      document.getElementById('bm-image').style.transform = `scale(${{currentBillZoom}})`;
+      document.getElementById('bm-zoom-text').textContent = `${{Math.round(currentBillZoom * 100)}}%`;
+    }}
+
+    function resetBillZoom() {{
+      currentBillZoom = 1;
+      document.getElementById('bm-image').style.transform = 'scale(1)';
+      document.getElementById('bm-zoom-text').textContent = '100%';
+    }}
+
+    function closeHandwrittenBillsModal() {{
+      document.getElementById('bills-modal').style.display = 'none';
+      resetBillZoom();
+    }}
+
+    function closeBillsModalOnOverlay(e) {{
+      if (e.target.id === 'bills-modal') closeHandwrittenBillsModal();
     }}
 
     // Robust Boot sequence
