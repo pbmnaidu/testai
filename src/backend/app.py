@@ -310,6 +310,40 @@ def get_data():
 
     return _DATA_CACHE
 
+
+def _read_overview_data() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Load only the columns required by the landing-dashboard summary.
+
+    The complete master table has 159 columns and occupies nearly 500 MB when
+    decoded by pandas.  That exceeds the memory available to free hosting
+    instances before any aggregation can run.  The overview response needs a
+    small, explicit projection instead.
+    """
+    master_path = os.path.join(FEATURES_DIR, "master_project_risk_scores.parquet")
+    master_columns = [
+        "work_id", "sanction_amount", "effective_expenditure", "completion_date",
+        "overall_risk_level", "overdue_days", "state", "financial_risk_score",
+        "compliance_risk_score", "duplicate_risk_score", "schedule_risk_score",
+        "overall_risk_score", "work_category", "is_financial_outlier",
+        "historical_sample_size", "historical_unit_price_count",
+    ]
+    try:
+        master = pd.read_parquet(master_path, columns=master_columns) if os.path.exists(master_path) else pd.DataFrame()
+    except Exception:
+        master = pd.DataFrame()
+
+    def read_columns(filename: str, columns: list[str]) -> pd.DataFrame:
+        path = os.path.join(FEATURES_DIR if filename.startswith("duplicate_") else PROCESSED_DIR, filename)
+        try:
+            return pd.read_parquet(path, columns=columns) if os.path.exists(path) else pd.DataFrame()
+        except Exception:
+            return pd.DataFrame()
+
+    duplicates = read_columns("duplicate_work_candidates.parquet", ["state"])
+    allocated = read_columns("t1_allocated_limits.parquet", ["allocated_amount"])
+    calamity = read_columns("t7_calamity_consents.parquet", ["consent_amount"])
+    return master, duplicates, allocated, calamity
+
 def clean_record_for_json(record):
     """Recursively convert pandas/NumPy values into strict JSON values.
 
@@ -387,10 +421,7 @@ def health_check():
 
 @app.get("/api/overview")
 def get_national_overview():
-    data = get_data()
-    master = data["master"]
-    t1 = data["t1"]
-    t7 = data["t7"]
+    master, duplicate_counts, t1, t7 = _read_overview_data()
     
     total_allocation = float(t1["allocated_amount"].sum()) if len(t1) > 0 else 0.0
     total_sanctioned = float(master["sanction_amount"].fillna(0).sum())
@@ -455,7 +486,6 @@ def get_national_overview():
     # Duplicate candidates are the only duplicate-specific quantity available
     # in the current feature store.  Do not label overall high-risk works as
     # duplicate/audit cases in the GIS panel.
-    duplicate_counts = data["duplicates"]
     if not duplicate_counts.empty and "state" in duplicate_counts.columns:
         duplicate_counts = duplicate_counts[duplicate_counts["state"].fillna("").astype(str).str.strip().ne("")]
         duplicate_counts = duplicate_counts.groupby("state").size()
