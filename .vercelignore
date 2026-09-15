@@ -1,13 +1,30 @@
-# Exclude Python backend, data files, and other non-frontend assets from Vercel build
-api/
-src/
-data/
-docs/
-*.py
+# Exclude Python backend and root data files from Vercel deployment
+/api/
+/src/
+/data/
+/docs/
+/downloads/
+/output/
+/scratch/
+/scripts/
+/tests/
+/tmp/
+/.venv/
+/venv/
+/requirements.txt
+/.python-version
 *.parquet
 *.csv
 *.log
-.venv/
-venv/
+
+# Explicitly ensure frontend files and public snapshots are NEVER ignored
+!frontend/
+!frontend/**
+!frontend/src/**
+!frontend/public/**
+!frontend/public/data/**
+
+# Ignore local node_modules & dist if present
 node_modules/
 frontend/node_modules/
+frontend/dist/
