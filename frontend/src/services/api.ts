@@ -823,6 +823,17 @@ export async function fetchCitizenEvidence(workId?: string, params: {
     }
   } catch {}
 
+  // 3. Merge local session queue
+  try {
+    const local = JSON.parse(localStorage.getItem('mplads_local_citizen_evidence') || '[]');
+    const existingIds = new Set(records.map((r) => r.submission_id));
+    for (const l of local) {
+      if (!existingIds.has(l.submission_id)) {
+        records.unshift(l);
+      }
+    }
+  } catch {}
+
   // Filter
   if (workId && workId.trim()) {
     const wid = workId.trim();
@@ -992,6 +1003,17 @@ export async function fetchAttendance(workId?: string): Promise<{ total: number;
     for (const b of baseline) {
       if (!existingIds.has(b.attendance_id)) {
         records.push(b);
+      }
+    }
+  } catch {}
+
+  // 3. Merge local session queue
+  try {
+    const local = JSON.parse(localStorage.getItem('mplads_local_attendance_records') || '[]');
+    const existingIds = new Set(records.map((r) => r.attendance_id));
+    for (const l of local) {
+      if (!existingIds.has(l.attendance_id)) {
+        records.unshift(l);
       }
     }
   } catch {}
