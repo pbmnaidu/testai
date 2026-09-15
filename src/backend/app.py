@@ -54,7 +54,8 @@ app.add_middleware(
         "http://127.0.0.1:3000",
         "https://mplads-frontend-w20d.onrender.com",
     ],
-    allow_origin_regex=r"https://.*\.onrender\.com",
+    # Allow Render and Vercel deployments, including preview subdomains.
+    allow_origin_regex=r"https://.*\.(?:onrender\.com|vercel\.app)",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -98,13 +99,79 @@ _initialize_data_dir()
 
 # Cache loaded dataframes in memory
 _DATA_CACHE = {}
+_FILTER_CACHE = {}
+_DATA_CACHE_LOCK = threading.RLock()
+
+# The master artifact contains raw aliases plus nested diagnostic columns.  A
+# request-serving process should not deserialize all of those columns for
+# every dashboard request: the scalar master is ~500 MB once pandas expands
+# it, which is larger than a free Render instance's usable memory.  Keep the
+# queue/summary projection intentionally small and load the full detail row
+# only when a user opens one work item.
+_MASTER_API_COLUMNS = [
+    "work_id", "state", "constituency", "mp_name", "description",
+    "work_category", "work_status", "main_sector", "sanction_amount",
+    "recommended_date", "sanction_date", "completion_date",
+    "effective_expenditure", "total_expenditure", "overall_risk_level",
+    "overall_risk_score", "composite_risk_score", "financial_risk_score",
+    "financial_risk_level", "financial_risk_rank", "is_financial_outlier",
+    "financial_explanation", "compliance_risk_score", "compliance_risk_level",
+    "compliance_explanation", "duplicate_risk_score", "duplicate_risk_level",
+    "duplicate_explanation", "schedule_risk_score", "schedule_risk_level",
+    "schedule_explanation", "schedule_what_happened", "schedule_why_it_matters",
+    "schedule_supporting_details", "overdue_days", "progress_gap_pct",
+    "unit_price_comparison_eligible", "recommended_reviewer_action",
+    "triggered_rules", "last_analyzed_at",
+]
+
+_MASTER_RAW_ALIASES = {
+    "Sr. No.", "Work category", "Work", "State", "IDA",
+    "Hon'ble Members of Parliament", "Constituency", "Work description",
+    "Recommended date", "Sanction Date", "Sanction Amount ( ₹ )", "Work Status",
+}
+
+
+def _master_detail_columns(path: str) -> list[str]:
+    """Return unique, non-raw columns for one-work detail lookups."""
+    try:
+        import pyarrow.parquet as parquet
+        import pyarrow.types as arrow_types
+
+        schema = parquet.ParquetFile(path).schema_arrow
+        return list(dict.fromkeys(
+            field.name for field in schema
+            if field.name not in _MASTER_RAW_ALIASES
+            and not arrow_types.is_null(field.type)
+        ))
+    except Exception:
+        return list(_MASTER_API_COLUMNS)
+
+
+def _read_master_record(path: str, work_id: str) -> dict | None:
+    """Read one detailed work row without materializing the full master table."""
+    if not os.path.exists(path):
+        return None
+    try:
+        import pyarrow.parquet as parquet
+
+        table = parquet.read_table(
+            path,
+            columns=_master_detail_columns(path),
+            filters=[("work_id", "=", work_id)],
+        )
+        if table.num_rows == 0:
+            return None
+        return clean_record_for_json(table.to_pandas().iloc[0].to_dict())
+    except Exception:
+        return None
 
 
 class LazyWorkIndex:
     """Resolve work details on demand instead of serializing every row at startup."""
 
-    def __init__(self, frame: pd.DataFrame):
+    def __init__(self, frame: pd.DataFrame, detail_loader=None):
         self.frame = frame
+        self.detail_loader = detail_loader
         self.positions = {}
         self.normalized_positions = {}
         self.tail_positions = {}
@@ -122,7 +189,12 @@ class LazyWorkIndex:
         if clean_id not in self.positions:
             return default
         if clean_id not in self.cache:
-            self.cache[clean_id] = clean_record_for_json(self.frame.iloc[self.positions[clean_id]].to_dict())
+            record = clean_record_for_json(self.frame.iloc[self.positions[clean_id]].to_dict())
+            if self.detail_loader:
+                detailed = self.detail_loader(clean_id)
+                if detailed:
+                    record.update(detailed)
+            self.cache[clean_id] = record
         return self.cache[clean_id]
 
     def items(self):
@@ -212,36 +284,35 @@ def _read_master_frame(path: str) -> pd.DataFrame:
     """
     try:
         import pyarrow.parquet as parquet
-        import pyarrow.types as arrow_types
-        schema = parquet.ParquetFile(path).schema_arrow
-        columns = [
-            field.name for field in schema
-            if not arrow_types.is_nested(field.type) and not arrow_types.is_null(field.type)
-        ]
-        # The master retains raw export columns for offline analysis, but
-        # returning both ``State`` and canonical ``state`` (and similar pairs)
-        # creates ambiguous JSON objects for strict clients.
-        raw_aliases = {
-            "Sr. No.", "Work category", "Work", "State", "IDA",
-            "Hon'ble Members of Parliament", "Constituency", "Work description",
-            "Recommended date", "Sanction Date", "Sanction Amount ( ₹ )", "Work Status",
-            "category_model_scores", "risk_evidence", "explainable_audit_summary",
-            "explanation", "financial_explanation", "risk_description",
-            "financial_supporting_details", "schedule_explanation", "recommended_action",
-            "recommended_reviewer_action", "compliance_explanation", "completion_explanation",
-            "financial_why_it_matters", "schedule_supporting_details", "material_quantities",
-        }
-        columns = [column for column in columns if column not in raw_aliases]
+        available = set(parquet.ParquetFile(path).schema_arrow.names)
+        columns = [column for column in _MASTER_API_COLUMNS if column in available]
         return pd.read_parquet(path, columns=columns)
     except Exception:
-        return pd.read_parquet(path)
+        # Never fall back to deserializing the entire artifact on a small
+        # serving instance.  A minimal ID frame keeps detail lookups and
+        # health/status routes alive while the malformed artifact is reported
+        # through the endpoint's normal empty-data response.
+        try:
+            return pd.read_parquet(path, columns=["work_id"])
+        except Exception:
+            return pd.DataFrame(columns=["work_id"])
 
 
 def get_data():
+    """Return the shared serving cache without duplicate concurrent loads."""
+    # The frontend opens several dashboard requests at once.  Serializing the
+    # first cache fill prevents each request from decoding its own copy of the
+    # Parquet files and briefly multiplying memory usage on small instances.
+    with _DATA_CACHE_LOCK:
+        return _get_data_locked()
+
+
+def _get_data_locked():
     master_p = os.path.join(FEATURES_DIR, "master_project_risk_scores.parquet")
     master_mtime = os.path.getmtime(master_p) if os.path.exists(master_p) else None
     if _DATA_CACHE.get("_master_mtime") != master_mtime:
         _DATA_CACHE.clear()
+        _FILTER_CACHE.clear()
         _DATA_CACHE["_master_mtime"] = master_mtime
     if "master" not in _DATA_CACHE:
         try:
@@ -255,7 +326,10 @@ def get_data():
 
         # Build only a lightweight ID-to-row index. Individual records are
         # cleaned when a detail endpoint actually requests them.
-        _DATA_CACHE["work_index"] = LazyWorkIndex(df)
+        _DATA_CACHE["work_index"] = LazyWorkIndex(
+            df,
+            detail_loader=lambda work_id: _read_master_record(master_p, work_id),
+        )
 
     if "duplicates" not in _DATA_CACHE:
         dup_p = os.path.join(FEATURES_DIR, "duplicate_work_candidates.parquet")
@@ -1779,9 +1853,6 @@ def _unique_filter_values(series, *, skip_numeric: bool = False):
             continue
         values.setdefault(value.casefold(), value)
     return sorted(values.values(), key=lambda value: value.casefold())
-
-
-_FILTER_CACHE = {}
 
 
 @app.get("/api/filters")
