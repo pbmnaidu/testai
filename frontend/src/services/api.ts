@@ -22,20 +22,29 @@ import {
   AttendanceStats
 } from '../types';
 
-const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || '/api';
+// Normalize API_BASE: trim whitespace, strip trailing slashes, and ensure '/api' is appended if a base domain is provided.
+const rawBase = ((import.meta as any).env?.VITE_API_BASE_URL || '/api').trim();
+const cleanBase = rawBase.replace(/\/+$/, '');
+const API_BASE = (cleanBase.startsWith('http') && !cleanBase.endsWith('/api'))
+  ? `${cleanBase}/api`
+  : cleanBase;
 
 async function safeFetchJson<T>(url: string, fallback: T): Promise<T> {
   try {
     const res = await fetch(url);
-    if (!res.ok) return fallback;
+    if (!res.ok) {
+      console.error(`[MPLADS API] HTTP ${res.status} (${res.statusText}) from: ${url}`);
+      return fallback;
+    }
     const contentType = res.headers.get('content-type') || '';
     if (!contentType.includes('application/json')) {
+      console.error(`[MPLADS API] Expected JSON but received '${contentType}' from: ${url}. (Make sure VITE_API_BASE_URL points to your backend and not the static frontend)`);
       return fallback;
     }
     const data = await res.json();
     return data || fallback;
   } catch (err) {
-    console.warn(`Fetch to ${url} failed, using fallback.`, err);
+    console.error(`[MPLADS API] Network or CORS failure fetching: ${url}`, err);
     return fallback;
   }
 }

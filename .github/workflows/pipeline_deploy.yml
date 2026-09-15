@@ -1,0 +1,45 @@
+name: Automated ML Pipeline & Cloud Deployment
+
+on:
+  workflow_dispatch: # Allows 1-click manual trigger from GitHub website
+  schedule:
+    - cron: '0 2 * * 0' # Automatically runs every Sunday at 2:00 AM UTC
+  push:
+    branches:
+      - chatBot
+    paths:
+      - 'data/processed/**'
+      - 'src/modules/**'
+      - 'src/risk/**'
+      - 'src/run_pipeline.py'
+
+jobs:
+  run-pipeline-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Allows pushing updated model files back to repository
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Full ML & Risk Intelligence Pipeline
+        run: |
+          python src/run_pipeline.py
+
+      - name: Commit and Push Updated Scored Datasets
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Automated ML Pipeline: update precomputed features and risk scores [skip ci]"
+          file_pattern: "data/features/*.parquet data/processed/*.parquet"

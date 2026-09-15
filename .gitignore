@@ -21,6 +21,7 @@ Thumbs.db
 *.log
 output/
 tmp/
+.codex-finalizer/
 
 # Data sync runtime state, snapshots, previews, and training caches
 data/sync_previews/
