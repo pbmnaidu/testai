@@ -1425,8 +1425,20 @@ def get_risk_monitor_queue(
     page: int = Query(1, ge=1),
     limit: int = Query(50, ge=1, le=200)
 ):
-    data = get_data()
-    df = data["master"]
+    master_path = os.path.join(FEATURES_DIR, "master_project_risk_scores.parquet")
+    cols = [
+        "work_id", "state", "constituency", "mp_name", "work_category", "work_status",
+        "overall_risk_level", "sanction_amount", "sanction_date", "completion_date",
+        "effective_expenditure", "financial_risk_score", "compliance_risk_score",
+        "duplicate_risk_score", "schedule_risk_score", "composite_risk_score",
+        "is_financial_outlier", "description"
+    ]
+    if sort_by and sort_by not in cols:
+        cols.append(sort_by)
+    try:
+        df = pd.read_parquet(master_path, columns=cols) if os.path.exists(master_path) else pd.DataFrame()
+    except Exception:
+        df = pd.DataFrame()
     
     if state and state.strip():
         df = df[df["state"].str.upper() == state.strip().upper()]
