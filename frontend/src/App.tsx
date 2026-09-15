@@ -3,7 +3,7 @@ import { Sidebar } from './components/layout/Sidebar';
 import { Topbar } from './components/layout/Topbar';
 import { AiAssistantModal } from './components/AiAssistantModal';
 import { GeotagEvidenceModal } from './components/GeotagEvidenceModal';
-import { fetchDuplicateCandidates, fetchOverview } from './services/api';
+import { fetchOverview } from './services/api';
 
 import { OverviewPage } from './pages/OverviewPage';
 import { MpIntelligencePage } from './pages/MpIntelligencePage';
@@ -41,15 +41,14 @@ export function App() {
   });
 
   useEffect(() => {
-    Promise.all([
-      fetchOverview(),
-      fetchDuplicateCandidates({ min_similarity: 85, page: 1, limit: 1 }),
-    ]).then(([overview, duplicates]) => {
+    fetchOverview().then((overview) => {
       setLivePortfolio({
         totalWorks: overview.summary.total_works,
         highRiskWorks: overview.summary.high_risk_works,
         financialOutlierWorks: overview.financial_summary?.flagged_financial_outliers ?? 0,
-        duplicateCandidates: duplicates.total ?? 0,
+        // Candidate records are loaded only when the inspector is opened.
+        // Loading them at startup can exceed a 512 MB free backend instance.
+        duplicateCandidates: 0,
       });
     }).catch(() => undefined);
   }, []);
