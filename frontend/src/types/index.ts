@@ -408,6 +408,8 @@ export interface SyncJobStatus {
   counters?: Record<string, number>;
   error_count?: number;
   technical_error?: string;
+  /** Static deployments link the operator to the GitHub Actions workflow. */
+  action_url?: string;
 }
 
 export interface TrainingStatus {

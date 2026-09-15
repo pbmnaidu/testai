@@ -30,6 +30,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: chatBot # Explicitly target chatBot branch for all runs
+          fetch-depth: 0 # Give the reconciliation step the full branch history
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
@@ -50,9 +51,19 @@ jobs:
         run: |
           python src/data/validate_snapshots.py
 
+      - name: Rebase generated changes onto latest chatBot
+        run: |
+          # git-auto-commit-action intentionally does not pull before pushing.
+          # Reconcile a commit from an earlier/parallel run while the generated
+          # files are still uncommitted.
+          git fetch origin chatBot
+          git rebase --autostash origin/chatBot
+
       - name: Commit and Push Updated Scored Datasets & Validated Snapshots
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           branch: chatBot
           commit_message: "Automated ML Pipeline: update precomputed features, risk scores, and dashboard snapshots [skip ci]"
-          file_pattern: "data/features/*.parquet data/processed/*.parquet frontend/public/data/snapshots/** data/snapshots/latest.json"
+          # data/snapshots/ is an ignored local mirror. The deployable snapshot
+          # lives under frontend/public and is tracked by Git.
+          file_pattern: "data/features/*.parquet data/processed/*.parquet frontend/public/data/snapshots/**"

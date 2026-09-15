@@ -1,5 +1,5 @@
-import auditJson from '../../../data/processed/combined_geotag_audit.json';
-import manifestJson from '../../../data/processed/combined_download_manifest.json';
+import auditJson from '../data/combined_geotag_audit.json';
+import manifestJson from '../data/combined_download_manifest.json';
 
 export interface GeotagBoundingBox {
   x_pct: number;

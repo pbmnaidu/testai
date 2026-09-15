@@ -60,6 +60,9 @@ import {
   orderBy,
 } from 'firebase/firestore';
 
+/** Manual trigger page for the snapshot/ML pipeline in the no-backend deployment. */
+export const PIPELINE_WORKFLOW_URL = 'https://github.com/pbmnaidu/testai/actions/workflows/pipeline_deploy.yml';
+
 // ============================================================================
 // 1. NATIONAL OVERVIEW & ANALYTICS
 // ============================================================================
@@ -422,8 +425,9 @@ export async function fetchSyncStatus(): Promise<SyncStatusResponse> {
 
 export async function startSync(): Promise<SyncStatusResponse['job']> {
   return {
-    status: 'QUEUED',
-    message: 'Pipeline synchronization runs via GitHub Actions workflow (workflow_dispatch on branch chatBot).',
+    status: 'ACTION_REQUIRED',
+    message: 'Open GitHub Actions and select “Run workflow” on branch chatBot. The new snapshot will be published after validation.',
+    action_url: PIPELINE_WORKFLOW_URL,
     datasets: [],
     counters: {},
   };
@@ -481,8 +485,9 @@ export async function fetchTrainingStatus(): Promise<any> {
 
 export async function startTraining(): Promise<any> {
   return {
-    status: 'SCHEDULED',
-    message: 'Training jobs are triggered via GitHub Actions Automated ML Pipeline.',
+    status: 'ACTION_REQUIRED',
+    message: 'Open GitHub Actions and select “Run workflow” on branch chatBot to run the pipeline and retrain the precomputed models.',
+    action_url: PIPELINE_WORKFLOW_URL,
   };
 }
 

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { commitSyncDiff, fetchSyncHealth, fetchSyncHistory, fetchSyncStatus, fetchTrainingStatus, previewSyncDiff, resetSyncJob, startSync, startTraining } from '../services/api';
+import { commitSyncDiff, fetchSyncHealth, fetchSyncHistory, fetchSyncStatus, fetchTrainingStatus, previewSyncDiff, resetSyncJob, startSync, startTraining, PIPELINE_WORKFLOW_URL } from '../services/api';
 import { SyncPreviewResponse, SyncStatusResponse } from '../types';
 import { RefreshCw, CheckCircle2, Clock, Database, GitCompare, Loader2, RotateCcw, ShieldCheck } from 'lucide-react';
 
@@ -22,6 +22,7 @@ export const DataSyncPage: React.FC = () => {
   const [busy, setBusy] = useState(false);
   const [trainingBusy, setTrainingBusy] = useState(false);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
 
   const refresh = useCallback(async () => {
     const [nextStatus, nextHistory, training, nextHealth] = await Promise.all([fetchSyncStatus(), fetchSyncHistory(), fetchTrainingStatus(), fetchSyncHealth()]);
@@ -39,7 +40,15 @@ export const DataSyncPage: React.FC = () => {
 
   const inspectChanges = async () => {
     setBusy(true); setError('');
-    try { await startSync(); await refresh(); }
+    setNotice('');
+    // A static Vercel frontend cannot safely hold a GitHub token. Open the
+    // authenticated workflow page synchronously so browsers do not block it.
+    window.open(PIPELINE_WORKFLOW_URL, '_blank', 'noopener,noreferrer');
+    try {
+      const job = await startSync();
+      setNotice(job?.message || 'GitHub Actions workflow opened.');
+      await refresh();
+    }
     catch (err) { setError(formatSyncError(err, 'Synchronization could not be started.')); }
     finally { setBusy(false); }
   };
@@ -61,7 +70,9 @@ export const DataSyncPage: React.FC = () => {
 
   const runAnalysis = async () => {
     setTrainingBusy(true); setError('');
-    try { await startTraining(); await refresh(); }
+    setNotice('');
+    window.open(PIPELINE_WORKFLOW_URL, '_blank', 'noopener,noreferrer');
+    try { const job = await startTraining(); setNotice(job.message || 'GitHub Actions workflow opened.'); await refresh(); }
     catch (err) { setError(formatSyncError(err, 'The analysis update could not be started. The previous analysis remains available.')); }
     finally { setTrainingBusy(false); }
   };
@@ -72,7 +83,7 @@ export const DataSyncPage: React.FC = () => {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2"><RefreshCw className="w-6 h-6 text-indigo-600" /> Data Synchronization & Status</h2>
-          <p className="text-xs text-slate-500 mt-1">Official MPLADS data is synchronized in the background using the configured schedule. The dashboard continues using the last validated dataset during an update.</p>
+          <p className="text-xs text-slate-500 mt-1">The dashboard serves the last validated snapshot. Automatic updates run through GitHub Actions; use the buttons to open the authenticated workflow trigger.</p>
         </div>
         <div className="flex items-center gap-2">
           {['RUNNING', 'QUEUED'].includes(status?.job?.status || '') && (
@@ -87,6 +98,7 @@ export const DataSyncPage: React.FC = () => {
         </div>
       </div>
       {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">{error}</div>}
+      {notice && <div className="rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-xs text-indigo-800">{notice} <a className="font-bold underline" href={PIPELINE_WORKFLOW_URL} target="_blank" rel="noreferrer">Open workflow</a></div>}
       {status?.job && status.job.status !== 'IDLE' && <div className="bg-white rounded-2xl border border-indigo-200 p-5 shadow-sm space-y-4">
         <div className="flex items-center justify-between gap-4">
           <div>
