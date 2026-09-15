@@ -54,6 +54,7 @@ app.add_middleware(
         "http://127.0.0.1:3000",
         "https://mplads-frontend-w20d.onrender.com",
     ],
+    allow_origin_regex=r"https://.*\.onrender\.com",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -224,6 +225,11 @@ def _read_master_frame(path: str) -> pd.DataFrame:
             "Sr. No.", "Work category", "Work", "State", "IDA",
             "Hon'ble Members of Parliament", "Constituency", "Work description",
             "Recommended date", "Sanction Date", "Sanction Amount ( ₹ )", "Work Status",
+            "category_model_scores", "risk_evidence", "explainable_audit_summary",
+            "explanation", "financial_explanation", "risk_description",
+            "financial_supporting_details", "schedule_explanation", "recommended_action",
+            "recommended_reviewer_action", "compliance_explanation", "completion_explanation",
+            "financial_why_it_matters", "schedule_supporting_details", "material_quantities",
         }
         columns = [column for column in columns if column not in raw_aliases]
         return pd.read_parquet(path, columns=columns)
@@ -721,8 +727,15 @@ def get_original_analysis_records(
 @app.get("/api/state-risk-summary")
 def get_state_risk_summary(state: str = Query(..., min_length=1)):
     """Return the live, four-engine risk profile for one selected state/UT."""
-    data = get_data()
-    master = data["master"]
+    master_path = os.path.join(FEATURES_DIR, "master_project_risk_scores.parquet")
+    state_cols = [
+        "state", "financial_risk_score", "compliance_risk_score",
+        "duplicate_risk_score", "schedule_risk_score"
+    ]
+    try:
+        master = pd.read_parquet(master_path, columns=state_cols) if os.path.exists(master_path) else pd.DataFrame()
+    except Exception:
+        master = pd.DataFrame()
 
     def state_key(value):
         value = str(value or "").upper().replace("&", " AND ")
