@@ -1,0 +1,41 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Citizen evidence submissions
+    match /citizen_evidence/{submissionId} {
+      // Allow reading evidence metadata
+      allow read: if true;
+      
+      // Require authenticated user for creating new evidence documents
+      allow create: if request.auth != null
+        && request.resource.data.work_id is string
+        && request.resource.data.download_url is string
+        && request.resource.data.byte_size is number
+        && request.resource.data.review_status == 'PENDING_REVIEW';
+        
+      // Allow updating review status (officer review)
+      allow update: if request.auth != null
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['review_status', 'reviewed_by', 'reviewed_at', 'review_comment', 'updated_at']);
+        
+      allow delete: if false;
+    }
+
+    // Staff attendance records
+    match /attendance_records/{attendanceId} {
+      allow read: if true;
+      
+      allow create: if request.auth != null
+        && request.resource.data.work_id is string
+        && request.resource.data.download_url is string
+        && request.resource.data.staff_count is number;
+        
+      allow update: if request.auth != null;
+      allow delete: if false;
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

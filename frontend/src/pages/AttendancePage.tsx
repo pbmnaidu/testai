@@ -80,7 +80,7 @@ export const AttendancePage: React.FC = () => {
         .then((response) => {
           if (!active) return;
           setWorks(response.records);
-          setSelectedWork((current) => current && response.records.some((record) => record.work_id === current.work_id)
+          setSelectedWork((current) => current && response.records.some((record: PublicWorkRecord) => record.work_id === current.work_id)
             ? current
             : response.records[0] || null);
           setWorksError('');

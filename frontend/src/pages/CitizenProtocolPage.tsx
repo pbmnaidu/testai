@@ -68,7 +68,7 @@ export const CitizenProtocolPage: React.FC = () => {
       setStats(workResponse.stats);
       setConfig(workResponse.config || emptyConfig);
       setEvidenceStats(evidenceResponse);
-      setSelectedWork((current) => current && workResponse.records.some((record) => record.work_id === current.work_id) ? workResponse.records.find((record) => record.work_id === current.work_id) || current : workResponse.records[0] || null);
+      setSelectedWork((current) => current && workResponse.records.some((record: PublicWorkRecord) => record.work_id === current.work_id) ? workResponse.records.find((record: PublicWorkRecord) => record.work_id === current.work_id) || current : workResponse.records[0] || null);
       setIsLoading(false);
     }).catch(() => {
       if (!active) return;

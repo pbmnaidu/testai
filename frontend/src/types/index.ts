@@ -562,6 +562,23 @@ export interface CitizenEvidenceConfig {
   allowed_categories: string[];
 }
 
+export interface CitizenWorksResponse {
+  total: number;
+  page: number;
+  limit: number;
+  total_pages?: number;
+  records: PublicWorkRecord[];
+  stats: {
+    total_works: number;
+    ongoing_works: number;
+    completed_works: number;
+    works_with_coordinates: number;
+    citizen_evidence: number;
+    categories: string[];
+  };
+  config: CitizenEvidenceConfig;
+}
+
 export interface CitizenEvidenceRecord {
   submission_id: string;
   work_id: string;

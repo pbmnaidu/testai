@@ -1,8 +1,22 @@
+# ==============================================================================
+# DEPRECATED: Render deployment configuration
+# ==============================================================================
+# NOTICE: The MPLADS Risk Intelligence platform has migrated away from Render
+# to a serverless static architecture:
+#   - Frontend & static snapshots: Vercel CDN
+#   - Automated analysis pipeline: GitHub Actions (.github/workflows/pipeline_deploy.yml)
+#   - Evidence uploads & metadata: Firebase Storage & Firestore
+#
+# DO NOT deploy or maintain active services on Render. Render backend services
+# should be suspended or deleted in the Render Dashboard to avoid unnecessary costs.
+#
+# The legacy configuration below is retained solely for historical audit reference.
+# ==============================================================================
+
 services:
   - type: web
-    name: mplads-backend
+    name: mplads-backend-DEPRECATED
     env: python
-    # Free tier: local uploaded files are temporary.
     plan: free
     buildCommand: "pip install -r requirements.txt"
     startCommand: "uvicorn src.backend.app:app --host 0.0.0.0 --port $PORT"
@@ -14,7 +28,7 @@ services:
         value: "false"
   - type: web
     runtime: static
-    name: mplads-frontend
+    name: mplads-frontend-DEPRECATED
     buildCommand: "cd frontend && npm ci --legacy-peer-deps && npm run build"
     staticPublishPath: frontend/dist
     envVars:

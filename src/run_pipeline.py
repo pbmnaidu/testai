@@ -58,6 +58,10 @@ def run_entire_pipeline(progress_callback=None, run_preprocessing=True, record_s
             f"{local_sync['removed_records_count']:,} removed"
         )
     
+    progress("EXPORT_DASHBOARD_SNAPSHOTS")
+    from src.data.export_snapshots import export_dashboard_snapshots
+    export_dashboard_snapshots()
+    
     elapsed = time.time() - start_t
     print("\n==================================================")
     print(f"   FULL PIPELINE EXECUTION SUCCESSFUL ({elapsed:.1f}s)   ")

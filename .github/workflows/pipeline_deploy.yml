@@ -12,16 +12,24 @@ on:
       - 'src/modules/**'
       - 'src/risk/**'
       - 'src/run_pipeline.py'
+      - 'src/data/export_snapshots.py'
+      - 'src/data/validate_snapshots.py'
+
+concurrency:
+  group: pipeline-deploy
+  cancel-in-progress: false
 
 jobs:
   run-pipeline-and-deploy:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Allows pushing updated model files back to repository
+      contents: write # Allows pushing updated model files and snapshots back to repository
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: chatBot # Explicitly target chatBot branch for all runs
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
@@ -34,12 +42,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run Full ML & Risk Intelligence Pipeline
+      - name: Run Full ML Pipeline & Export Dashboard Snapshots
         run: |
           python src/run_pipeline.py
 
-      - name: Commit and Push Updated Scored Datasets
+      - name: Validate Generated Snapshots & Checksums
+        run: |
+          python src/data/validate_snapshots.py
+
+      - name: Commit and Push Updated Scored Datasets & Validated Snapshots
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Automated ML Pipeline: update precomputed features and risk scores [skip ci]"
-          file_pattern: "data/features/*.parquet data/processed/*.parquet"
+          branch: chatBot
+          commit_message: "Automated ML Pipeline: update precomputed features, risk scores, and dashboard snapshots [skip ci]"
+          file_pattern: "data/features/*.parquet data/processed/*.parquet frontend/public/data/snapshots/** data/snapshots/latest.json"
