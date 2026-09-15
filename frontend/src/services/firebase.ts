@@ -33,13 +33,13 @@ import {
 } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAOjw7LF4Jhm2tSEj2V98degliRWKTnixQ",
-  authDomain: "nirikshan-ai-44.firebaseapp.com",
-  projectId: "nirikshan-ai-44",
-  storageBucket: "nirikshan-ai-44.firebasestorage.app",
-  messagingSenderId: "143855912094",
-  appId: "1:143855912094:web:06ee5a58dc01861667e78f",
-  measurementId: "G-R3RD3Z4Y7Q"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyAOjw7LF4Jhm2tSEj2V98degliRWKTnixQ",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "nirikshan-ai-44.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "nirikshan-ai-44",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "nirikshan-ai-44.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "143855912094",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:143855912094:web:06ee5a58dc01861667e78f",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-R3RD3Z4Y7Q",
 };
 
 // Initialize or reuse Firebase app
