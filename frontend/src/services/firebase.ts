@@ -18,6 +18,7 @@ import {
   getDownloadURL,
 } from 'firebase/storage';
 import {
+  initializeFirestore,
   getFirestore,
   collection,
   doc,
@@ -46,11 +47,15 @@ const firebaseConfig = {
 export const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 export const auth = getAuth(app);
 export const storage = getStorage(app);
-export const db = getFirestore(app);
+export const db = initializeFirestore(app, {
+  experimentalAutoDetectLongPolling: true,
+});
 
 // Validation constants
 export const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10 MB
+
+let anonymousAuthDisabled = false;
 
 /**
  * Ensures user is authenticated (anonymously or previously logged in)
@@ -60,11 +65,21 @@ export async function ensureAuthenticatedUser(): Promise<User> {
   if (auth.currentUser) {
     return auth.currentUser;
   }
+  if (anonymousAuthDisabled) {
+    return {
+      uid: 'anon_' + Math.random().toString(36).substring(2, 10),
+    } as unknown as User;
+  }
   try {
     const cred = await signInAnonymously(auth);
     return cred.user;
-  } catch (err) {
-    console.warn('[Firebase Auth] Anonymous sign-in failed, proceeding with fallback uploader ID:', err);
+  } catch (err: any) {
+    if (err?.code === 'auth/admin-restricted-operation') {
+      anonymousAuthDisabled = true;
+      console.warn('[Firebase Auth] Anonymous sign-in is disabled in Firebase Console. Using client session fallback. To enable: Firebase Console -> Authentication -> Sign-in method -> Anonymous -> Enable.');
+    } else {
+      console.warn('[Firebase Auth] Anonymous sign-in failed, proceeding with fallback uploader ID:', err);
+    }
     // Return a mock user structure if network/offline blocks auth handshake
     return {
       uid: 'anon_' + Math.random().toString(36).substring(2, 10),

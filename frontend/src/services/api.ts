@@ -799,15 +799,17 @@ export async function fetchCitizenEvidence(workId?: string, params: {
 } = {}): Promise<{ total: number; page: number; limit: number; total_pages: number; records: CitizenEvidenceRecord[] }> {
   let records: CitizenEvidenceRecord[] = [];
 
-  // 1. Fetch live evidence from Firestore
+  // 1. Fetch live evidence from Firestore with 2.5s timeout
   try {
     const colRef = collection(db, 'citizen_evidence');
-    const snap = await getDocs(colRef);
-    snap.forEach((doc) => {
+    const snapPromise = getDocs(colRef);
+    const timeoutPromise = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 2500));
+    const snap = await Promise.race([snapPromise, timeoutPromise]);
+    snap.forEach((doc: any) => {
       records.push(doc.data() as CitizenEvidenceRecord);
     });
   } catch (err) {
-    console.warn('[Firestore] Could not load live evidence from Firestore, checking baseline snapshot:', err);
+    // Falls back seamlessly to static snapshot baseline
   }
 
   // 2. Merge baseline snapshot records
@@ -974,12 +976,14 @@ export async function fetchAttendance(workId?: string): Promise<{ total: number;
 
   try {
     const colRef = collection(db, 'attendance_records');
-    const snap = await getDocs(colRef);
-    snap.forEach((doc) => {
+    const snapPromise = getDocs(colRef);
+    const timeoutPromise = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 2500));
+    const snap = await Promise.race([snapPromise, timeoutPromise]);
+    snap.forEach((doc: any) => {
       records.push(doc.data() as AttendanceRecord);
     });
   } catch (err) {
-    console.warn('[Firestore] Could not load live attendance records from Firestore:', err);
+    // Falls back seamlessly to static snapshot baseline
   }
 
   try {
