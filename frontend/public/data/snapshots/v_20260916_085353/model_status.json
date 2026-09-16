@@ -1,0 +1,246 @@
+{
+  "experiment_name": "MPLADS_Financial_Anomaly_Detection",
+  "registered_model": "MPLADS_Financial_Anomaly_Model",
+  "production_model": {
+    "model_name": "MPLADS_Financial_Anomaly_Model",
+    "model_version": "v8",
+    "run_id": "RUN-1789090324-16000",
+    "stage": "Production",
+    "dataset_version": "VALIDATION-SNAPSHOT",
+    "last_trained_at": "2026-09-11T07:02:04.529195"
+  },
+  "runs": [
+    {
+      "run_id": "RUN-1789090324-16000",
+      "experiment_name": "MPLADS_Financial_Anomaly_Detection",
+      "model_name": "MPLADS_Financial_Anomaly_Model",
+      "version": "v8",
+      "stage": "Production",
+      "timestamp": "2026-09-11T07:02:04.529195",
+      "algorithm": "IsolationForest",
+      "dataset_version": "VALIDATION-SNAPSHOT",
+      "dataset_rows": 79068,
+      "feature_set_version": "financial_features_v2",
+      "parameters": {
+        "n_estimators": 100,
+        "contamination": 0.05,
+        "random_state": 42,
+        "max_samples": "auto"
+      },
+      "metrics": {
+        "total_works": 79068,
+        "delta_new": 0,
+        "delta_updated": 0,
+        "drift": {
+          "financial_risk_score": {
+            "old_mean": 14.274281631001163,
+            "new_mean": 14.274281631001163,
+            "mean_delta": 0.0,
+            "old_count": 79068,
+            "new_count": 79068
+          },
+          "duplicate_risk_score": {
+            "old_mean": 13.854124298072543,
+            "new_mean": 13.854124298072543,
+            "mean_delta": 0.0,
+            "old_count": 79068,
+            "new_count": 79068
+          },
+          "compliance_risk_score": {
+            "old_mean": 84.43662417159914,
+            "new_mean": 84.43662417159914,
+            "mean_delta": 0.0,
+            "old_count": 79068,
+            "new_count": 79068
+          },
+          "schedule_risk_score": {
+            "old_mean": 52.23636616583194,
+            "new_mean": 52.23636616583194,
+            "mean_delta": 0.0,
+            "old_count": 79068,
+            "new_count": 79068
+          },
+          "composite_risk_score": {
+            "old_mean": 72.1442075175798,
+            "new_mean": 72.1442075175798,
+            "mean_delta": 0.0,
+            "old_count": 79068,
+            "new_count": 79068
+          }
+        },
+        "number_of_anomalies": 3722,
+        "anomaly_percentage": 4.7,
+        "critical_risk_count": 1124,
+        "high_risk_count": 2598
+      }
+    },
+    {
+      "run_id": "RUN-1789051034",
+      "experiment_name": "MPLADS_Financial_Anomaly_Detection",
+      "model_name": "MPLADS_Financial_Anomaly_Model",
+      "version": "v2",
+      "stage": "Production",
+      "timestamp": "2026-09-10T20:07:14.581500",
+      "algorithm": "IsolationForest",
+      "dataset_version": "SNAP-2026-09-09",
+      "dataset_rows": 79068,
+      "feature_set_version": "financial_features_v2",
+      "parameters": {
+        "n_estimators": 100,
+        "contamination": 0.05,
+        "random_state": 42,
+        "max_samples": "auto"
+      },
+      "metrics": {
+        "number_of_anomalies": 4377,
+        "anomaly_percentage": 5.54,
+        "critical_risk_count": 1467,
+        "high_risk_count": 4377
+      }
+    },
+    {
+      "run_id": "RUN-1788954991",
+      "experiment_name": "MPLADS_Financial_Anomaly_Detection",
+      "model_name": "MPLADS_Financial_Anomaly_Model",
+      "version": "v2",
+      "stage": "Production",
+      "timestamp": "2026-09-09T17:26:31.098300",
+      "algorithm": "IsolationForest",
+      "dataset_version": "SNAP-2026-09-09",
+      "dataset_rows": 79068,
+      "feature_set_version": "financial_features_v2",
+      "parameters": {
+        "n_estimators": 100,
+        "contamination": 0.05,
+        "random_state": 42,
+        "max_samples": "auto"
+      },
+      "metrics": {
+        "number_of_anomalies": 4377,
+        "anomaly_percentage": 5.54,
+        "critical_risk_count": 1467,
+        "high_risk_count": 4377
+      }
+    },
+    {
+      "run_id": "RUN-1788939287",
+      "experiment_name": "MPLADS_Financial_Anomaly_Detection",
+      "model_name": "MPLADS_Financial_Anomaly_Model",
+      "version": "v2",
+      "stage": "Production",
+      "timestamp": "2026-09-09T13:04:47.696718",
+      "algorithm": "IsolationForest",
+      "dataset_version": "SNAP-2026-09-09",
+      "dataset_rows": 79068,
+      "feature_set_version": "financial_features_v2",
+      "parameters": {
+        "n_estimators": 100,
+        "contamination": 0.05,
+        "random_state": 42,
+        "max_samples": "auto"
+      },
+      "metrics": {
+        "number_of_anomalies": 4377,
+        "anomaly_percentage": 5.54,
+        "critical_risk_count": 1467,
+        "high_risk_count": 4377
+      }
+    },
+    {
+      "run_id": "RUN-1788939239",
+      "experiment_name": "MPLADS_Financial_Anomaly_Detection",
+      "model_name": "MPLADS_Financial_Anomaly_Model",
+      "version": "v2",
+      "stage": "Production",
+      "timestamp": "2026-09-09T13:03:59.753243",
+      "algorithm": "IsolationForest",
+      "dataset_version": "SNAP-2026-09-09",
+      "dataset_rows": 79068,
+      "feature_set_version": "financial_features_v2",
+      "parameters": {
+        "n_estimators": 100,
+        "contamination": 0.05,
+        "random_state": 42,
+        "max_samples": "auto"
+      },
+      "metrics": {
+        "number_of_anomalies": 4377,
+        "anomaly_percentage": 5.54,
+        "critical_risk_count": 1467,
+        "high_risk_count": 4377
+      }
+    },
+    {
+      "run_id": "RUN-1788938536",
+      "experiment_name": "MPLADS_Financial_Anomaly_Detection",
+      "model_name": "MPLADS_Financial_Anomaly_Model",
+      "version": "v2",
+      "stage": "Production",
+      "timestamp": "2026-09-09T12:52:16.359677",
+      "algorithm": "IsolationForest",
+      "dataset_version": "SNAP-2026-09-09",
+      "dataset_rows": 79068,
+      "feature_set_version": "financial_features_v2",
+      "parameters": {
+        "n_estimators": 100,
+        "contamination": 0.05,
+        "random_state": 42,
+        "max_samples": "auto"
+      },
+      "metrics": {
+        "number_of_anomalies": 4377,
+        "anomaly_percentage": 5.54,
+        "critical_risk_count": 1467,
+        "high_risk_count": 4377
+      }
+    },
+    {
+      "run_id": "RUN-1788934105",
+      "experiment_name": "MPLADS_Financial_Anomaly_Detection",
+      "model_name": "MPLADS_Financial_Anomaly_Model",
+      "version": "v2",
+      "stage": "Production",
+      "timestamp": "2026-09-09T11:38:25.225379",
+      "algorithm": "IsolationForest",
+      "dataset_version": "SNAP-2026-09-09",
+      "dataset_rows": 79068,
+      "feature_set_version": "financial_features_v2",
+      "parameters": {
+        "n_estimators": 100,
+        "contamination": 0.05,
+        "random_state": 42,
+        "max_samples": "auto"
+      },
+      "metrics": {
+        "number_of_anomalies": 4557,
+        "anomaly_percentage": 5.76,
+        "critical_risk_count": 1670,
+        "high_risk_count": 4557
+      }
+    },
+    {
+      "run_id": "RUN-1788934026",
+      "experiment_name": "MPLADS_Financial_Anomaly_Detection",
+      "model_name": "MPLADS_Financial_Anomaly_Model",
+      "version": "v2",
+      "stage": "Production",
+      "timestamp": "2026-09-09T11:37:06.687692",
+      "algorithm": "IsolationForest",
+      "dataset_version": "SNAP-2026-09-09",
+      "dataset_rows": 79068,
+      "feature_set_version": "financial_features_v2",
+      "parameters": {
+        "n_estimators": 100,
+        "contamination": 0.05,
+        "random_state": 42,
+        "max_samples": "auto"
+      },
+      "metrics": {
+        "number_of_anomalies": 4557,
+        "anomaly_percentage": 5.76,
+        "critical_risk_count": 1670,
+        "high_risk_count": 4557
+      }
+    }
+  ]
+}
