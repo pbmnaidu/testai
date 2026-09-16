@@ -35,6 +35,12 @@ from src.data.sync.sync_runner import (
 from src.data.sync.training_manager import TRAINING_MANAGER
 from src.utils.mlflow_tracker import MLflowTracker
 from src.modules.material_context import analyze_material_context
+from src.modules.material_fairness import (
+    SAMPLE_DOCUMENTS,
+    load_specification_benchmarks,
+    ingest_custom_benchmark_module,
+    analyze_material_price_fairness,
+)
 from src.modules.work_classifier import classify_work_descriptions
 from src.modules.compliance_engine import GUIDELINE_SOURCE, public_scope_matrix
 
@@ -1154,6 +1160,74 @@ def get_material_context(work_id: str = Query(...)):
     frame = pd.DataFrame([record])
     result = analyze_material_context(frame, _BACKEND_ROOT).iloc[0].to_dict()
     return clean_record_for_json(result)
+
+@app.get("/api/material-fairness/sample-documents")
+def get_material_sample_documents():
+    return {"total": len(SAMPLE_DOCUMENTS), "samples": SAMPLE_DOCUMENTS}
+
+@app.get("/api/material-fairness/benchmarks")
+def get_material_benchmarks(state: str = None, material: str = None):
+    df = load_specification_benchmarks(_BACKEND_ROOT)
+    if not df.empty:
+        if state and str(state).strip():
+            df = df[df["state"].fillna("").astype(str).str.casefold().eq(str(state).strip().casefold())]
+        if material and str(material).strip():
+            df = df[df["material"].fillna("").astype(str).str.casefold().str.contains(str(material).strip().casefold())]
+        records = [clean_record_for_json(r) for r in df.to_dict(orient="records")]
+    else:
+        records = []
+    return {"total": len(records), "benchmarks": records}
+
+@app.post("/api/material-fairness/analyze-document")
+async def analyze_material_document(
+    file: UploadFile = File(None),
+    sample_id: str = Form(None),
+    raw_text: str = Form(None),
+    quoted_price: float = Form(None),
+    state: str = Form(None),
+):
+    file_bytes = None
+    filename = "document.png"
+    if file is not None:
+        filename = file.filename or "document.png"
+        file_bytes = await file.read()
+    
+    result = analyze_material_price_fairness(
+        file_bytes=file_bytes,
+        filename=filename,
+        raw_text=raw_text,
+        quoted_unit_price=quoted_price,
+        state=state or "National Baseline",
+        base_dir=_BACKEND_ROOT,
+        sample_id=sample_id,
+    )
+    return clean_record_for_json(result)
+
+@app.get("/api/material-fairness/search-works")
+def search_material_works(query: str = ""):
+    records, _ = _citizen_work_records()
+    q = str(query or "").strip().casefold()
+    if q:
+        filtered = [
+            r for r in records
+            if q in str(r.get("work_id") or "").casefold()
+            or q in str(r.get("description") or "").casefold()
+            or q in str(r.get("constituency") or "").casefold()
+        ]
+    else:
+        filtered = records[:20]
+    return {"total": len(filtered[:20]), "works": filtered[:20]}
+
+@app.post("/api/material-fairness/upload-benchmark-module")
+async def upload_benchmark_module(file: UploadFile = File(...)):
+    try:
+        content = await file.read()
+        text = content.decode("utf-8", errors="replace")
+        res = ingest_custom_benchmark_module(text)
+        return clean_record_for_json(res)
+    except Exception as e:
+        return {"status": "ERROR", "message": str(e)}
+
 
 @app.get("/api/analytics/classification")
 def get_classification(work_id: str = Query(...)):
