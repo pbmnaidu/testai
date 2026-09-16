@@ -55,8 +55,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
+    // Failsafe timeout: never hang on splash screen for more than 1200ms
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1200);
+
     // Listen for Firebase Auth state transitions
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      clearTimeout(timer);
       if (firebaseUser) {
         const stored = getStoredUserProfile();
         if (stored && stored.uid === firebaseUser.uid) {
@@ -91,7 +97,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      clearTimeout(timer);
+      unsubscribe();
+    };
   }, []);
 
   const handleLoginWithGoogle = async (): Promise<UserProfile> => {

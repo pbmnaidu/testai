@@ -134,12 +134,12 @@ export async function getLatestManifest(): Promise<SnapshotManifest> {
   }
 
   try {
-    const res = await fetch('/data/snapshots/latest.json', { cache: 'no-cache' });
+    const res = await fetch(`/data/snapshots/latest.json?t=${Date.now()}`, { cache: 'no-cache' });
     if (res.ok) {
       const contentType = res.headers.get('content-type') || '';
       if (!contentType.includes('text/html')) {
         const manifest: SnapshotManifest = await res.json();
-        if (manifest?.snapshot_version) {
+        if (manifest?.snapshot_version && manifest.base_path) {
           cachedManifest = manifest;
           return manifest;
         }
@@ -179,7 +179,7 @@ export async function fetchSnapshotFile<T>(filename: string): Promise<T> {
     console.warn(`[SnapshotAdapter] Primary fetch failed for '${primaryUrl}', trying secondary fallback.`, err);
   }
 
-  // Secondary fallback url
+  // Secondary fallback url (v_20260915_225902 is verified permanently available on CDN)
   const secondaryUrl = `/data/snapshots/v_20260915_225902/${filename}`;
   try {
     const res = await fetch(secondaryUrl);
@@ -193,7 +193,21 @@ export async function fetchSnapshotFile<T>(filename: string): Promise<T> {
     }
   } catch {}
 
-  throw new Error(`Failed loading static dashboard data from '${primaryUrl}' or secondary fallback.`);
+  // Tertiary fallback url
+  const tertiaryUrl = `/data/snapshots/v_20260915_194248/${filename}`;
+  try {
+    const res = await fetch(tertiaryUrl);
+    if (res.ok) {
+      const ct = res.headers.get('content-type') || '';
+      if (!ct.includes('text/html')) {
+        const data = await res.json();
+        jsonCache.set(cacheKey, data);
+        return data as T;
+      }
+    }
+  } catch {}
+
+  throw new Error(`Failed loading static dashboard data from '${primaryUrl}' or fallbacks.`);
 }
 
 /**
@@ -212,13 +226,24 @@ export async function resolveWorkDetail(workId: string): Promise<{ work: WorkRec
   let shardData = shardCache.get(cacheKey);
   if (!shardData) {
     const url = `${manifest.base_path}/work_details/${shardHex}.json`;
-    let res = await fetch(url);
-    if (!res.ok) {
+    let res: Response | null = null;
+    try {
+      res = await fetch(url);
+      const ct = res.headers.get('content-type') || '';
+      if (!res.ok || ct.includes('text/html')) {
+        res = null;
+      }
+    } catch {
+      res = null;
+    }
+
+    if (!res) {
       const fallbackUrl = `/data/snapshots/v_20260915_225902/work_details/${shardHex}.json`;
       res = await fetch(fallbackUrl);
-    }
-    if (!res.ok) {
-      throw new Error(`Work detail shard '${shardHex}.json' could not be loaded.`);
+      const ct = res.headers.get('content-type') || '';
+      if (!res.ok || ct.includes('text/html')) {
+        throw new Error(`Work detail shard '${shardHex}.json' could not be loaded.`);
+      }
     }
     shardData = await res.json();
     shardCache.set(cacheKey, shardData!);

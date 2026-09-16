@@ -265,6 +265,44 @@ export const SovereignLoginGate: React.FC = () => {
             {/* TAB 1: SIGN IN */}
             {activeTab === 'signin' && (
               <form onSubmit={handleSignIn} className="space-y-4">
+                {/* 1-Click Fast-Track Evaluation Buttons */}
+                <div className="rounded-xl border border-[#d2dfd4] bg-[#e8f0ea]/70 p-3 text-xs space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-[#263a42] text-[11px] uppercase tracking-wider flex items-center gap-1.5">
+                      <UserCheck className="w-3.5 h-3.5 text-[#4b8c72]" /> 1-Click Fast-Track Evaluation
+                    </span>
+                    <span className="text-[10px] text-[#4b8c72] font-semibold font-editorial-mono">Instant Unlock</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleDemoSignIn('officer')}
+                      disabled={isSubmitting}
+                      className="py-2 px-2.5 rounded-lg bg-[#4b8c72] hover:bg-[#3d735d] text-white font-bold text-[11px] flex items-center justify-center gap-1.5 shadow-2xs transition disabled:opacity-50"
+                    >
+                      <UserCheck className="w-3.5 h-3.5" />
+                      <span>Implementing Officer</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDemoSignIn('citizen')}
+                      disabled={isSubmitting}
+                      className="py-2 px-2.5 rounded-lg bg-[#b24e28] hover:bg-[#964221] text-white font-bold text-[11px] flex items-center justify-center gap-1.5 shadow-2xs transition disabled:opacity-50"
+                    >
+                      <Compass className="w-3.5 h-3.5" />
+                      <span>Citizen Auditor</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="flex-grow border-t border-[#ded7ca]" />
+                  <span className="text-[10px] font-editorial-mono uppercase tracking-wider text-[#7b817c]">
+                    Or Enter Credentials
+                  </span>
+                  <div className="flex-grow border-t border-[#ded7ca]" />
+                </div>
+
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-[#263a42] mb-1">
                     Official Email Address
