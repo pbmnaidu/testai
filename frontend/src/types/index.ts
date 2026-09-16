@@ -294,6 +294,7 @@ export interface NationalOverviewResponse {
     compliance_risk_works?: number;
     duplicate_risk_works?: number;
     schedule_risk_works?: number;
+    duplicate_candidate_pairs?: number;
   }>;
   state_metrics?: Array<{
     state: string;
@@ -408,8 +409,6 @@ export interface SyncJobStatus {
   counters?: Record<string, number>;
   error_count?: number;
   technical_error?: string;
-  /** Static deployments link the operator to the GitHub Actions workflow. */
-  action_url?: string;
 }
 
 export interface TrainingStatus {
@@ -487,35 +486,18 @@ export interface OfficerSignal {
 }
 
 export interface OfficerDashboardResponse {
-  selected_filters: { state?: string | null; constituency?: string | null; work_status?: string | null; severity?: string | null; search?: string | null; focus?: string | null };
+  selected_filters: { state?: string | null; constituency?: string | null; work_status?: string | null; severity?: string | null; search?: string | null };
   available: { states: string[]; constituencies: string[]; statuses: string[]; severities: string[] };
   summary: {
-    total_works: number;
-    high_priority_works: number;
-    material_price_reviews: number;
-    attendance_issues: number;
-    citizen_complaints: number;
-    compliance_issues: number;
-    schedule_risks: number;
-    duplicate_candidates: number;
+    total_works: number; high_priority_works: number; material_price_reviews: number; attendance_issues: number;
+    citizen_complaints: number; compliance_issues: number; schedule_risks: number; duplicate_candidates: number;
     financial_reviews: number;
   };
   data_availability: Record<string, { available: boolean; source?: string; warning?: string }>;
-  queue_total?: number;
   priority_works: Array<{
-    work_id: string;
-    state?: string;
-    constituency?: string;
-    description?: string;
-    work_status?: string;
-    overall_risk: string;
-    overall_risk_level?: string;
-    overall_risk_score: number;
-    composite_risk_score?: number;
-    signals?: OfficerSignal[];
-    why_flagged: string;
-    recommended_action: string;
-    officer_review_status: string;
+    work_id: string; state?: string; constituency?: string; description?: string; work_status?: string;
+    overall_risk: string; overall_risk_level?: string; overall_risk_score: number; composite_risk_score?: number; signals: OfficerSignal[]; why_flagged: string;
+    recommended_action: string; officer_review_status: string;
   }>;
   metadata?: AnalyticsMetadata;
 }
@@ -526,14 +508,153 @@ export interface OfficerWorkResponse {
   evidence_summary: OfficerSignal[];
   material?: any;
   material_warning?: string | null;
-  attendance: { available: boolean; warning?: string; records?: AttendanceRecord[]; summary?: AttendanceStats };
-  citizen_feedback: { available: boolean; warning?: string; records?: CitizenEvidenceRecord[]; summary?: CitizenEvidenceStats };
+  attendance: { available: boolean; warning?: string };
+  citizen_feedback: { 
+    available: boolean; 
+    total_complaints?: number; 
+    complaints?: CitizenComplaint[]; 
+    warning?: string | null; 
+  };
   candidate_duplicates: CandidateDuplicatePair[];
   compliance_findings: ComplianceFinding[];
   timeline: Array<{ event: string; date: string; source: string; detail?: string }>;
   officer_review: { status: string; persistence_available: boolean; message?: string };
   traceability: Array<{ label: string; source: string; dataset: string }>;
   metadata?: AnalyticsMetadata;
+}
+
+export interface FinancialBenchmarkRecord {
+  benchmark_id: string;
+  comparison_scope: 'CONSTITUENCY' | 'STATE' | 'ALL_INDIA' | string;
+  comparison_level: 'EFFECTIVE_CATEGORY' | 'SUBSECTOR' | 'MAIN_SECTOR' | string;
+  state: string;
+  constituency: string;
+  main_sector: string;
+  subsector: string;
+  effective_work_category: string;
+  original_effective_work_category?: string;
+  peer_category?: string;
+  peer_category_auto_generated?: boolean;
+  completed_work_count: number;
+  current_work_count: number;
+  outlier_count: number;
+  historical_cost_min?: number;
+  historical_cost_median?: number;
+  historical_cost_max?: number;
+  historical_unit_price_min?: number;
+  historical_unit_price_median?: number;
+  historical_unit_price_max?: number;
+  historical_unit_price_count?: number;
+}
+
+export interface FinancialBenchmarkResponse extends PaginatedResponse<FinancialBenchmarkRecord> {
+  available: { states: string[]; sectors: string[]; subsectors: string[] };
+}
+
+export interface CitizenComplaintLocation {
+  lat?: number;
+  lon?: number;
+  accuracy?: number;
+  address?: string;
+  timestamp?: string;
+}
+
+export interface CitizenComplaint {
+  complaint_id: string;
+  work_id?: string | null;
+  work_title?: string | null;
+  state?: string | null;
+  constituency?: string | null;
+  work_status?: string | null;
+  category: string;
+  category_label: string;
+  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | string;
+  description: string;
+  location?: CitizenComplaintLocation;
+  proof_images?: string[];
+  proof_docs?: string[];
+  citizen_name?: string;
+  citizen_phone?: string | null;
+  citizen_email?: string | null;
+  is_anonymous: boolean;
+  created_at: string;
+  status: 'PENDING_VERIFICATION' | 'FIELD_INSPECTION_ORDERED' | 'SHOW_CAUSE_ISSUED' | 'RESOLVED' | 'DISMISSED' | string;
+  officer_action_notes?: string | null;
+  officer_action_date?: string | null;
+}
+
+export interface CitizenComplaintSubmission {
+  work_id?: string | null;
+  work_title?: string | null;
+  state?: string | null;
+  constituency?: string | null;
+  work_status?: string | null;
+  category: string;
+  category_label: string;
+  severity: string;
+  description: string;
+  location?: CitizenComplaintLocation;
+  proof_images?: string[];
+  proof_docs?: string[];
+  citizen_name?: string;
+  citizen_phone?: string;
+  citizen_email?: string;
+  is_anonymous: boolean;
+}
+
+export interface CitizenComplaintsResponse {
+  total: number;
+  complaints: CitizenComplaint[];
+}
+
+export interface CitizenNearbyWorksResponse {
+  total: number;
+  page: number;
+  limit: number;
+  works: WorkRecord[];
+}
+
+
+
+export type UserRole = 'officer' | 'citizen' | 'contractor' | 'material_contractor';
+
+export type ApprovalStatus = 'APPROVED' | 'PENDING_APPROVAL' | 'REJECTED';
+
+export interface RegistrationRequest {
+  requestId: string;
+  uid?: string;
+  email: string;
+  displayName: string;
+  role: UserRole;
+  organization?: string;
+  phone?: string;
+  state?: string;
+  constituency?: string;
+  createdAt: string;
+  status: ApprovalStatus;
+  reviewedAt?: string;
+  reviewedBy?: string;
+  reviewNotes?: string;
+}
+
+export interface UserProfile {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL?: string | null;
+  role: UserRole;
+  designation?: string;
+  organization?: string;
+  phone?: string;
+  state?: string;
+  constituency?: string;
+  createdAt?: string;
+  lastLoginAt?: string;
+  isSystemAdmin?: boolean;
+  approvalStatus?: ApprovalStatus;
+  approvalNotes?: string;
+  approvedBy?: string;
+  approvedAt?: string;
 }
 
 export interface PublicWorkRecord {
@@ -655,50 +776,4 @@ export interface AttendanceStats {
   within_expected_radius: number;
   outside_expected_radius: number;
   low_gps_accuracy: number;
-}
-
-export interface FinancialBenchmarkRecord {
-  benchmark_id: string;
-  comparison_scope: 'CONSTITUENCY' | 'STATE' | 'ALL_INDIA' | string;
-  comparison_level: 'EFFECTIVE_CATEGORY' | 'SUBSECTOR' | 'MAIN_SECTOR' | string;
-  state: string;
-  constituency: string;
-  main_sector: string;
-  subsector: string;
-  effective_work_category: string;
-  original_effective_work_category?: string;
-  peer_category?: string;
-  peer_category_auto_generated?: boolean;
-  completed_work_count: number;
-  current_work_count: number;
-  outlier_count: number;
-  historical_cost_min?: number;
-  historical_cost_median?: number;
-  historical_cost_max?: number;
-  historical_unit_price_min?: number;
-  historical_unit_price_median?: number;
-  historical_unit_price_max?: number;
-  historical_unit_price_count?: number;
-}
-
-export interface FinancialBenchmarkResponse extends PaginatedResponse<FinancialBenchmarkRecord> {
-  available: { states: string[]; sectors: string[]; subsectors: string[] };
-}
-
-export type UserRole = 'officer' | 'citizen' | 'contractor' | 'material_contractor';
-
-export interface UserProfile {
-  uid: string;
-  email: string | null;
-  displayName: string | null;
-  photoURL: string | null;
-  role: UserRole;
-  designation?: string;
-  organization?: string;
-  phone?: string;
-  state?: string;
-  constituency?: string;
-  createdAt: string;
-  lastLoginAt: string;
-  isSystemAdmin?: boolean;
 }

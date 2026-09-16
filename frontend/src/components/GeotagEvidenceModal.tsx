@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -7,12 +7,9 @@ import {
   MapPin,
   Minus,
   Plus,
-  Receipt,
   RotateCcw,
-  SlidersHorizontal,
   X,
 } from 'lucide-react';
-import HandwrittenBillsModal from './HandwrittenBillsModal';
 import {
   formatCoordinate,
   formatDms,
@@ -40,11 +37,8 @@ export const GeotagEvidenceModal: React.FC<GeotagEvidenceModalProps> = ({
   const record = getGeotagEvidence(workId);
   const [selectedImageName, setSelectedImageName] = useState<string | undefined>();
   const [zoom, setZoom] = useState(1);
-  const [thumbnailSize, setThumbnailSize] = useState(80);
   const [imageLoadError, setImageLoadError] = useState(false);
   const [riskWork, setRiskWork] = useState<WorkRecord | null>(null);
-  const [showBillsModal, setShowBillsModal] = useState(false);
-  const imageScrollRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!isOpen) return undefined;
@@ -53,9 +47,7 @@ export const GeotagEvidenceModal: React.FC<GeotagEvidenceModalProps> = ({
       || record?.images[0];
     setSelectedImageName(image?.name);
     setZoom(1);
-    setThumbnailSize(80);
     setImageLoadError(false);
-    setShowBillsModal(false);
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
     };
@@ -67,14 +59,6 @@ export const GeotagEvidenceModal: React.FC<GeotagEvidenceModalProps> = ({
       document.body.style.overflow = previousOverflow;
     };
   }, [isOpen, workId, initialImageName, record, onClose]);
-
-  // A failed image must not poison the next thumbnail selection. Reset the
-  // preview state whenever the selected asset changes so each image gets a
-  // fresh load attempt.
-  useEffect(() => {
-    setImageLoadError(false);
-    imageScrollRef.current?.scrollTo({ left: 0, top: 0 });
-  }, [selectedImageName]);
 
   useEffect(() => {
     if (!isOpen || !workId) {
@@ -111,20 +95,13 @@ export const GeotagEvidenceModal: React.FC<GeotagEvidenceModalProps> = ({
     const nextIndex = (selectedIndex + delta + record.images.length) % record.images.length;
     setSelectedImageName(record.images[nextIndex].name);
     setZoom(1);
-    setImageLoadError(false);
-  };
-
-  const selectImage = (imageName: string) => {
-    setSelectedImageName(imageName);
-    setZoom(1);
-    setImageLoadError(false);
   };
 
   return (
     <div className="geotag-evidence-modal fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 lg:p-6" role="dialog" aria-modal="true" aria-label="Photographic evidence preview">
       <button aria-label="Close evidence preview" onClick={onClose} className="geotag-evidence-modal__backdrop absolute inset-0 backdrop-blur-sm" />
-      <div className="geotag-evidence-modal__panel relative z-10 flex max-w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-2xl dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 lg:flex-row" title="Drag the lower-right corner to resize the preview">
-        <div className="geotag-evidence-modal__main flex min-h-0 min-w-0 flex-1 flex-col">
+      <div className="geotag-evidence-modal__panel relative z-10 flex max-w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-2xl dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 lg:flex-row">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-slate-800 sm:px-5">
             <div className="min-w-0">
               <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
@@ -132,62 +109,45 @@ export const GeotagEvidenceModal: React.FC<GeotagEvidenceModalProps> = ({
               </div>
               <h2 className="mt-1 truncate text-sm font-bold text-slate-900 dark:text-white">Work {displayWorkId || '—'}</h2>
             </div>
-            <div className="flex items-center gap-2">
-              {record?.handwrittenBillsCount && record.handwrittenBillsCount > 0 ? (
-                <button
-                  onClick={() => setShowBillsModal(true)}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-900 shadow-sm hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-950/70 dark:text-amber-200 transition"
-                  title="View handwritten bills and payment vouchers for this work"
-                >
-                  <Receipt className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                  <span>View Bills ({record.handwrittenBillsCount})</span>
-                </button>
-              ) : null}
-              <button onClick={onClose} className="rounded-xl p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white" aria-label="Close">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
+            <button onClick={onClose} className="rounded-xl p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white" aria-label="Close">
+              <X className="h-5 w-5" />
+            </button>
           </div>
 
-          <div className="geotag-evidence-modal__image-canvas relative flex min-h-0 flex-1 flex-col overflow-hidden p-2 sm:p-4">
-            <div ref={imageScrollRef} className="geotag-evidence-modal__image-scroll" tabIndex={selectedImage ? 0 : -1} aria-label="Selected evidence image; scroll to inspect enlarged image">
-              {selectedImage && !imageLoadError ? (
-                <div className="geotag-evidence-modal__image-stage relative" style={{ width: zoom > 1 ? `${zoom * 100}%` : undefined, height: zoom > 1 ? `${zoom * 100}%` : undefined, maxWidth: zoom > 1 ? 'none' : undefined, maxHeight: zoom > 1 ? 'none' : undefined }}>
-                  <img
-                    key={selectedImage.url}
-                    src={selectedImage.url}
-                    alt={`Photographic evidence for work ${displayWorkId || workId}`}
-                    onError={() => setImageLoadError(true)}
-                    onLoad={() => setImageLoadError(false)}
-                    className="geotag-evidence-modal__image rounded-lg object-contain shadow-2xl"
-                    style={zoom > 1 ? { width: '100%', height: '100%' } : undefined}
-                  />
-                  {selectedGps?.bbox && (
-                    <div
-                      className="pointer-events-none absolute z-10 rounded-sm border-2 border-emerald-300 bg-emerald-400/10 shadow-[0_0_0_9999px_rgba(2,6,23,0.12),0_0_18px_rgba(52,211,153,0.8)]"
-                      style={{
-                        left: `${selectedGps.bbox.x_pct}%`,
-                        top: `${selectedGps.bbox.y_pct}%`,
-                        width: `${selectedGps.bbox.w_pct}%`,
-                        height: `${selectedGps.bbox.h_pct}%`,
-                      }}
-                    >
-                      <span className="absolute bottom-full left-0 mb-1 whitespace-nowrap rounded-md border border-emerald-300/80 bg-emerald-400 px-2 py-1 text-[10px] font-black text-slate-950 shadow-lg">
-                        📍 STAMPED GPS: {selectedGps.raw_stamp_text || `${selectedGps.latitude}, ${selectedGps.longitude}`}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              ) : selectedImage ? (
-                <div className="rounded-xl border border-dashed border-rose-300 bg-rose-50 px-6 py-10 text-center text-xs text-rose-700 dark:border-rose-700/70 dark:bg-rose-950/30 dark:text-rose-200">
-                  The image file could not be loaded from the evidence archive.
-                </div>
-              ) : (
-                <div className="rounded-xl border border-dashed border-slate-300 px-6 py-10 text-center text-xs text-slate-600 dark:border-slate-700 dark:text-slate-400">No photographic evidence is attached to this work.</div>
-              )}
-            </div>
+          <div className="geotag-evidence-modal__image-canvas relative flex min-h-0 flex-1 items-center justify-center overflow-auto p-3 sm:p-5">
+            {selectedImage && !imageLoadError ? (
+              <div className="relative inline-block max-h-full max-w-full origin-center transition-transform duration-150" style={{ transform: `scale(${zoom})` }}>
+                <img
+                  src={selectedImage.url}
+                  alt={`Photographic evidence for work ${displayWorkId || workId}`}
+                  onError={() => setImageLoadError(true)}
+                  className="block h-auto max-h-full max-w-full rounded-lg object-contain shadow-2xl"
+                />
+                {selectedGps?.bbox && (
+                  <div
+                    className="pointer-events-none absolute z-10 rounded-sm border-2 border-emerald-300 bg-emerald-400/10 shadow-[0_0_0_9999px_rgba(2,6,23,0.12),0_0_18px_rgba(52,211,153,0.8)]"
+                    style={{
+                      left: `${selectedGps.bbox.x_pct}%`,
+                      top: `${selectedGps.bbox.y_pct}%`,
+                      width: `${selectedGps.bbox.w_pct}%`,
+                      height: `${selectedGps.bbox.h_pct}%`,
+                    }}
+                  >
+                    <span className="absolute bottom-full left-0 mb-1 whitespace-nowrap rounded-md border border-emerald-300/80 bg-emerald-400 px-2 py-1 text-[10px] font-black text-slate-950 shadow-lg">
+                      📍 STAMPED GPS: {selectedGps.raw_stamp_text || `${selectedGps.latitude}, ${selectedGps.longitude}`}
+                    </span>
+                  </div>
+                )}
+              </div>
+            ) : selectedImage ? (
+              <div className="rounded-xl border border-dashed border-rose-300 bg-rose-50 px-6 py-10 text-center text-xs text-rose-700 dark:border-rose-700/70 dark:bg-rose-950/30 dark:text-rose-200">
+                The image file could not be loaded from the evidence archive.
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-slate-300 px-6 py-10 text-center text-xs text-slate-600 dark:border-slate-700 dark:text-slate-400">No photographic evidence is attached to this work.</div>
+            )}
 
-            <div className="geotag-evidence-modal__zoom-toolbar absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-xl border border-slate-200 bg-white/95 p-1 shadow-xl dark:border-slate-700 dark:bg-slate-900/90">
+            <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-xl border border-slate-200 bg-white/95 p-1 shadow-xl dark:border-slate-700 dark:bg-slate-900/90">
               <button onClick={() => setZoom((value) => Math.max(0.75, Number((value - 0.25).toFixed(2))))} className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white" aria-label="Zoom out"><Minus className="h-4 w-4" /></button>
               <button onClick={() => setZoom(1)} className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white" aria-label="Reset zoom"><RotateCcw className="h-4 w-4" /></button>
               <span className="w-12 text-center font-mono text-[10px] text-slate-600 dark:text-slate-400">{Math.round(zoom * 100)}%</span>
@@ -202,32 +162,16 @@ export const GeotagEvidenceModal: React.FC<GeotagEvidenceModalProps> = ({
             </div>
           )}
 
-          <div className="geotag-evidence-modal__thumbnails border-t border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/80">
-            <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-500">
-              <span>{record?.images.length || 0} attached photo{record?.images.length === 1 ? '' : 's'}{record && record.images.length > 1 ? ` · Photo ${(selectedIndex + 1).toLocaleString()} of ${record.images.length}` : ''}</span>
-              {record && record.images.length > 1 && (
-                <label className="geotag-evidence-modal__thumbnail-size flex items-center gap-1.5 normal-case tracking-normal" title="Adjust thumbnail size">
-                  <SlidersHorizontal className="h-3.5 w-3.5" />
-                  <span>Thumbnail size</span>
-                  <input
-                    type="range"
-                    min="56"
-                    max="140"
-                    step="4"
-                    value={thumbnailSize}
-                    onChange={(event) => setThumbnailSize(Number(event.target.value))}
-                    className="w-20 accent-emerald-500"
-                    aria-label="Adjust thumbnail size"
-                  />
-                  <span className="w-8 text-right font-mono">{thumbnailSize}px</span>
-                </label>
-              )}
+          <div className="border-t border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/80">
+            <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-500">
+              <span>{record?.images.length || 0} attached photo{record?.images.length === 1 ? '' : 's'}</span>
+              {record && record.images.length > 1 && <span>Photo {(selectedIndex + 1).toLocaleString()} of {record.images.length}</span>}
             </div>
             <div className="flex items-center gap-2">
               {record && record.images.length > 1 && <button onClick={() => selectRelativeImage(-1)} className="hidden rounded-lg border border-slate-300 p-2 text-slate-600 hover:bg-slate-100 hover:text-slate-950 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white sm:block" aria-label="Previous photo"><ChevronLeft className="h-4 w-4" /></button>}
-              <div className="geotag-evidence-modal__thumbnail-grid min-w-0 flex-1" role="listbox" aria-label="Evidence photo thumbnails" aria-activedescendant={selectedImage ? `evidence-thumb-${selectedImage.name}` : undefined}>
+              <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1">
                 {record?.images.map((image) => (
-                  <button id={`evidence-thumb-${image.name}`} role="option" aria-selected={image.name === selectedImage?.name} key={image.name} onClick={() => selectImage(image.name)} style={{ width: `${thumbnailSize}px`, height: `${Math.round(thumbnailSize * 0.75)}px` }} className={`relative shrink-0 overflow-hidden rounded-lg border-2 transition ${image.name === selectedImage?.name ? 'border-emerald-400 ring-2 ring-emerald-300/60' : 'border-slate-300 hover:border-slate-500 dark:border-slate-700'}`} title={image.name} aria-label={`View photo ${image.name}`}>
+                  <button key={image.name} onClick={() => { setSelectedImageName(image.name); setZoom(1); }} className={`relative h-14 w-20 shrink-0 overflow-hidden rounded-lg border-2 transition ${image.name === selectedImage?.name ? 'border-emerald-400' : 'border-slate-300 hover:border-slate-500 dark:border-slate-700'}`} title={image.name}>
                     <img src={image.url} alt="" className="h-full w-full object-cover" />
                     {image.gps && <span className="absolute bottom-0 left-0 right-0 bg-emerald-400/95 py-0.5 text-[8px] font-black text-slate-950">📍 GPS</span>}
                   </button>
@@ -304,12 +248,6 @@ export const GeotagEvidenceModal: React.FC<GeotagEvidenceModalProps> = ({
           {selectedGps && <a href={mapsUrl(selectedGps)} target="_blank" rel="noreferrer" className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-400 px-3 py-2.5 text-xs font-black text-slate-950 transition hover:bg-emerald-300">Open in Google Maps <ExternalLink className="h-3.5 w-3.5" /></a>}
         </aside>
       </div>
-
-      <HandwrittenBillsModal
-        isOpen={showBillsModal}
-        workId={workId}
-        onClose={() => setShowBillsModal(false)}
-      />
     </div>
   );
 };

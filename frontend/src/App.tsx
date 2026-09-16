@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/layout/Sidebar';
 import { Topbar } from './components/layout/Topbar';
-import { AiAssistantModal } from './components/AiAssistantModal';
+import { CitizenPortalPage } from './pages/CitizenPortalPage';
 import { GeotagEvidenceModal } from './components/GeotagEvidenceModal';
-import { fetchOverview } from './services/api';
+import { fetchDuplicateCandidates, fetchOverview } from './services/api';
+import { useAuth } from './context/AuthContext';
+import { SovereignLoginGate } from './components/auth/SovereignLoginGate';
+import { SovereignSplashLoading } from './components/auth/SovereignSplashLoading';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 import { OverviewPage } from './pages/OverviewPage';
 import { MpIntelligencePage } from './pages/MpIntelligencePage';
@@ -18,49 +22,75 @@ import { StateRiskAnalyticsPage } from './pages/StateRiskAnalyticsPage';
 import { FinancialBenchmarkPage } from './pages/FinancialBenchmarkPage';
 import { GeotagEvidenceAuditPage } from './pages/GeotagEvidenceAuditPage';
 import { ComplianceMonitorPage } from './pages/ComplianceMonitorPage';
-import { CitizenProtocolPage } from './pages/CitizenProtocolPage';
-import { AttendancePage } from './pages/AttendancePage';
 import { MaterialFairnessPage } from './pages/MaterialFairnessPage';
 import { OfficerDashboardPage } from './pages/OfficerDashboardPage';
-import { ErrorBoundary } from './components/ErrorBoundary';
+import { AttendancePage } from './pages/AttendancePage';
 
 export function App() {
+  const { user, isLoading } = useAuth();
+
   const [activeTab, setActiveTab] = useState<string>('overview');
   const [selectedWorkId, setSelectedWorkId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [initialSeverity, setInitialSeverity] = useState<string>('');
-  const [isAiAssistantOpen, setIsAiAssistantOpen] = useState<boolean>(false);
+  const [initialDimension, setInitialDimension] = useState<string>('all');
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
   const [evidencePreview, setEvidencePreview] = useState<{ workId: string; imageName?: string } | null>(null);
   const [livePortfolio, setLivePortfolio] = useState({ totalWorks: 0, highRiskWorks: 0, financialOutlierWorks: 0, duplicateCandidates: 0 });
-  const [isDark, setIsDark] = useState<boolean>(() => {
-    try {
-      const saved = window.localStorage.getItem('mplads-theme');
-      return saved ? saved === 'dark' : true;
-    } catch { return true; }
-  });
+  const [isDark, setIsDark] = useState<boolean>(false);
 
   useEffect(() => {
-    fetchOverview().then((overview) => {
+    try {
+      window.localStorage.removeItem('mplads-theme');
+    } catch { /* storage unavailable */ }
+    document.documentElement.classList.remove('dark');
+  }, []);
+
+  // Fetch portfolio data ONLY when user is authenticated
+  useEffect(() => {
+    if (!user) {
+      setLivePortfolio({ totalWorks: 0, highRiskWorks: 0, financialOutlierWorks: 0, duplicateCandidates: 0 });
+      return;
+    }
+
+    Promise.all([
+      fetchOverview(),
+      fetchDuplicateCandidates({ min_similarity: 85, page: 1, limit: 1 }),
+    ]).then(([overview, duplicates]) => {
       setLivePortfolio({
         totalWorks: overview.summary.total_works,
         highRiskWorks: overview.summary.high_risk_works,
         financialOutlierWorks: overview.financial_summary?.flagged_financial_outliers ?? 0,
-        // Candidate records are loaded only when the inspector is opened.
-        // Loading them at startup can exceed a 512 MB free backend instance.
-        duplicateCandidates: 0,
+        duplicateCandidates: duplicates.total ?? 0,
       });
     }).catch(() => undefined);
-  }, []);
+  }, [user]);
 
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', isDark);
+    // Ensure calm public-service editorial styling is active
+    if (!isDark) {
+      document.documentElement.classList.remove('dark');
+    } else {
+      document.documentElement.classList.add('dark');
+    }
     try { window.localStorage.setItem('mplads-theme', isDark ? 'dark' : 'light'); } catch { /* storage unavailable */ }
   }, [isDark]);
 
-  const handleNavigateToRiskMonitor = (severity?: string) => {
+  // Loading state while resolving auth credentials
+  if (isLoading) {
+    return <SovereignSplashLoading />;
+  }
+
+  // Data visibility lock: only visible when user is authenticated
+  if (!user) {
+    return <SovereignLoginGate />;
+  }
+
+  const handleNavigateToRiskMonitor = (severity?: string, dimension?: string) => {
     if (severity) setInitialSeverity(severity);
+    if (dimension) setInitialDimension(dimension);
+    else setInitialDimension('all');
     setSelectedWorkId(null);
     setActiveTab('risk-monitor');
   };
@@ -90,7 +120,7 @@ export function App() {
   };
 
   return (
-    <div className={`flex min-h-screen antialiased font-sans transition-colors ${isDark ? 'bg-[#0b0f17] text-slate-100' : 'bg-[#f4f6f9] text-slate-900'}`}>
+    <div className="flex min-h-screen antialiased bg-[#fbfaf6] text-[#263a42] font-editorial-sans">
       {/* Sidebar Navigation */}
       <Sidebar
         activeTab={selectedWorkId ? 'project-detail' : activeTab}
@@ -111,58 +141,47 @@ export function App() {
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           onSearchSubmit={handleSearchSubmit}
-          onSelectWork={handleSelectWork}
-          onOpenChat={() => setIsAiAssistantOpen(true)}
+          onOpenCitizenPortal={() => {
+            setSelectedWorkId(null);
+            setActiveTab('citizen-portal');
+          }}
+          onOpenOfficerCenter={() => {
+            setSelectedWorkId(null);
+            setActiveTab('officer-dashboard');
+          }}
           onOpenSidebar={() => setIsSidebarOpen(true)}
-          onToggleSidebar={() => setIsSidebarCollapsed((value) => !value)}
-          onToggleTheme={() => setIsDark((value) => !value)}
-          isDark={isDark}
           isSidebarCollapsed={isSidebarCollapsed}
+          activeTab={selectedWorkId ? 'project-detail' : activeTab}
         />
 
-
-        <main className={`shell-main ${isSidebarCollapsed ? 'shell-main--collapsed' : ''} flex-1 overflow-y-auto pt-16 min-w-0 overflow-x-hidden`}>
+        <main className={`shell-main ${isSidebarCollapsed ? 'shell-main--collapsed' : ''} flex-1 overflow-y-auto pt-[70px] min-w-0 overflow-x-hidden`}>
           <ErrorBoundary onReset={() => { setSelectedWorkId(null); setActiveTab('overview'); }}>
             {selectedWorkId ? (
               <ProjectDetailPage workId={selectedWorkId} onBack={handleBackToMonitor} onSelectWork={handleSelectWork} onOpenEvidence={handleOpenEvidence} />
             ) : (
               <>
-                {activeTab === 'geotag-evidence' && <GeotagEvidenceAuditPage onSelectWork={handleSelectWork} onOpenEvidence={handleOpenEvidence} />}
-                {activeTab === 'citizen-protocol' && <CitizenProtocolPage />}
-                {activeTab === 'attendance' && <AttendancePage />}
-                {activeTab === 'material-fairness' && <MaterialFairnessPage />}
-                {activeTab === 'officer-dashboard' && <OfficerDashboardPage onSelectWork={handleSelectWork} />}
+                {activeTab === 'citizen-portal' && <CitizenPortalPage onSelectWork={handleSelectWork} />}
+                {activeTab === 'officer-dashboard' && <OfficerDashboardPage />}
+                {activeTab === 'material-fairness' && <MaterialFairnessPage onSelectWork={handleSelectWork} />}
                 {activeTab === 'overview' && <OverviewPage onNavigateToRiskMonitor={handleNavigateToRiskMonitor} />}
                 {activeTab === 'mp-intelligence' && <MpIntelligencePage onSelectWork={handleSelectWork} />}
-                {activeTab === 'risk-monitor' && <RiskMonitorPage initialSeverity={initialSeverity} initialDimension="all" totalWorks={livePortfolio.totalWorks} onSelectWork={handleSelectWork} />}
                 {activeTab === 'state-risk-analytics' && <StateRiskAnalyticsPage onSelectWork={handleSelectWork} />}
-                {activeTab === 'duplicate-inspector' && <DuplicateInspectorPage onSelectWork={handleSelectWork} />}
+                {activeTab === 'risk-monitor' && <RiskMonitorPage initialSeverity={initialSeverity} initialDimension={initialDimension} totalWorks={livePortfolio.totalWorks} onSelectWork={handleSelectWork} />}
                 {activeTab === 'financial-analytics' && <FinancialAnalyticsPage onSelectWork={handleSelectWork} onOpenBenchmarks={() => setActiveTab('financial-benchmarks')} />}
                 {activeTab === 'financial-benchmarks' && <FinancialBenchmarkPage />}
+                {activeTab === 'duplicate-inspector' && <DuplicateInspectorPage onSelectWork={handleSelectWork} />}
+                {activeTab === 'geotag-evidence' && <GeotagEvidenceAuditPage onSelectWork={handleSelectWork} onOpenEvidence={handleOpenEvidence} />}
                 {activeTab === 'compliance-monitor' && <ComplianceMonitorPage onSelectWork={handleSelectWork} onOpenEvidence={handleOpenEvidence} />}
-                {activeTab === 'schedule-progress' && <RiskMonitorPage initialDimension="schedule" totalWorks={livePortfolio.totalWorks} onSelectWork={handleSelectWork} />}
+                {activeTab === 'schedule-progress' && <ScheduleProgressPage onSelectWork={handleSelectWork} />}
                 {activeTab === 'data-sync' && <DataSyncPage />}
                 {activeTab === 'model-monitoring' && <ModelMonitoringPage />}
+                {activeTab === 'attendance' && <AttendancePage />}
               </>
             )}
           </ErrorBoundary>
         </main>
       </div>
 
-      {/* AI Assistant Copilot Modal */}
-      <AiAssistantModal
-        isOpen={isAiAssistantOpen}
-        onClose={() => setIsAiAssistantOpen(false)}
-        onSelectWork={handleSelectWork}
-        onNavigateTab={(tab) => {
-          setSelectedWorkId(null);
-          setActiveTab(tab);
-        }}
-        totalWorks={livePortfolio.totalWorks}
-        highRiskWorks={livePortfolio.highRiskWorks}
-        financialOutlierWorks={livePortfolio.financialOutlierWorks}
-        duplicateCandidates={livePortfolio.duplicateCandidates}
-      />
       <GeotagEvidenceModal
         isOpen={Boolean(evidencePreview)}
         workId={evidencePreview?.workId || null}

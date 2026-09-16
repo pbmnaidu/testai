@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { MapPin, AlertTriangle, Navigation, Layers, Info } from 'lucide-react';
+import { MapPin, AlertTriangle, Navigation, Layers, Info, ArrowRight } from 'lucide-react';
 import indiaMapAsset from '../../assets/india_map.png';
 import { fetchOverview, fetchStateRiskSummary } from '../../services/api';
 import { NationalOverviewResponse, StateRiskSummary } from '../../types';
@@ -22,15 +22,15 @@ interface LiveStateGisData extends StateGisData {
 }
 
 const STATE_GIS_NODES: StateGisData[] = [
-  // Northern Region
-  { state: 'Ladakh', code: 'LA', lat: 34.1526, lng: 77.5771, x: 35.5, y: 10 },
-  { state: 'Jammu & Kashmir', code: 'JK', lat: 33.7782, lng: 76.5762, x: 28.5, y: 14 },
-  { state: 'Himachal Pradesh', code: 'HP', lat: 31.1048, lng: 77.1734, x: 33, y: 19 },
-  { state: 'Punjab', code: 'PB', lat: 31.1471, lng: 75.3412, x: 28, y: 22 },
-  { state: 'Chandigarh', code: 'CH', lat: 30.7333, lng: 76.7794, x: 31, y: 22 },
-  { state: 'Haryana', code: 'HR', lat: 29.0588, lng: 76.0856, x: 30, y: 26 },
-  { state: 'Uttarakhand', code: 'UK', lat: 30.0668, lng: 79.0193, x: 37, y: 23 },
-  { state: 'Delhi', code: 'DL', lat: 28.7041, lng: 77.1025, x: 33.8, y: 28.5 },
+  // Northern Region - calibrated for maximum visibility and non-overlap
+  { state: 'Ladakh', code: 'LA', lat: 34.1526, lng: 77.5771, x: 36, y: 9 },
+  { state: 'Jammu & Kashmir', code: 'JK', lat: 33.7782, lng: 76.5762, x: 28, y: 13.5 },
+  { state: 'Himachal Pradesh', code: 'HP', lat: 31.1048, lng: 77.1734, x: 34, y: 18 },
+  { state: 'Punjab', code: 'PB', lat: 31.1471, lng: 75.3412, x: 25.5, y: 22 },
+  { state: 'Chandigarh', code: 'CH', lat: 30.7333, lng: 76.7794, x: 29.5, y: 20 },
+  { state: 'Haryana', code: 'HR', lat: 29.0588, lng: 76.0856, x: 28, y: 26.5 },
+  { state: 'Uttarakhand', code: 'UK', lat: 30.0668, lng: 79.0193, x: 39, y: 21.5 },
+  { state: 'Delhi', code: 'DL', lat: 28.7041, lng: 77.1025, x: 33.5, y: 27.5 },
   
   // Western & Central Region
   { state: 'Rajasthan', code: 'RJ', lat: 27.0238, lng: 74.2179, x: 23, y: 36 },
@@ -69,8 +69,28 @@ const STATE_GIS_NODES: StateGisData[] = [
   { state: 'Lakshadweep', code: 'LD', lat: 10.5667, lng: 72.6417, x: 8.5, y: 89 },
 ];
 
-export const IndiaGisHeatmap: React.FC = () => {
-  const [selectedNode, setSelectedNode] = useState<StateGisData>(STATE_GIS_NODES[9]); // UP default
+interface IndiaGisHeatmapProps {
+  onSelectState?: (state: string) => void;
+  onNavigateToRiskMonitor?: (severity?: string, tab?: string) => void;
+  initialSelectedState?: string;
+  className?: string;
+}
+
+export const IndiaGisHeatmap: React.FC<IndiaGisHeatmapProps> = ({
+  onSelectState,
+  onNavigateToRiskMonitor,
+  initialSelectedState,
+  className = ''
+}) => {
+  const [selectedNode, setSelectedNode] = useState<StateGisData>(() => {
+    if (initialSelectedState) {
+      const match = STATE_GIS_NODES.find(
+        (n) => n.state.toUpperCase() === initialSelectedState.toUpperCase()
+      );
+      if (match) return match;
+    }
+    return STATE_GIS_NODES[9]; // UP default
+  });
   const [filterLevel, setFilterLevel] = useState<string>('ALL');
   const [stateRiskSummary, setStateRiskSummary] = useState<StateRiskSummary | null>(null);
   const [overview, setOverview] = useState<NationalOverviewResponse | null>(null);
@@ -87,6 +107,17 @@ export const IndiaGisHeatmap: React.FC = () => {
         setOverviewStatus('unavailable');
       });
   }, []);
+
+  useEffect(() => {
+    if (initialSelectedState) {
+      const match = STATE_GIS_NODES.find(
+        (n) => normalizeStateName(n.state) === normalizeStateName(initialSelectedState)
+      );
+      if (match) {
+        setSelectedNode(match);
+      }
+    }
+  }, [initialSelectedState]);
 
   const normalizeStateName = (value: string) => {
     const normalized = value
@@ -114,6 +145,7 @@ export const IndiaGisHeatmap: React.FC = () => {
       hasLiveData: Boolean(metric),
     };
   });
+
   const selectedLiveNode = liveNodes.find((node) => node.state === selectedNode.state) || liveNodes[9];
 
   useEffect(() => {
@@ -140,6 +172,11 @@ export const IndiaGisHeatmap: React.FC = () => {
     };
   }, [selectedNode.state]);
 
+  const handleNodeClick = (node: StateGisData) => {
+    setSelectedNode(node);
+    onSelectState?.(node.state);
+  };
+
   const filteredNodes = liveNodes.filter((n) => {
     if (overviewStatus !== 'ready') return filterLevel === 'ALL';
     if (filterLevel === 'ALL') return true;
@@ -149,104 +186,123 @@ export const IndiaGisHeatmap: React.FC = () => {
   const getBadgeColor = (level: string) => {
     switch (level) {
       case 'CRITICAL':
-        return 'gis-risk-badge gis-risk-badge--critical bg-rose-500/20 text-rose-400 border-rose-500/40 shadow-rose-500/20';
+        return 'bg-[#fde8e4] text-[#b24e28] border border-[#f2c4b8] font-bold';
       case 'HIGH':
-        return 'gis-risk-badge gis-risk-badge--high bg-amber-500/20 text-amber-400 border-amber-500/40 shadow-amber-500/20';
+        return 'bg-[#fef4e6] text-[#b8741a] border border-[#f6dbb5] font-bold';
       case 'MEDIUM':
-        return 'gis-risk-badge gis-risk-badge--medium bg-orange-500/20 text-orange-400 border-orange-500/40';
+        return 'bg-[#fef3eb] text-[#ba6e3a] border border-[#f8dcce] font-bold';
       default:
-        return 'gis-risk-badge gis-risk-badge--low bg-emerald-500/20 text-emerald-400 border-emerald-500/40';
+        return 'bg-[#edf5f0] text-[#20664e] border border-[#cbe4d5] font-bold';
     }
   };
 
   const getNodeBg = (level: string) => {
     switch (level) {
       case 'CRITICAL':
-        return 'bg-rose-500 shadow-rose-500/50';
+        return 'bg-[#b24e28]';
       case 'HIGH':
-        return 'bg-amber-500 shadow-amber-500/50';
+        return 'bg-[#c07218]';
       case 'MEDIUM':
-        return 'bg-orange-500 shadow-orange-500/50';
+        return 'bg-[#ba6e3a]';
       default:
-        return 'bg-emerald-500 shadow-emerald-500/50';
+        return 'bg-[#20664e]';
     }
   };
 
   const getSignalTone = (key: string) => {
     switch (key) {
       case 'financial':
-        return 'text-indigo-400';
+        return 'text-[#263a42]';
       case 'compliance':
-        return 'text-rose-400';
+        return 'text-[#b24e28]';
       case 'duplicate':
-        return 'text-amber-400';
+        return 'text-[#ba6e3a]';
       default:
-        return 'text-sky-400';
+        return 'text-[#20664e]';
     }
   };
 
   return (
-    <div className="card-panel p-6 space-y-4">
+    <div className={`editorial-panel rounded-sm border border-[#e3ddd3] bg-[#fffefa] p-5 space-y-4 shadow-2xs ${className}`}>
       {/* Header Bar */}
-      <div className="gis-map-header flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#e8e0d6] pb-3.5">
         <div>
-          <h3 className="text-base font-extrabold text-slate-100 flex items-center gap-2">
-            <Navigation className="w-5 h-5 text-indigo-400 animate-pulse" />
-            <span>Geospatial Risk Heatmap & Spatial Context</span>
+          <h3 className="font-editorial-serif text-[18px] font-semibold text-[#263a42] m-0 leading-tight">
+            Geographic review &amp; spatial context
           </h3>
-          <p className="text-xs text-slate-400 mt-0.5 font-medium">
-            Live state-level risk and duplicate-candidate metrics across 36 States & UTs. Exact &lt;200m clustering requires latitude/longitude fields in the source records.
+          <p className="text-[10px] text-[#7b817c] mt-1 m-0">
+            Live state-level risk, duplicate candidates, and delivery signals across 36 States &amp; UTs.
           </p>
         </div>
 
-        {/* Risk Level Filter Toggle */}
-        <div className="gis-map-filter flex items-center gap-1.5 bg-slate-900 border border-slate-800 p-1 rounded-xl">
-          {['ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].map((lvl) => (
-            <button
-              key={lvl}
-              onClick={() => setFilterLevel(lvl)}
-              className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all ${
-                filterLevel === lvl
-                  ? 'bg-slate-100 text-slate-900 shadow-xs'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              {lvl}
-            </button>
-          ))}
+        {/* Header Right: State Selector & Risk Filter */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <select
+            value={selectedNode.state}
+            onChange={(e) => {
+              const match = STATE_GIS_NODES.find((n) => n.state === e.target.value);
+              if (match) handleNodeClick(match);
+            }}
+            className="text-[10px] bg-[#fffefa] text-[#263a42] border border-[#ded7ca] rounded px-2 py-1 font-editorial-sans focus:outline-none focus:border-[#b24e28]"
+            title="Jump to State/UT"
+          >
+            {STATE_GIS_NODES.map((n) => (
+              <option key={n.code} value={n.state}>
+                {n.state} ({n.code})
+              </option>
+            ))}
+          </select>
+
+          {/* Risk Level Filter Toggle */}
+          <div className="flex items-center gap-1.5 bg-[#f4f0e8] border border-[#ded7ca] p-1 rounded-md">
+            {['ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].map((lvl) => (
+              <button
+                key={lvl}
+                onClick={() => setFilterLevel(lvl)}
+                className={`px-2.5 py-1 rounded text-[9.5px] font-editorial-mono font-bold transition-all ${
+                  filterLevel === lvl
+                    ? 'bg-white text-[#b24e28] shadow-xs border border-[#ded7ca]'
+                    : 'text-[#65736f] hover:text-[#263a42]'
+                }`}
+              >
+                {lvl}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Main Map Container Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Interactive Visual Map Box */}
-        <div className="gis-map-panel lg:col-span-2 bg-slate-950/95 rounded-2xl border border-slate-800 p-4 space-y-2 flex flex-col justify-between overflow-hidden shadow-inner">
-          
+        <div className="lg:col-span-7 xl:col-span-8 bg-[#fdfbf7] rounded border border-[#e5dfd5] p-3.5 space-y-2 flex flex-col justify-between overflow-hidden">
           {/* Map Sub-Header Bar */}
           <div className="flex justify-between items-center z-10">
-            <div className="gis-map-header-chip flex items-center gap-2 bg-slate-900/90 border border-slate-800 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-200 shadow-md">
-              <Layers className="w-3.5 h-3.5 text-indigo-400" />
-              <span>India State-Centre View (36 States & UTs)</span>
+            <div className="flex items-center gap-1.5 bg-white border border-[#ded7ca] px-2.5 py-1 rounded text-[10px] font-bold text-[#263a42] shadow-2xs">
+              <Layers className="w-3 h-3 text-[#b24e28]" />
+              <span>India State-Centre View (36 States &amp; UTs)</span>
             </div>
 
-            <div className="gis-map-live-chip text-[10px] text-slate-400 bg-slate-900/90 px-2.5 py-1 rounded-lg border border-slate-800 font-mono shadow-md">
+            <div className="text-[9.5px] text-[#577469] bg-[#e8f0ea] border border-[#d2dfd4] px-2 py-0.5 rounded font-editorial-mono font-bold">
               {overviewStatus === 'loading' ? 'Loading live metrics…' : overviewStatus === 'ready' ? 'Live risk metrics' : 'Live metrics unavailable'}
             </div>
           </div>
 
-          {/* Compact Map View Canvas Box (Height reduced to 390px) */}
-          <div className="gis-map-canvas relative w-full h-[390px] rounded-xl bg-slate-950 border border-slate-800/80 overflow-hidden my-1 flex items-center justify-center">
-            {/* Grid pattern backdrop */}
-            <div className="absolute inset-0 bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:20px_20px] opacity-20 pointer-events-none" />
-
-            {/* Keep the image and nodes in the same aspect-ratio layer. This
-                prevents object-contain letterboxing from shifting points away
-                from their corresponding state locations. */}
-            <div className="gis-map-image-layer relative h-full max-w-full mx-auto">
+          {/* Compact Map View Canvas Box */}
+          <div 
+            className="relative w-full rounded bg-[#e9f1eb] border border-[#dce5dd] overflow-hidden my-1 flex items-center justify-center shrink-0"
+            style={{ height: '430px', minHeight: '430px' }}
+          >
+            {/* Aspect-ratio layer keeping pins aligned */}
+            <div 
+              className="gis-map-image-layer relative mx-auto" 
+              style={{ width: '400px', height: '410px', maxWidth: '100%', position: 'relative' }}
+            >
               <img
                 src={indiaMapAsset}
                 alt="Official India Map with 36 States & Territories"
-                className="absolute inset-0 w-full h-full object-contain rounded-xl filter contrast-[1.05] brightness-[0.95] drop-shadow-[0_0_20px_rgba(99,102,241,0.3)] pointer-events-none select-none z-0"
+                className="w-full h-full object-contain rounded filter contrast-[1.03] brightness-[0.98] pointer-events-none select-none z-0 opacity-95 block"
+                style={{ width: '100%', height: '100%', display: 'block' }}
               />
 
               {/* Positioned Interactive State Nodes (36 States & UTs) */}
@@ -255,31 +311,69 @@ export const IndiaGisHeatmap: React.FC = () => {
                 return (
                   <div
                     key={node.code}
-                    onClick={() => setSelectedNode(node)}
+                    onClick={() => handleNodeClick(node)}
                     style={{ left: `${node.x}%`, top: `${node.y}%` }}
-                    className={`absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all duration-200 group/node ${
-                      isSelected ? 'scale-125 z-30' : 'hover:scale-110 z-20'
+                    className={`absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all duration-150 group/node ${
+                      isSelected ? 'scale-125 z-40' : 'hover:scale-115 z-20'
                     }`}
                   >
-                    {/* Pulse Effect for Critical States */}
-                    {overviewStatus === 'ready' && node.hasLiveData && node.riskLevel === 'CRITICAL' && (
-                      <span className="absolute -inset-1.5 rounded-full bg-rose-500/50 animate-ping" />
+                    {/* Focus Ring for Selected State */}
+                    {isSelected && (
+                      <span className="absolute -inset-1 rounded-full bg-[#1c2a30]/20 animate-ping pointer-events-none" />
                     )}
 
-                    {/* Compact State Node Circle Badge (w-6 h-6) */}
+                    {/* State Node Circle Badge - 24px, high-contrast border and drop shadow */}
                     <div
-                      className={`gis-node-badge w-6 h-6 rounded-full ${overviewStatus === 'ready' && node.hasLiveData ? getNodeBg(node.riskLevel) : 'bg-slate-500'} border-[1.5px] border-slate-950 flex items-center justify-center text-[9px] font-black text-slate-950 shadow-xl ${
-                        isSelected ? 'ring-2 ring-indigo-400 scale-110' : ''
-                      }`}
+                      className={`w-6 h-6 rounded-full ${
+                        overviewStatus === 'ready' && node.hasLiveData ? getNodeBg(node.riskLevel) : 'bg-[#7b817c]'
+                      } border-[1.5px] ${
+                        isSelected
+                          ? 'border-[#1c2a30] ring-[3px] ring-[#b24e28] ring-offset-1 ring-offset-white shadow-xl scale-110'
+                          : 'border-white shadow-[0_2px_5px_rgba(0,0,0,0.35)]'
+                      } flex items-center justify-center text-[9px] font-black font-editorial-mono text-white select-none`}
                     >
                       {node.code}
                     </div>
 
+                    {/* Persistent Mini-Pill for Selected State */}
+                    {isSelected && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: '100%',
+                          left: '50%',
+                          transform: 'translateX(-50%)',
+                          marginTop: '3px',
+                          padding: '1px 5px',
+                          backgroundColor: '#1c2a30',
+                          color: '#ffffff',
+                          fontSize: '8px',
+                          fontWeight: 700,
+                          lineHeight: '1.2',
+                          borderRadius: '3px',
+                          whiteSpace: 'nowrap',
+                          boxShadow: '0 2px 5px rgba(0,0,0,0.35)',
+                          pointerEvents: 'none',
+                          zIndex: 50,
+                          fontFamily: "'DM Mono', monospace",
+                        }}
+                      >
+                        {node.state}
+                      </div>
+                    )}
+
                     {/* Tooltip on Hover */}
-                    <div className="gis-map-tooltip absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/node:flex flex-col bg-slate-900/95 border border-slate-700 text-slate-100 text-[10px] rounded-xl px-2.5 py-1 shadow-2xl whitespace-nowrap z-40 pointer-events-none">
-                      <span className="font-extrabold">{node.state}</span>
-                      <span className="text-[9px] text-slate-400 font-mono">
-                        {overviewStatus === 'ready' && node.hasLiveData ? `₹${node.sanctionedCr.toFixed(2)} Cr • ${node.duplicateCandidatePairs.toLocaleString()} Duplicate Pairs` : 'Live metrics unavailable'}
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/node:flex flex-col bg-[#fffefa] border border-[#ded7ca] text-[#263a42] text-[10px] rounded-md px-3 py-1.5 shadow-xl whitespace-nowrap z-50 pointer-events-none font-editorial-sans">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-[#1c2a30]">{node.state}</span>
+                        <span className={`text-[8px] px-1.5 py-0.5 rounded font-editorial-mono font-bold ${getBadgeColor(node.riskLevel)}`}>
+                          {node.riskLevel}
+                        </span>
+                      </div>
+                      <span className="text-[9px] text-[#7b817c] font-editorial-mono mt-0.5">
+                        {overviewStatus === 'ready' && node.hasLiveData
+                          ? `₹${node.sanctionedCr.toFixed(2)} Cr • ${node.duplicateCandidatePairs.toLocaleString()} Duplicates`
+                          : 'Live metrics unavailable'}
                       </span>
                     </div>
                   </div>
@@ -289,104 +383,224 @@ export const IndiaGisHeatmap: React.FC = () => {
           </div>
 
           {/* Map Footer Legend */}
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800/80 pt-2.5 text-[11px] text-slate-400">
-            <div className="flex items-center gap-4 font-semibold">
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-rose-500/50" /> Critical</span>
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-amber-500/50" /> High</span>
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-orange-500/50" /> Medium</span>
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-emerald-500/50" /> Low</span>
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[#e8e0d6] pt-2 text-[10px] text-[#7b817c]">
+            <div className="flex items-center gap-3 font-medium">
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#b24e28]" /> Priority review</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#c07218]" /> Watch (High)</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#ba6e3a]" /> Medium</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#20664e]" /> Stable</span>
             </div>
-            <span className="text-[10px] text-slate-400 font-mono font-medium">Click a node to inspect live state metrics</span>
+            <span className="text-[9.5px] text-[#958a7d] font-editorial-mono">Click a node to inspect state profile</span>
           </div>
         </div>
 
         {/* Selected State GIS Intelligence Panel */}
-        <div className="gis-selected-region-panel bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 flex flex-col justify-between shadow-lg">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div>
-                <span className="text-[10px] font-extrabold uppercase text-slate-500 tracking-wider block">Selected Region</span>
-                <h4 className="text-lg font-black text-slate-100 flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-indigo-400" />
-                  <span>{selectedLiveNode.state}</span>
-                </h4>
+        <div className="lg:col-span-5 xl:col-span-4 bg-[#fffefa] border border-[#ded7ca] rounded-md p-5 flex flex-col justify-between shadow-xs">
+          <div className="space-y-3.5">
+            {/* Header: Eyebrow + State Name + Risk Level Badge */}
+            <div className="border-b border-[#ece5db] pb-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[8.5px] font-editorial-mono font-bold uppercase tracking-[0.1em] text-[#8e8275]">
+                  State Focus · Region Context
+                </span>
+                <span className={`px-2.5 py-0.5 rounded-full text-[9.5px] font-editorial-mono font-bold flex items-center gap-1 ${getBadgeColor(selectedLiveNode.riskLevel)}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${getNodeBg(selectedLiveNode.riskLevel)}`} />
+                  <span>
+                    {overviewStatus === 'loading'
+                      ? 'LOADING'
+                      : overviewStatus === 'unavailable'
+                        ? 'UNAVAILABLE'
+                        : selectedLiveNode.hasLiveData
+                          ? `${selectedLiveNode.riskLevel} ATTENTION`
+                          : 'NO DATA'}
+                  </span>
+                </span>
               </div>
-              <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold border ${overviewStatus === 'ready' && selectedLiveNode.hasLiveData ? getBadgeColor(selectedLiveNode.riskLevel) : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
-                {overviewStatus === 'loading' ? 'LOADING' : overviewStatus === 'unavailable' ? 'UNAVAILABLE' : selectedLiveNode.hasLiveData ? `${selectedLiveNode.riskLevel} RISK` : 'NO DATA'}
-              </span>
+              <h4 className="font-editorial-serif text-[21px] font-semibold text-[#1c2a30] flex items-center gap-2 mt-1 m-0">
+                <MapPin className="w-4 h-4 text-[#b24e28] shrink-0" />
+                <span>{selectedLiveNode.state}</span>
+              </h4>
             </div>
 
-            {/* Region KPI Cards */}
-            <div className="grid grid-cols-2 gap-2">
-              <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-800">
-                <span className="text-[10px] font-bold text-slate-400 uppercase block">Sanction Volume</span>
-                <span className="text-base font-black text-slate-100 font-mono">
-                  {overviewStatus === 'ready' && selectedLiveNode.hasLiveData ? `₹${selectedLiveNode.sanctionedCr.toFixed(2)} Cr` : '—'}
+            {/* Region Key Financial & Quality Metrics (2 Tiles) */}
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="bg-[#fbfaf6] p-3 rounded border border-[#e8e1d5]">
+                <span className="text-[8.5px] font-editorial-mono font-bold text-[#8e8275] uppercase tracking-wider block">
+                  Sanctioned Budget
+                </span>
+                <span className="text-[16px] font-bold text-[#1c2a30] font-editorial-mono mt-1 block">
+                  {overviewStatus === 'ready' && selectedLiveNode.hasLiveData
+                    ? `₹${selectedLiveNode.sanctionedCr.toFixed(2)} Cr`
+                    : '—'}
+                </span>
+                <span className="text-[9px] text-[#7b817c] font-editorial-sans mt-0.5 block">
+                  {selectedLiveNode.totalWorks > 0
+                    ? `${selectedLiveNode.totalWorks.toLocaleString()} total works recorded`
+                    : 'Portfolio allocation'}
                 </span>
               </div>
-              <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-800">
-                <span className="text-[10px] font-bold text-slate-400 uppercase block">Duplicate Candidate Pairs</span>
-                <span className="text-base font-black text-rose-400 font-mono">
-                  {overviewStatus === 'ready' && selectedLiveNode.hasLiveData ? selectedLiveNode.duplicateCandidatePairs.toLocaleString() : '—'}
+
+              <div className="bg-[#fbfaf6] p-3 rounded border border-[#e8e1d5]">
+                <span className="text-[8.5px] font-editorial-mono font-bold text-[#8e8275] uppercase tracking-wider block">
+                  Duplicate Work-Pairs
+                </span>
+                <span className="text-[16px] font-bold text-[#b24e28] font-editorial-mono mt-1 block">
+                  {overviewStatus === 'ready' && selectedLiveNode.hasLiveData
+                    ? selectedLiveNode.duplicateCandidatePairs.toLocaleString()
+                    : '—'}
+                </span>
+                <span className="text-[9px] text-[#7b817c] font-editorial-sans mt-0.5 block">
+                  Similarity candidates flagged
                 </span>
               </div>
             </div>
 
-            {/* Live state-level risk profile: prioritise the strongest risk
-                engine instead of presenting duplicate candidates alone. */}
-            <div className="gis-state-risk-detail bg-slate-800/40 p-3.5 rounded-xl border border-slate-800/80 space-y-3">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-slate-300 flex items-center gap-1.5">
-                  <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Highest State Risk Signal</span>
+            {/* Dominant Risk Signal Editorial Callout */}
+            <div
+              style={{
+                backgroundColor: '#faf6ed',
+                borderLeft: '4px solid #b24e28',
+                borderTop: '1px solid #eddccb',
+                borderRight: '1px solid #eddccb',
+                borderBottom: '1px solid #eddccb',
+                padding: '10px 12px',
+                borderRadius: '0 6px 6px 0',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '10.5px', fontWeight: 700, color: '#1c2a30', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <AlertTriangle style={{ width: '14px', height: '14px', color: '#b24e28' }} />
+                  <span>Dominant Risk Engine</span>
                 </span>
-                <span className="gis-dominant-risk font-mono font-black text-amber-400">
+                <span style={{ fontFamily: "'DM Mono', monospace", fontWeight: 700, color: '#b24e28', fontSize: '10.5px' }}>
                   {stateRiskSummary === null
                     ? 'Loading…'
                     : stateRiskSummary.dominant_signal
-                      ? `${stateRiskSummary.dominant_signal.label} ${stateRiskSummary.dominant_signal.average_score.toFixed(1)}/100`
+                      ? `${stateRiskSummary.dominant_signal.label} (${stateRiskSummary.dominant_signal.average_score.toFixed(1)}/100)`
                       : 'No live data'}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
+              <p style={{ fontSize: '10px', color: '#635b52', lineHeight: '1.5', marginTop: '6px', margin: '6px 0 0' }}>
                 {stateRiskSummary === null
-                  ? `Loading the four-engine risk profile for ${selectedLiveNode.state}.`
+                  ? `Compiling four-engine risk indicators for ${selectedLiveNode.state}…`
                   : stateRiskSummary.dominant_signal
-                    ? `${stateRiskSummary.dominant_signal.label} is the strongest signal across ${stateRiskSummary.total_works.toLocaleString()} analysed works; ${stateRiskSummary.dominant_signal.flagged_works.toLocaleString()} works score 35 or above in this engine.`
-                    : `No analysed work records are available for ${selectedLiveNode.state}.`}
+                    ? `${stateRiskSummary.dominant_signal.label} represents the primary audit pressure across ${stateRiskSummary.total_works.toLocaleString()} works, with ${stateRiskSummary.dominant_signal.flagged_works.toLocaleString()} works requiring review.`
+                    : `No analyzed risk records are currently logged for ${selectedLiveNode.state}.`}
               </p>
-              {stateRiskSummary && stateRiskSummary.signals.length > 0 && (
-                <div className="grid grid-cols-2 gap-2 pt-1">
-                  {stateRiskSummary.signals.map((signal) => (
-                    <div key={signal.key} className="gis-risk-signal-card bg-slate-900/60 border border-slate-800/80 rounded-lg px-2.5 py-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-[10px] font-bold text-slate-400">{signal.label}</span>
-                        <span className={`text-[11px] font-black font-mono ${getSignalTone(signal.key)}`}>
-                          {signal.average_score.toFixed(1)}
-                        </span>
+            </div>
+
+            {/* 4-Engine Risk Indicator Bars */}
+            {stateRiskSummary && stateRiskSummary.signals && stateRiskSummary.signals.length > 0 && (
+              <div className="space-y-2 pt-1 border-t border-[#ece5db]">
+                <span className="text-[9px] font-editorial-mono font-bold uppercase text-[#8e8275] tracking-wider block">
+                  Four-Engine Risk Breakdown
+                </span>
+                <div className="space-y-2">
+                  {stateRiskSummary.signals.map((signal) => {
+                    const score = signal.average_score;
+                    const barFillColor =
+                      signal.key === 'compliance'
+                        ? '#b24e28'
+                        : signal.key === 'schedule'
+                          ? '#c07218'
+                          : signal.key === 'duplicate'
+                            ? '#ba6e3a'
+                            : '#20664e';
+                    return (
+                      <div key={signal.key} className="space-y-0.5">
+                        <div className="flex items-center justify-between text-[9.5px]">
+                          <span className="text-[#364b53] font-medium font-editorial-sans">
+                            {signal.label}
+                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[8.5px] text-[#8e8275] font-editorial-mono">
+                              {signal.flagged_works.toLocaleString()} flagged
+                            </span>
+                            <span className="font-bold font-editorial-mono text-[#1c2a30]">
+                              {score.toFixed(1)}
+                            </span>
+                          </div>
+                        </div>
+                        <div
+                          style={{
+                            width: '100%',
+                            height: '6px',
+                            borderRadius: '9999px',
+                            backgroundColor: '#e8e2d8',
+                            overflow: 'hidden',
+                            marginTop: '2px',
+                          }}
+                        >
+                          <div
+                            style={{
+                              height: '100%',
+                              borderRadius: '9999px',
+                              width: `${Math.min(100, Math.max(5, score))}%`,
+                              backgroundColor: barFillColor,
+                              transition: 'width 0.3s ease',
+                            }}
+                          />
+                        </div>
                       </div>
-                      <span className="text-[9px] text-slate-500 font-medium">{signal.flagged_works.toLocaleString()} works ≥35</span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
-            {/* Lat/Lng Coordinates */}
-            <div className="gis-coordinates text-[11px] font-mono text-slate-500 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/60 flex items-center justify-between">
-              <span>Representative State Centre:</span>
-              <span className="text-slate-300 font-bold">{selectedLiveNode.lat.toFixed(4)}° N, {selectedLiveNode.lng.toFixed(4)}° E</span>
+            {/* State Center Coordinates */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '8px 12px',
+                backgroundColor: '#fbfaf6',
+                border: '1px solid #e8e1d5',
+                borderRadius: '6px',
+                fontSize: '10px',
+                fontFamily: "'DM Mono', monospace",
+                color: '#7b817c',
+              }}
+            >
+              <span>State Centre:</span>
+              <span style={{ color: '#1c2a30', fontWeight: 700 }}>
+                {selectedLiveNode.lat.toFixed(4)}° N, {selectedLiveNode.lng.toFixed(4)}° E
+              </span>
             </div>
           </div>
 
-          <div className="pt-2">
-            <div className="gis-map-info p-3 bg-indigo-950/40 border border-indigo-800/50 rounded-xl text-[11px] text-indigo-300 font-medium flex items-center gap-2">
-              <Info className="w-4 h-4 text-indigo-400 shrink-0" />
-              <span>State-centre positions are reference geometry; risk and duplicate-pair values come from the live MPLADS feature store. Exact spatial proximity is unavailable until source coordinates are provided.</span>
-            </div>
-          </div>
+          {/* Action Button */}
+          <button
+            onClick={() => onNavigateToRiskMonitor?.(selectedLiveNode.riskLevel)}
+            style={{
+              width: '100%',
+              marginTop: '12px',
+              padding: '10px 16px',
+              borderRadius: '6px',
+              border: 'none',
+              backgroundColor: '#b24e28',
+              color: '#ffffff',
+              fontWeight: 700,
+              fontSize: '11px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              boxShadow: '0 2px 4px rgba(178, 78, 40, 0.25)',
+              cursor: 'pointer',
+              transition: 'background-color 0.15s ease',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#993d1d')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#b24e28')}
+          >
+            <span>Inspect Audit Cases for {selectedLiveNode.state}</span>
+            <ArrowRight style={{ width: '14px', height: '14px' }} />
+          </button>
         </div>
       </div>
     </div>
   );
 };
+export default IndiaGisHeatmap;
+

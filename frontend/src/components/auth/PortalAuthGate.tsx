@@ -64,6 +64,7 @@ export const PortalAuthGate: React.FC<PortalAuthGateProps> = ({
   const [phone, setPhone] = useState('');
   const [constituency, setConstituency] = useState('');
   const [error, setError] = useState('');
+  const [regNotice, setRegNotice] = useState<{ type: 'warning' | 'success'; message: string; submessage?: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Check authorization
@@ -77,13 +78,18 @@ export const PortalAuthGate: React.FC<PortalAuthGateProps> = ({
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setRegNotice(null);
     if (!email.trim()) {
       setError('Please enter your official email address.');
       return;
     }
+    const targetRole = Array.isArray(requiredRole) ? requiredRole[0] : requiredRole;
+    if (targetRole === 'officer' && email.trim().toLowerCase() !== designatedOfficerEmail.toLowerCase()) {
+      setError(`Implementing Officer access is strictly restricted to designated administrative email: ${designatedOfficerEmail}`);
+      return;
+    }
     setIsSubmitting(true);
     try {
-      const targetRole = Array.isArray(requiredRole) ? requiredRole[0] : requiredRole;
       await loginWithCredentials(email.trim(), password, targetRole);
     } catch (err: any) {
       setError(err.message || 'Authentication failed. Check your credentials.');
@@ -95,21 +101,22 @@ export const PortalAuthGate: React.FC<PortalAuthGateProps> = ({
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setRegNotice(null);
     if (!email.trim() || !displayName.trim()) {
       setError('Full Name and Email Address are mandatory.');
       return;
     }
 
-    if (regRole === 'officer' && email.trim().toLowerCase() !== designatedOfficerEmail.toLowerCase()) {
+    if (regRole === 'officer') {
       setError(
-        `Implementing & Inspection Officer registration is strictly restricted to designated administrative email: ${designatedOfficerEmail}`
+        `Implementing Officer registration cannot be self-registered. Restricted strictly to: ${designatedOfficerEmail}`
       );
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await register({
+      const profile = await register({
         email: email.trim(),
         displayName: displayName.trim(),
         role: regRole,
@@ -117,6 +124,21 @@ export const PortalAuthGate: React.FC<PortalAuthGateProps> = ({
         phone: phone.trim(),
         constituency: constituency.trim(),
       });
+
+      if (profile.approvalStatus === 'PENDING_APPROVAL') {
+        setActiveTab('signin');
+        setRegNotice({
+          type: 'warning',
+          message: 'Registration Request Submitted to Implementing Officer',
+          submessage: `Your statutory registration as ${
+            regRole === 'contractor' ? 'Civil Works Contractor' : 'Material Contractor & Vendor'
+          } has been dispatched to Implementing Officer (${designatedOfficerEmail}). In accordance with statutory protocol, login is locked until officer review and approval. You may log in once approved.`
+        });
+        setDisplayName('');
+        setOrganization('');
+        setPhone('');
+        setConstituency('');
+      }
     } catch (err: any) {
       setError(err.message || 'Registration failed.');
     } finally {
@@ -290,6 +312,19 @@ export const PortalAuthGate: React.FC<PortalAuthGateProps> = ({
             </button>
           </div>
 
+          {regNotice && (
+            <div className="mt-4 rounded-xl border border-amber-300 bg-amber-50 p-3.5 text-xs text-amber-950 space-y-1 shadow-2xs dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-200">
+              <div className="font-bold flex items-center gap-2 text-amber-900 dark:text-amber-300">
+                <span>⚠ {regNotice.message}</span>
+              </div>
+              {regNotice.submessage && (
+                <p className="text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
+                  {regNotice.submessage}
+                </p>
+              )}
+            </div>
+          )}
+
           {error && (
             <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-semibold text-rose-800 dark:border-rose-800/70 dark:bg-rose-950/30 dark:text-rose-200">
               {error}
@@ -389,14 +424,17 @@ export const PortalAuthGate: React.FC<PortalAuthGateProps> = ({
                   onChange={(e) => setRegRole(e.target.value as UserRole)}
                   className="mt-1 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                 >
-                  <option value="officer">Implementing / Inspection Officer (Designated naidupolimera.6@gmail.com)</option>
-                  <option value="citizen">Citizen Protocol Auditor (Public review &amp; verification)</option>
-                  <option value="contractor">Civil Works Contractor (Attendance &amp; Labor Muster)</option>
-                  <option value="material_contractor">Material Contractor (Quality &amp; Price Fairness)</option>
+                  <option value="citizen">Public Citizen Auditor (Instant Access)</option>
+                  <option value="contractor">Civil Works Contractor (Officer Approval Required)</option>
+                  <option value="material_contractor">Material Contractor &amp; Vendor (Officer Approval Required)</option>
                 </select>
-                {regRole === 'officer' && (
+                {regRole !== 'citizen' ? (
                   <p className="mt-1 text-[10px] font-semibold text-amber-600 dark:text-amber-400">
-                    ⚠ Note: Officer registration is restricted exclusively to {designatedOfficerEmail}.
+                    ⚠ Approval Required: Contractors and vendors cannot log in until approved by Implementing Officer ({designatedOfficerEmail}).
+                  </p>
+                ) : (
+                  <p className="mt-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                    ✓ Instant Access: Citizens can log in and audit works immediately.
                   </p>
                 )}
               </div>

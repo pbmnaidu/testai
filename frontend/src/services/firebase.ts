@@ -42,8 +42,8 @@ import {
 } from 'firebase/firestore';
 import { optimizeImageForUpload } from '../utils/imageOptimizer';
 
-import { UserProfile, UserRole } from '../types';
-export type { UserProfile, UserRole };
+import { UserProfile, UserRole, RegistrationRequest, ApprovalStatus } from '../types';
+export type { UserProfile, UserRole, RegistrationRequest, ApprovalStatus };
 
 export const DESIGNATED_OFFICER_EMAIL = 'naidupolimera.6@gmail.com';
 
@@ -201,6 +201,197 @@ export async function signInWithGoogle(): Promise<UserProfile> {
 /**
  * Sign in using email credentials with strict statutory role compliance.
  */
+export const INITIAL_REGISTRATION_REQUESTS: RegistrationRequest[] = [
+  {
+    requestId: 'req-balaji-001',
+    uid: 'gov-contractor-balaji-003',
+    email: 'contractor.infra@nic.in',
+    displayName: 'Sri Balaji Infra & Constructions',
+    role: 'contractor',
+    organization: 'Sri Balaji Infra & Constructions Pvt Ltd (Lic: PWD/AP/CLASS-I/8834)',
+    phone: '+91 99890 33445',
+    state: 'Andhra Pradesh',
+    constituency: 'Visakhapatnam',
+    createdAt: '2025-01-01T10:00:00.000Z',
+    status: 'APPROVED',
+    reviewedAt: '2025-01-01T14:30:00.000Z',
+    reviewedBy: DESIGNATED_OFFICER_EMAIL,
+    reviewNotes: 'Authorized under statutory civil muster guidelines.',
+  },
+  {
+    requestId: 'req-deccan-002',
+    uid: 'gov-material-deccan-004',
+    email: 'materials.supply@nic.in',
+    displayName: 'Deccan Cement & Steel Supplies Ltd.',
+    role: 'material_contractor',
+    organization: 'Deccan Building Materials Consortium (GSTIN: 37AAACD4567M1Z4)',
+    phone: '+91 91210 55667',
+    state: 'Andhra Pradesh',
+    constituency: 'Visakhapatnam',
+    createdAt: '2025-01-01T11:00:00.000Z',
+    status: 'APPROVED',
+    reviewedAt: '2025-01-01T15:00:00.000Z',
+    reviewedBy: DESIGNATED_OFFICER_EMAIL,
+    reviewNotes: 'Verified against district SOR benchmark.',
+  },
+  {
+    requestId: 'req-apex-003',
+    email: 'contractor.balaji@infra.in',
+    displayName: 'Apex Civil Infra Projects LLP',
+    role: 'contractor',
+    organization: 'Apex Civil Infra Projects (Lic: CPWD/SZ/CIVIL/4412)',
+    phone: '+91 98492 44321',
+    state: 'Andhra Pradesh',
+    constituency: 'Visakhapatnam',
+    createdAt: new Date(Date.now() - 36 * 3600 * 1000).toISOString(),
+    status: 'PENDING_APPROVAL',
+  },
+  {
+    requestId: 'req-coastal-004',
+    email: 'vendor.coastal@cement.in',
+    displayName: 'Coastal Concrete & Ready-Mix Supplies',
+    role: 'material_contractor',
+    organization: 'Coastal Building Supplies (GSTIN: 37BBDCC9981K1Z2)',
+    phone: '+91 97011 88992',
+    state: 'Andhra Pradesh',
+    constituency: 'Visakhapatnam',
+    createdAt: new Date(Date.now() - 18 * 3600 * 1000).toISOString(),
+    status: 'PENDING_APPROVAL',
+  },
+];
+
+/**
+ * Fetch all registration requests for contractor & vendor approvals.
+ */
+export async function fetchRegistrationRequests(): Promise<RegistrationRequest[]> {
+  const localRaw = localStorage.getItem('mplads_registration_requests');
+  let requests: RegistrationRequest[] = localRaw ? JSON.parse(localRaw) : [...INITIAL_REGISTRATION_REQUESTS];
+
+  // Try fetching from Firestore (if available)
+  try {
+    const colRef = collection(db, 'registration_requests');
+    const q = query(colRef, orderBy('createdAt', 'desc'));
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      const remoteRequests: RegistrationRequest[] = [];
+      snap.forEach((d) => {
+        remoteRequests.push({ ...(d.data() as RegistrationRequest), requestId: d.id });
+      });
+      // Merge remote with local/initial
+      const map = new Map<string, RegistrationRequest>();
+      requests.forEach((r) => map.set(r.requestId, r));
+      remoteRequests.forEach((r) => map.set(r.requestId, r));
+      requests = Array.from(map.values());
+    }
+  } catch {
+    // Graceful offline/local mode fallback
+  }
+
+  // Persist merged cache
+  try {
+    localStorage.setItem('mplads_registration_requests', JSON.stringify(requests));
+  } catch {}
+
+  return requests.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+/**
+ * Save a new registration request to Firestore and localStorage.
+ */
+export async function saveRegistrationRequest(request: RegistrationRequest): Promise<void> {
+  const requests = await fetchRegistrationRequests();
+  const existingIdx = requests.findIndex((r) => r.email.toLowerCase() === request.email.toLowerCase());
+  if (existingIdx >= 0) {
+    requests[existingIdx] = request;
+  } else {
+    requests.unshift(request);
+  }
+
+  try {
+    localStorage.setItem('mplads_registration_requests', JSON.stringify(requests));
+  } catch {}
+
+  try {
+    const docRef = doc(db, 'registration_requests', request.requestId);
+    await setDoc(docRef, { ...request, server_timestamp: serverTimestamp() }, { merge: true });
+  } catch {}
+}
+
+/**
+ * Approve a contractor or vendor registration request (Implementing Officer only).
+ */
+export async function approveRegistrationRequest(
+  requestId: string,
+  officerEmail = DESIGNATED_OFFICER_EMAIL,
+  notes = 'Approved by Implementing District Officer'
+): Promise<RegistrationRequest> {
+  const requests = await fetchRegistrationRequests();
+  const req = requests.find((r) => r.requestId === requestId);
+  if (!req) {
+    throw new Error(`Registration request '${requestId}' not found.`);
+  }
+
+  req.status = 'APPROVED';
+  req.reviewedAt = new Date().toISOString();
+  req.reviewedBy = officerEmail;
+  req.reviewNotes = notes;
+
+  try {
+    localStorage.setItem('mplads_registration_requests', JSON.stringify(requests));
+  } catch {}
+
+  try {
+    const docRef = doc(db, 'registration_requests', requestId);
+    await updateDoc(docRef, {
+      status: 'APPROVED',
+      reviewedAt: req.reviewedAt,
+      reviewedBy: officerEmail,
+      reviewNotes: notes,
+    });
+  } catch {}
+
+  return req;
+}
+
+/**
+ * Reject a contractor or vendor registration request (Implementing Officer only).
+ */
+export async function rejectRegistrationRequest(
+  requestId: string,
+  officerEmail = DESIGNATED_OFFICER_EMAIL,
+  reason = 'Rejected during statutory background check'
+): Promise<RegistrationRequest> {
+  const requests = await fetchRegistrationRequests();
+  const req = requests.find((r) => r.requestId === requestId);
+  if (!req) {
+    throw new Error(`Registration request '${requestId}' not found.`);
+  }
+
+  req.status = 'REJECTED';
+  req.reviewedAt = new Date().toISOString();
+  req.reviewedBy = officerEmail;
+  req.reviewNotes = reason;
+
+  try {
+    localStorage.setItem('mplads_registration_requests', JSON.stringify(requests));
+  } catch {}
+
+  try {
+    const docRef = doc(db, 'registration_requests', requestId);
+    await updateDoc(docRef, {
+      status: 'REJECTED',
+      reviewedAt: req.reviewedAt,
+      reviewedBy: officerEmail,
+      reviewNotes: reason,
+    });
+  } catch {}
+
+  return req;
+}
+
+/**
+ * Sign in using email credentials with strict statutory role compliance.
+ */
 export async function signInWithCredentials(
   email: string,
   _password = '',
@@ -214,6 +405,7 @@ export async function signInWithCredentials(
     const officerProfile: UserProfile = {
       ...OFFICIAL_DEMO_ACCOUNTS.officer,
       lastLoginAt: nowIso,
+      approvalStatus: 'APPROVED',
     };
     try {
       localStorage.setItem('mplads_auth_profile', JSON.stringify(officerProfile));
@@ -221,11 +413,18 @@ export async function signInWithCredentials(
     return officerProfile;
   }
 
+  // Strict role security: Officer access is ONLY permitted for designated administrative email
+  if (preferredRole === 'officer') {
+    throw new Error(
+      `Implementing & Inspection Officer access is strictly restricted to designated administrative email: ${DESIGNATED_OFFICER_EMAIL}`
+    );
+  }
+
   // Check matching pre-defined demo accounts
   for (const roleKey of Object.keys(OFFICIAL_DEMO_ACCOUNTS) as UserRole[]) {
     const demo = OFFICIAL_DEMO_ACCOUNTS[roleKey];
     if (demo.email && demo.email.toLowerCase() === normalizedEmail) {
-      const updated = { ...demo, lastLoginAt: nowIso };
+      const updated = { ...demo, lastLoginAt: nowIso, approvalStatus: 'APPROVED' as const };
       try {
         localStorage.setItem('mplads_auth_profile', JSON.stringify(updated));
       } catch {}
@@ -233,14 +432,30 @@ export async function signInWithCredentials(
     }
   }
 
-  // Role validation: Only designated email can be officer
-  if (preferredRole === 'officer') {
-    throw new Error(
-      `Access as Implementing / Inspection Officer is strictly restricted to designated administrative email: ${DESIGNATED_OFFICER_EMAIL}`
-    );
+  const assignedRole: UserRole = preferredRole || 'citizen';
+
+  // For contractor or material_contractor, enforce Officer Approval Gate!
+  if (assignedRole === 'contractor' || assignedRole === 'material_contractor') {
+    const requests = await fetchRegistrationRequests();
+    const userReq = requests.find((r) => r.email.toLowerCase() === normalizedEmail);
+
+    if (!userReq || userReq.status === 'PENDING_APPROVAL') {
+      throw new Error(
+        `Login Blocked: Your statutory registration as ${
+          assignedRole === 'contractor' ? 'Civil Works Contractor' : 'Material Contractor & Vendor'
+        } is awaiting authorization from the Implementing District Officer (${DESIGNATED_OFFICER_EMAIL}). You cannot log in until approved.`
+      );
+    }
+
+    if (userReq.status === 'REJECTED') {
+      throw new Error(
+        `Login Blocked: Your registration request as ${
+          assignedRole === 'contractor' ? 'Civil Works Contractor' : 'Material Contractor & Vendor'
+        } was rejected by the Implementing District Officer.`
+      );
+    }
   }
 
-  const assignedRole: UserRole = preferredRole || 'citizen';
   const designation =
     assignedRole === 'citizen'
       ? 'Verified Citizen Auditor'
@@ -260,6 +475,7 @@ export async function signInWithCredentials(
     createdAt: nowIso,
     lastLoginAt: nowIso,
     isSystemAdmin: false,
+    approvalStatus: 'APPROVED',
   };
 
   try {
@@ -270,7 +486,7 @@ export async function signInWithCredentials(
 }
 
 /**
- * Register a new user profile with statutory checks.
+ * Register a new user profile with statutory checks and approval routing.
  */
 export async function registerUserProfile(fields: {
   email: string;
@@ -286,11 +502,14 @@ export async function registerUserProfile(fields: {
 
   if (fields.role === 'officer' && !isDesignatedOfficer) {
     throw new Error(
-      `Registration for Implementing / Inspection Officer is strictly restricted to designated administrative email: ${DESIGNATED_OFFICER_EMAIL}`
+      `Implementing & Inspection Officer registration is strictly restricted to designated administrative email: ${DESIGNATED_OFFICER_EMAIL}`
     );
   }
 
   const nowIso = new Date().toISOString();
+  const isCitizen = fields.role === 'citizen';
+  const approvalStatus: ApprovalStatus = isCitizen || isDesignatedOfficer ? 'APPROVED' : 'PENDING_APPROVAL';
+
   const designation =
     isDesignatedOfficer
       ? 'Senior Implementing & Inspection Officer / Nodal Admin'
@@ -302,8 +521,9 @@ export async function registerUserProfile(fields: {
             ? 'Authorized Works Material Contractor & Vendor'
             : 'Authorized User';
 
+  const profileUid = `user-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
   const profile: UserProfile = {
-    uid: `reg-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    uid: profileUid,
     email: normalizedEmail,
     displayName: fields.displayName.trim() || normalizedEmail.split('@')[0],
     photoURL: null,
@@ -316,11 +536,33 @@ export async function registerUserProfile(fields: {
     createdAt: nowIso,
     lastLoginAt: nowIso,
     isSystemAdmin: isDesignatedOfficer,
+    approvalStatus,
   };
 
-  try {
-    localStorage.setItem('mplads_auth_profile', JSON.stringify(profile));
-  } catch {}
+  // If contractor or vendor, register approval request for Implementing Officer
+  if (!isCitizen && !isDesignatedOfficer) {
+    const regReq: RegistrationRequest = {
+      requestId: `req-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      uid: profileUid,
+      email: normalizedEmail,
+      displayName: fields.displayName.trim() || normalizedEmail.split('@')[0],
+      role: fields.role,
+      organization: fields.organization?.trim() || '',
+      phone: fields.phone?.trim() || '',
+      state: fields.state?.trim() || '',
+      constituency: fields.constituency?.trim() || '',
+      createdAt: nowIso,
+      status: 'PENDING_APPROVAL',
+    };
+    await saveRegistrationRequest(regReq);
+  }
+
+  // Only auto-login if APPROVED (Citizen or designated Officer)
+  if (approvalStatus === 'APPROVED') {
+    try {
+      localStorage.setItem('mplads_auth_profile', JSON.stringify(profile));
+    } catch {}
+  }
 
   return profile;
 }

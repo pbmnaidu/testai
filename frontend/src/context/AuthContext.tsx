@@ -10,7 +10,12 @@ import {
   DESIGNATED_OFFICER_EMAIL,
   OFFICIAL_DEMO_ACCOUNTS,
 } from '../services/firebase';
-import { UserProfile, UserRole } from '../types';
+import { UserProfile, UserRole, RegistrationRequest } from '../types';
+import {
+  fetchRegistrationRequests,
+  approveRegistrationRequest,
+  rejectRegistrationRequest,
+} from '../services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 
 interface AuthContextType {
@@ -38,6 +43,9 @@ interface AuthContextType {
   isMaterialContractor: boolean;
   isSystemAdmin: boolean;
   designatedOfficerEmail: string;
+  getPendingApprovals: () => Promise<RegistrationRequest[]>;
+  approveContractorVendor: (requestId: string, notes?: string) => Promise<RegistrationRequest>;
+  rejectContractorVendor: (requestId: string, reason?: string) => Promise<RegistrationRequest>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -137,7 +145,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       const profile = await registerUserProfile(data);
-      setUser(profile);
+      // Only establish active login session if APPROVED (Citizen or designated Officer)
+      if (profile.approvalStatus === 'APPROVED') {
+        setUser(profile);
+      }
       return profile;
     } finally {
       setIsLoading(false);
@@ -156,6 +167,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const handleSwitchRole = async (newRole: UserRole): Promise<void> => {
     if (!user) return;
+    if (newRole === 'officer' && (user.email || '').toLowerCase() !== DESIGNATED_OFFICER_EMAIL.toLowerCase()) {
+      throw new Error(
+        `Implementing Officer access is strictly restricted to designated administrative email: ${DESIGNATED_OFFICER_EMAIL}`
+      );
+    }
     const updated = await updateUserRole(user.uid, newRole);
     if (updated) {
       setUser(updated);
@@ -163,7 +179,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const currentRole: UserRole = user?.role || 'citizen';
-  const isOfficer = currentRole === 'officer' || (user?.email || '').toLowerCase() === DESIGNATED_OFFICER_EMAIL.toLowerCase();
+  const isOfficer = (user?.email || '').toLowerCase() === DESIGNATED_OFFICER_EMAIL.toLowerCase() && currentRole === 'officer';
   const isCitizen = currentRole === 'citizen';
   const isContractor = currentRole === 'contractor';
   const isMaterialContractor = currentRole === 'material_contractor';
@@ -187,6 +203,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isMaterialContractor,
         isSystemAdmin,
         designatedOfficerEmail: DESIGNATED_OFFICER_EMAIL,
+        getPendingApprovals: fetchRegistrationRequests,
+        approveContractorVendor: approveRegistrationRequest,
+        rejectContractorVendor: rejectRegistrationRequest,
       }}
     >
       {children}

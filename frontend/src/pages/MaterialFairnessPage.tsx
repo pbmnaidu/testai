@@ -36,7 +36,6 @@ import {
   searchMaterialWorks,
   uploadBenchmarkModule
 } from '../services/api';
-import { PortalAuthGate } from '../components/auth/PortalAuthGate';
 
 interface SampleDoc {
   id: string;
@@ -87,7 +86,13 @@ interface AnalysisResult {
   auditor_guidance: string[];
 }
 
-export function MaterialFairnessPage() {
+interface MaterialFairnessProps {
+  initialViewTab?: 'audit' | 'ingestion' | 'benchmarks';
+  onSelectWork?: (workId: string) => void;
+  showHeader?: boolean;
+}
+
+export function MaterialFairnessPage({ initialViewTab = 'audit', onSelectWork, showHeader = true }: MaterialFairnessProps = {}) {
   const [samples, setSamples] = useState<SampleDoc[]>([]);
   const [selectedSampleId, setSelectedSampleId] = useState<string>('sample_cement_opc53_overpriced');
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
@@ -106,7 +111,7 @@ export function MaterialFairnessPage() {
   const [showRawTextEditor, setShowRawTextEditor] = useState<boolean>(false);
 
   // View Navigation
-  const [activeViewTab, setActiveViewTab] = useState<'audit' | 'ingestion' | 'benchmarks'>('audit');
+  const [activeViewTab, setActiveViewTab] = useState<'audit' | 'ingestion' | 'benchmarks'>(initialViewTab);
 
   // Real-world Works Linker
   const [workSearchQuery, setWorkSearchQuery] = useState<string>('');
@@ -145,7 +150,6 @@ export function MaterialFairnessPage() {
     raw_text?: string;
     quoted_price?: number;
     state?: string;
-    work_id?: string;
   }) => {
     setLoading(true);
     try {
@@ -154,8 +158,7 @@ export function MaterialFairnessPage() {
         file: opts.file,
         raw_text: opts.raw_text,
         quoted_price: opts.quoted_price,
-        state: opts.state || selectedState,
-        work_id: opts.work_id || selectedLinkedWork?.work_id,
+        state: opts.state || selectedState
       });
       setAnalysisResult(res);
       if (res?.extracted_text) {
@@ -261,7 +264,7 @@ export function MaterialFairnessPage() {
     Verification: Passed site technical inspection
     `;
     setRawTextEdit(generatedVoucherText);
-    runAnalysis({ raw_text: generatedVoucherText, state: work.state, quoted_price: customPrice ? parseFloat(customPrice) : 485.0, work_id: work.work_id });
+    runAnalysis({ raw_text: generatedVoucherText, state: work.state, quoted_price: customPrice ? parseFloat(customPrice) : 485.0 });
     setActiveViewTab('audit');
   };
 
@@ -364,15 +367,7 @@ ${analysisResult.auditor_guidance.map((g) => `[ ] ${g}`).join('\n')}
   };
 
   return (
-    <PortalAuthGate
-      requiredRole="material_contractor"
-      portalTitle="Material Quality & Price Fairness Verification"
-      portalSubtitle="Authorized Works Material Contractors & Vendor Invoice Audit"
-      portalBadge="Material Contractor"
-      portalIcon={Scale}
-      accentColor="purple"
-    >
-      <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
+    <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
       {/* Toast Notification */}
       {copiedToast && (
         <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl border border-emerald-500/40 flex items-center gap-2 animate-bounce">
@@ -1177,11 +1172,8 @@ ${analysisResult.auditor_guidance.map((g) => `[ ] ${g}`).join('\n')}
           </div>
         </div>
       )}
-      </div>
-    </PortalAuthGate>
+    </div>
   );
 }
 
 export default MaterialFairnessPage;
-
-

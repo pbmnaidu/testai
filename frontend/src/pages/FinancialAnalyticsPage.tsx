@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { fetchFilters, fetchOverview, fetchRiskQueue } from '../services/api';
 import { FilterOptions, NationalOverviewResponse, WorkRecord } from '../types';
-import { ArrowLeft, ArrowUpDown, ArrowRight, BarChart3, DollarSign, Eye, Filter, RotateCcw } from 'lucide-react';
+import { ArrowLeft, ArrowUpDown, ArrowRight, BarChart3, DollarSign, Eye, Filter, RotateCcw, TrendingUp } from 'lucide-react';
 import { usePersistentState } from '../hooks/usePersistentState';
+import { FinancialBenchmarkPage } from './FinancialBenchmarkPage';
 
 interface FinancialAnalyticsPageProps {
   onSelectWork?: (workId: string) => void;
@@ -21,6 +22,7 @@ const comparison = (min?: number, max?: number, current?: number, unit = '') => 
 };
 
 export const FinancialAnalyticsPage: React.FC<FinancialAnalyticsPageProps> = ({ onSelectWork, onOpenBenchmarks }) => {
+  const [financialTab, setFinancialTab] = useState<'outliers' | 'benchmarks'>('outliers');
   const [records, setRecords] = useState<WorkRecord[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -75,15 +77,43 @@ export const FinancialAnalyticsPage: React.FC<FinancialAnalyticsPageProps> = ({ 
     <div className="p-6 space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-        <h2 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-          <DollarSign className="w-6 h-6 text-amber-600" /> Financial Risk Order
-        </h2>
-        <p className="text-xs text-slate-500 mt-1">
-          Ranked works outside a labelled completed-work peer range. Cost groups use constituency, then state, then India only when a narrower group has insufficient history; unit prices require a specific work type and validated quantity.
-        </p>
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+            <DollarSign className="w-6 h-6 text-amber-600" /> Financial Anomaly & Peer Intelligence
+          </h2>
+          <p className="text-xs text-slate-500 mt-1">
+            Ranked expenditure outliers and historical completed-work peer benchmark cost ranges.
+          </p>
         </div>
-        {onOpenBenchmarks && <button onClick={onOpenBenchmarks} className="inline-flex items-center gap-2 rounded-xl bg-indigo-50 border border-indigo-200 px-3 py-2 text-xs font-bold text-indigo-700 hover:bg-indigo-100"><BarChart3 className="w-4 h-4" /> View peer benchmark statistics</button>}
+        <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200">
+          <button
+            onClick={() => setFinancialTab('outliers')}
+            className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
+              financialTab === 'outliers'
+                ? 'bg-white text-slate-900 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <DollarSign className="w-4 h-4 text-amber-600" />
+            Financial Outliers Queue
+          </button>
+          <button
+            onClick={() => setFinancialTab('benchmarks')}
+            className={`px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
+              financialTab === 'benchmarks'
+                ? 'bg-white text-slate-900 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <BarChart3 className="w-4 h-4 text-indigo-600" />
+            Peer Benchmark Statistics
+          </button>
+        </div>
       </div>
+
+      {financialTab === 'benchmarks' ? (
+        <FinancialBenchmarkPage />
+      ) : (
+        <>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <div className="bg-white rounded-2xl border border-slate-200 p-5">
@@ -157,6 +187,8 @@ export const FinancialAnalyticsPage: React.FC<FinancialAnalyticsPageProps> = ({ 
           </div>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 };
