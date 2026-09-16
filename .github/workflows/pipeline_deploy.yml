@@ -6,6 +6,7 @@ on:
     - cron: '0 2 * * 0' # Automatically runs every Sunday at 2:00 AM UTC
   push:
     branches:
+      - frontend-ui-migration
       - chatBot
     paths:
       - 'data/processed/**'
@@ -29,7 +30,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: chatBot # Explicitly target chatBot branch for all runs
+          ref: frontend-ui-migration # Deploy to production branch (Vercel tracks this)
           fetch-depth: 0 # Give the reconciliation step the full branch history
 
       - name: Set up Python 3.11
@@ -51,18 +52,18 @@ jobs:
         run: |
           python src/data/validate_snapshots.py
 
-      - name: Rebase generated changes onto latest chatBot
+      - name: Rebase generated changes onto latest frontend-ui-migration
         run: |
           # git-auto-commit-action intentionally does not pull before pushing.
           # Reconcile a commit from an earlier/parallel run while the generated
           # files are still uncommitted.
-          git fetch origin chatBot
-          git rebase --autostash origin/chatBot
+          git fetch origin frontend-ui-migration
+          git rebase --autostash origin/frontend-ui-migration
 
       - name: Commit and Push Updated Scored Datasets & Validated Snapshots
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          branch: chatBot
+          branch: frontend-ui-migration
           commit_message: "Automated ML Pipeline: update precomputed features, risk scores, and dashboard snapshots [skip ci]"
           # data/snapshots/ is an ignored local mirror. The deployable snapshot
           # lives under frontend/public and is tracked by Git.

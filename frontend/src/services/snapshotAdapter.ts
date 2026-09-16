@@ -109,10 +109,10 @@ export function getWorkShardHex(workId: string): string {
 
 const DEFAULT_MANIFEST: SnapshotManifest = {
   schema_version: '2.0.0',
-  snapshot_version: 'v_20260915_225902',
-  generated_at: '2026-09-15T22:59:02.293528+05:30',
-  dataset_version: 'v_20260915_225902',
-  base_path: '/data/snapshots/v_20260915_225902',
+  snapshot_version: 'v_20260916_060738',
+  generated_at: '2026-09-16T06:07:38.533630+00:00',
+  dataset_version: 'v_20260916_060738',
+  base_path: '/data/snapshots/v_20260916_060738',
   row_counts: {
     master_works: 79827,
     duplicate_clusters: 2146,
@@ -180,7 +180,7 @@ export async function fetchSnapshotFile<T>(filename: string): Promise<T> {
   }
 
   // Secondary fallback url
-  const secondaryUrl = `/data/snapshots/v_20260915_225902/${filename}`;
+  const secondaryUrl = `/data/snapshots/v_20260916_060738/${filename}`;
   try {
     const res = await fetch(secondaryUrl);
     if (res.ok) {
