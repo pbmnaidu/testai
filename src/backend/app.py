@@ -497,7 +497,8 @@ def health_check():
     total_projects = 0
     try:
         if os.path.exists(master_p):
-            total_projects = len(pd.read_parquet(master_p, columns=["work_id"]))
+            import pyarrow.parquet as pq
+            total_projects = pq.ParquetFile(master_p).metadata.num_rows
     except Exception:
         total_projects = 0
     return {
@@ -505,8 +506,17 @@ def health_check():
         "total_projects_loaded": total_projects
     }
 
+_OVERVIEW_CACHE = {"result": None, "mtime": None}
+
 @app.get("/api/overview")
 def get_national_overview():
+    master_path = os.path.join(FEATURES_DIR, "master_project_risk_scores.parquet")
+    mtime = os.path.getmtime(master_path) if os.path.exists(master_path) else None
+    if _OVERVIEW_CACHE.get("result") is not None and _OVERVIEW_CACHE.get("mtime") == mtime:
+        cached = dict(_OVERVIEW_CACHE["result"])
+        cached["metadata"] = _analytics_metadata()
+        return cached
+
     master, duplicate_counts, t1, t7 = _read_overview_data()
     
     total_allocation = float(t1["allocated_amount"].sum()) if len(t1) > 0 else 0.0
@@ -525,6 +535,10 @@ def get_national_overview():
         
     total_review_cases = med_cnt + high_cnt + crit_cnt
     
+    # Fast vectorized indicator columns for groupby aggregations
+    master["_is_high_risk"] = master["overall_risk_level"].isin(["MEDIUM", "HIGH", "CRITICAL"])
+    master["_is_critical"] = master["overall_risk_level"] == "CRITICAL"
+
     # State-level aggregation for the GIS view.  Ignore blank source-state
     # rows so the API represents the same 36 States/UTs as the map.
     state_source = master[master["state"].fillna("").astype(str).str.strip().ne("")].copy()
@@ -532,8 +546,8 @@ def get_national_overview():
         total_works=("work_id", "count"),
         total_sanctioned=("sanction_amount", "sum"),
         total_disbursed=("effective_expenditure", "sum"),
-        high_risk_works=("overall_risk_level", lambda x: (x.isin(["MEDIUM", "HIGH", "CRITICAL"])).sum()),
-        critical_works=("overall_risk_level", lambda x: (x == "CRITICAL").sum()),
+        high_risk_works=("_is_high_risk", "sum"),
+        critical_works=("_is_critical", "sum"),
         average_risk_score=("overall_risk_score", "mean"),
     ).reset_index().sort_values("high_risk_works", ascending=False)
 
@@ -573,9 +587,9 @@ def get_national_overview():
     # in the current feature store.  Do not label overall high-risk works as
     # duplicate/audit cases in the GIS panel.
     if not duplicate_counts.empty and "state" in duplicate_counts.columns:
-        duplicate_counts = duplicate_counts[duplicate_counts["state"].fillna("").astype(str).str.strip().ne("")]
-        duplicate_counts = duplicate_counts.groupby("state").size()
-        state_agg["duplicate_candidate_pairs"] = state_agg["state"].map(duplicate_counts).fillna(0).astype(int)
+        dup_state = duplicate_counts[duplicate_counts["state"].fillna("").astype(str).str.strip().ne("")]
+        dup_counts = dup_state.groupby("state").size()
+        state_agg["duplicate_candidate_pairs"] = state_agg["state"].map(dup_counts).fillna(0).astype(int)
     else:
         state_agg["duplicate_candidate_pairs"] = 0
     
@@ -585,7 +599,7 @@ def get_national_overview():
     cat_agg = master.groupby("work_category").agg(
         total_works=("work_id", "count"),
         total_sanctioned=("sanction_amount", "sum"),
-        high_risk_works=("overall_risk_level", lambda x: (x.isin(["MEDIUM", "HIGH", "CRITICAL"])).sum())
+        high_risk_works=("_is_high_risk", "sum")
     ).reset_index().sort_values("high_risk_works", ascending=False)
     
     cat_list = [clean_record_for_json(r) for r in cat_agg.to_dict(orient="records")]
@@ -599,7 +613,7 @@ def get_national_overview():
         "unit_price_comparisons": int(unit_available.sum()),
     }
     
-    return {
+    res = {
         "summary": {
             "total_allocated_funds": total_allocation,
             "total_sanctioned_amount": total_sanctioned,
@@ -623,6 +637,9 @@ def get_national_overview():
         "category_distribution": cat_list[:8],
         "metadata": _analytics_metadata(),
     }
+    _OVERVIEW_CACHE["result"] = res
+    _OVERVIEW_CACHE["mtime"] = mtime
+    return res
 
 
 @app.get("/api/analytics/overview")
@@ -799,7 +816,7 @@ def get_original_analysis_records(
 
 
 @app.get("/api/state-risk-summary")
-def get_state_risk_summary(state: str = Query(..., min_length=1)):
+def get_state_risk_summary(state: str = Query(None)):
     """Return the live, four-engine risk profile for one selected state/UT."""
     master_path = os.path.join(FEATURES_DIR, "master_project_risk_scores.parquet")
     state_cols = [
@@ -810,6 +827,13 @@ def get_state_risk_summary(state: str = Query(..., min_length=1)):
         master = pd.read_parquet(master_path, columns=state_cols) if os.path.exists(master_path) else pd.DataFrame()
     except Exception:
         master = pd.DataFrame()
+
+    if not state or not str(state).strip():
+        if not master.empty and "state" in master.columns:
+            st_counts = master["state"].dropna().value_counts()
+            state = str(st_counts.index[0]) if len(st_counts) > 0 else "ANDHRA PRADESH"
+        else:
+            state = "ANDHRA PRADESH"
 
     def state_key(value):
         value = str(value or "").upper().replace("&", " AND ")
@@ -981,7 +1005,8 @@ def get_schedule_risk_analytics(
 
 @app.get("/api/sync/status")
 def get_sync_status():
-    return get_automation_status()
+    status = get_automation_status()
+    return clean_record_for_json(status) if isinstance(status, dict) else status
 
 
 @app.get("/api/sync/health")
@@ -2154,14 +2179,27 @@ def get_officer_dashboard(
                 "schedule": "Schedule risk is above the review threshold.",
                 "duplicate": "Duplicate-risk score is above the review threshold.",
             }.get(focus_key, "Overall analytical risk level requires officer review.")
+            score_val = float(record.get("overall_risk_score") or record.get("composite_risk_score") or 0)
+            level_val = str(record.get("overall_risk_level") or "").strip().upper()
+            if not level_val or level_val == "UNASSESSED" or (level_val == "LOW" and score_val >= 35):
+                if score_val >= 85:
+                    level_val = "CRITICAL"
+                elif score_val >= 65:
+                    level_val = "HIGH"
+                elif score_val >= 35:
+                    level_val = "MEDIUM"
+                else:
+                    level_val = "LOW"
             priority.append({
                 "work_id": record.get("work_id"),
                 "state": record.get("state"),
                 "constituency": record.get("constituency"),
                 "description": record.get("description"),
                 "work_status": record.get("work_status"),
-                "overall_risk": record.get("overall_risk_level") or "UNASSESSED",
-                "overall_risk_score": record.get("overall_risk_score") or record.get("composite_risk_score") or 0,
+                "overall_risk": level_val,
+                "overall_risk_level": level_val,
+                "overall_risk_score": score_val,
+                "composite_risk_score": score_val,
                 "signals": signals,
                 "why_flagged": signals[0]["explanation"] if signals else focus_reason,
                 "recommended_action": signals[0]["recommended_action"] if signals else record.get("recommended_reviewer_action") or "Review work monitoring record",
@@ -2279,53 +2317,83 @@ def get_officer_work_monitoring(work_id: str = Query(..., min_length=1)):
 # Citizen Feedback & Public Evidence Helpers & Endpoints
 # =====================================================================
 
+_CITIZEN_WORK_CACHE = {"records": None, "lookup": None, "master_mtime": None, "ev_mtime": None}
+
 def _citizen_work_records() -> tuple[list[dict], dict]:
+    master_path = os.path.join(FEATURES_DIR, "master_project_risk_scores.parquet")
+    mtime = os.path.getmtime(master_path) if os.path.exists(master_path) else None
+    ev_path = os.path.join(DATA_DIR, "citizen_evidence.json")
+    ev_mtime = os.path.getmtime(ev_path) if os.path.exists(ev_path) else None
+
+    if (
+        _CITIZEN_WORK_CACHE["records"] is not None
+        and _CITIZEN_WORK_CACHE["master_mtime"] == mtime
+        and _CITIZEN_WORK_CACHE["ev_mtime"] == ev_mtime
+    ):
+        return _CITIZEN_WORK_CACHE["records"], _CITIZEN_WORK_CACHE["lookup"]
+
     data = get_data()
     master = _all_records_frame(data)
-    location_lookup = {}
-    records = []
+
     evidence_counts = {}
     for ev in _read_citizen_evidence():
         wid = str(ev.get("work_id") or "").strip()
         if wid:
             evidence_counts[wid] = evidence_counts.get(wid, 0) + 1
 
-    for row in master.to_dict(orient="records"):
-        r = clean_record_for_json(row)
-        wid = str(r.get("work_id") or "").strip()
-        lat = None
-        lon = None
-        for lat_k in ("latitude", "lat", "geo_latitude", "work_latitude"):
-            if r.get(lat_k) is not None:
-                try:
-                    lat = float(r[lat_k])
-                    break
-                except (ValueError, TypeError):
-                    pass
-        for lon_k in ("longitude", "lon", "geo_longitude", "work_longitude"):
-            if r.get(lon_k) is not None:
-                try:
-                    lon = float(r[lon_k])
-                    break
-                except (ValueError, TypeError):
-                    pass
-        rec = {
-            "work_id": wid,
-            "description": r.get("description") or "Work description not provided",
-            "state": r.get("state") or "Unknown State",
-            "constituency": r.get("constituency") or "Unknown Constituency",
-            "work_category": r.get("work_category") or "Other",
-            "work_status": r.get("work_status") or "Ongoing",
-            "normalized_status": _normalized_citizen_work_status(r.get("work_status")),
-            "sanction_amount": r.get("sanction_amount"),
-            "latitude": lat,
-            "longitude": lon,
-            "coordinate_available": lat is not None and lon is not None,
-            "citizen_evidence_count": evidence_counts.get(wid, 0),
-        }
-        records.append(rec)
-        if wid:
-            location_lookup[wid] = rec
+    wids = master["work_id"].fillna("").astype(str).str.strip()
+    descs = master["description"].fillna("Work description not provided").astype(str)
+    states = master["state"].fillna("Unknown State").astype(str)
+    consts = master["constituency"].fillna("Unknown Constituency").astype(str)
+    cats = master["work_category"].fillna("Other").astype(str)
+    statuses = master["work_status"].fillna("Ongoing").astype(str)
+    sanctions = master["sanction_amount"].where(pd.notnull(master["sanction_amount"]), None)
+
+    lat_col = None
+    for k in ("latitude", "lat", "geo_latitude", "work_latitude"):
+        if k in master.columns:
+            lat_col = pd.to_numeric(master[k], errors="coerce")
+            break
+    lon_col = None
+    for k in ("longitude", "lon", "geo_longitude", "work_longitude"):
+        if k in master.columns:
+            lon_col = pd.to_numeric(master[k], errors="coerce")
+            break
+
+    df = pd.DataFrame({
+        "work_id": wids,
+        "description": descs,
+        "state": states,
+        "constituency": consts,
+        "work_category": cats,
+        "work_status": statuses,
+        "sanction_amount": sanctions,
+        "latitude": lat_col if lat_col is not None else [None] * len(master),
+        "longitude": lon_col if lon_col is not None else [None] * len(master),
+    })
+
+    status_unique = statuses.unique()
+    status_map = {s: _normalized_citizen_work_status(s) for s in status_unique}
+    df["normalized_status"] = statuses.map(status_map)
+    df["coordinate_available"] = df["latitude"].notna() & df["longitude"].notna()
+    df["citizen_evidence_count"] = df["work_id"].map(evidence_counts).fillna(0).astype(int)
+
+    records = df.to_dict(orient="records")
+    for r in records:
+        if pd.isna(r["latitude"]):
+            r["latitude"] = None
+        if pd.isna(r["longitude"]):
+            r["longitude"] = None
+        if pd.isna(r["sanction_amount"]):
+            r["sanction_amount"] = None
+
+    location_lookup = {r["work_id"]: r for r in records if r["work_id"]}
+
+    _CITIZEN_WORK_CACHE["records"] = records
+    _CITIZEN_WORK_CACHE["lookup"] = location_lookup
+    _CITIZEN_WORK_CACHE["master_mtime"] = mtime
+    _CITIZEN_WORK_CACHE["ev_mtime"] = ev_mtime
+
     return records, location_lookup
 
 
@@ -2775,6 +2843,102 @@ def get_attendance(work_id: str = None, review_status: str = None):
         target_status = review_status.strip().upper()
         records = [r for r in records if str(r.get("review_status") or "").upper() == target_status]
     return {"total": len(records), "records": records}
+
+
+@app.post("/api/attendance")
+async def create_attendance(
+    request: Request,
+    work_id: str = Form(..., min_length=1, max_length=160),
+    staff_count: str = Form("1"),
+    latitude: str = Form(None),
+    longitude: str = Form(None),
+    gps_accuracy: str = Form(None),
+    captured_at: str = Form(None),
+    live_capture: str = Form("true"),
+    image: UploadFile = File(...),
+):
+    _enforce_citizen_rate_limit(request)
+    data = get_data()
+    works, _ = _citizen_work_records()
+    clean_target = work_id.strip()
+    work = next((r for r in works if r["work_id"] == clean_target), None)
+    if not work and "/" in clean_target:
+        tail = clean_target.rsplit("/", 1)[-1]
+        work = next((r for r in works if r["work_id"].rsplit("/", 1)[-1] == tail), None)
+    if not work and clean_target.startswith("WORK_"):
+        tail = clean_target.replace("WORK_", "")
+        work = next((r for r in works if r["work_id"].replace("WORK_", "") == tail or r["work_id"].rsplit("/", 1)[-1] == tail), None)
+    if not work and "master_work_index" in data:
+        full_id = data["master_work_index"].id_by_tail(clean_target)
+        if full_id:
+            work = next((r for r in works if r["work_id"] == full_id), None)
+    if not work:
+        work = {"work_id": clean_target, "description": f"Work ID: {clean_target}", "state": "", "constituency": ""}
+
+    parsed_latitude = _parse_optional_float(latitude, "latitude")
+    parsed_longitude = _parse_optional_float(longitude, "longitude")
+    parsed_accuracy = _parse_optional_float(gps_accuracy, "gps_accuracy")
+    if parsed_latitude is not None and not -90 <= parsed_latitude <= 90:
+        raise HTTPException(status_code=422, detail="latitude is outside the valid range.")
+    if parsed_longitude is not None and not -180 <= parsed_longitude <= 180:
+        raise HTTPException(status_code=422, detail="longitude is outside the valid range.")
+
+    is_live_capture = str(live_capture).strip().lower() in {"true", "1", "yes"}
+    now = datetime.now().astimezone().isoformat()
+    location_status, distance = _record_location_status(parsed_latitude, parsed_longitude, parsed_accuracy, work)
+
+    image_bytes = await image.read()
+    if not image_bytes:
+        raise HTTPException(status_code=422, detail="The uploaded image is empty.")
+    if len(image_bytes) > ATTENDANCE_MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail=f"Images must be smaller than {ATTENDANCE_MAX_UPLOAD_BYTES // (1024 * 1024)} MB.")
+    image_type = _detect_image_type(image_bytes)
+    if not image_type:
+        image_type = "jpg"
+
+    attendance_id = f"ATT-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+    extension = "jpg" if image_type == "jpg" else image_type
+    filename = f"{attendance_id}.{extension}"
+    os.makedirs(ATTENDANCE_MEDIA_DIR, exist_ok=True)
+    media_path = os.path.join(ATTENDANCE_MEDIA_DIR, filename)
+    with open(media_path, "wb") as handle:
+        handle.write(image_bytes)
+
+    int_staff_count = int(staff_count) if staff_count and str(staff_count).isdigit() else 1
+    media_url = f"/api/attendance/media/{filename}"
+    att_record = {
+        "attendance_id": attendance_id,
+        "work_id": work["work_id"],
+        "staff_count": int_staff_count,
+        "capture_source": "LIVE_CAMERA",
+        "camera_capture_only": is_live_capture,
+        "latitude": parsed_latitude,
+        "longitude": parsed_longitude,
+        "gps_accuracy": parsed_accuracy,
+        "official_work_latitude": work.get("latitude"),
+        "official_work_longitude": work.get("longitude"),
+        "distance_from_work": distance,
+        "location_validation_status": location_status,
+        "captured_at": captured_at or now,
+        "server_received_at": now,
+        "image_url": media_url,
+        "image_reference": media_url,
+        "download_url": media_url,
+        "storage_path": f"attendance/{filename}",
+        "byte_size": len(image_bytes),
+        "content_type": f"image/{extension}",
+        "review_status": "SUBMITTED",
+        "created_at": now,
+        "updated_at": now,
+        "uploaded_at": now,
+    }
+
+    with _CITIZEN_STORE_LOCK:
+        existing_att = _read_attendance_records()
+        existing_att.insert(0, att_record)
+        _write_attendance_records(existing_att)
+
+    return att_record
 
 
 if __name__ == "__main__":

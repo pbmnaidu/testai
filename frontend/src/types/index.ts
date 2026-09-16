@@ -509,8 +509,10 @@ export interface OfficerDashboardResponse {
     description?: string;
     work_status?: string;
     overall_risk: string;
+    overall_risk_level?: string;
     overall_risk_score: number;
-    signals: OfficerSignal[];
+    composite_risk_score?: number;
+    signals?: OfficerSignal[];
     why_flagged: string;
     recommended_action: string;
     officer_review_status: string;
@@ -681,4 +683,22 @@ export interface FinancialBenchmarkRecord {
 
 export interface FinancialBenchmarkResponse extends PaginatedResponse<FinancialBenchmarkRecord> {
   available: { states: string[]; sectors: string[]; subsectors: string[] };
+}
+
+export type UserRole = 'officer' | 'citizen' | 'contractor' | 'material_contractor';
+
+export interface UserProfile {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+  role: UserRole;
+  designation?: string;
+  organization?: string;
+  phone?: string;
+  state?: string;
+  constituency?: string;
+  createdAt: string;
+  lastLoginAt: string;
+  isSystemAdmin?: boolean;
 }

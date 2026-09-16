@@ -17,7 +17,8 @@ import {
   MapPin,
   Camera,
   Scale,
-  X
+  X,
+  Lock
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -29,12 +30,28 @@ interface SidebarProps {
   totalWorks?: number;
 }
 
+interface NavItem {
+  id: string;
+  label: string;
+  icon: any;
+  badge?: string;
+  badgeColor?: string;
+  isSecured?: boolean;
+}
+
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpen = false, onClose, collapsed = false, totalWorks }) => {
-  const sections = [
+  const sections: { title: string; items: NavItem[] }[] = [
     {
       title: 'Officer Workspace',
       items: [
-        { id: 'officer-dashboard', label: 'Implementing Officer Center', icon: ClipboardCheck },
+        { 
+          id: 'officer-dashboard', 
+          label: 'Implementing Officer Center', 
+          icon: ClipboardCheck,
+          badge: 'Designated Officer',
+          badgeColor: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300',
+          isSecured: true
+        },
       ]
     },
     {
@@ -49,20 +66,41 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
     {
       title: 'Citizen Access',
       items: [
-        { id: 'citizen-protocol', label: 'Citizen Protocol', icon: MapPin },
+        { 
+          id: 'citizen-protocol', 
+          label: 'Citizen Protocol', 
+          icon: MapPin,
+          badge: 'Citizen Verified',
+          badgeColor: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300',
+          isSecured: true
+        },
       ]
     },
     {
       title: 'Contractor Access',
       items: [
-        { id: 'attendance', label: 'Attendance Capture', icon: Camera },
+        { 
+          id: 'attendance', 
+          label: 'Attendance Capture', 
+          icon: Camera,
+          badge: 'Labor Muster',
+          badgeColor: 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300',
+          isSecured: true
+        },
       ]
     },
     {
       title: 'Anomaly & Audits',
       items: [
         { id: 'geotag-evidence', label: 'Field Photographic Evidence', icon: MapPin },
-        { id: 'material-fairness', label: 'Material Quality & Price Fairness', icon: Scale },
+        { 
+          id: 'material-fairness', 
+          label: 'Material Quality & Price Fairness', 
+          icon: Scale,
+          badge: 'Material Vendors',
+          badgeColor: 'bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300',
+          isSecured: true
+        },
         { id: 'duplicate-inspector', label: 'Candidate Duplicate Inspector', icon: Copy },
         { id: 'financial-analytics', label: 'Financial Anomaly Analytics', icon: PieChart },
         { id: 'compliance-monitor', label: 'Compliance Evidence Gaps', icon: CheckSquare },
@@ -72,7 +110,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
     {
       title: 'Platform Engine',
       items: [
-        { id: 'data-sync', label: 'Data Sync & System Status', icon: RefreshCw },
+        { 
+          id: 'data-sync', 
+          label: 'Data Sync & System Status', 
+          icon: RefreshCw,
+          badge: 'Admin Only',
+          badgeColor: 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300',
+          isSecured: true
+        },
         { id: 'model-monitoring', label: 'MLflow Model Monitoring', icon: Cpu },
       ]
     }
@@ -116,7 +161,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
                     <button
                       key={item.id}
                       onClick={() => { setActiveTab(item.id); onClose?.(); }}
-                      title={collapsed ? item.label : undefined}
+                      title={collapsed ? `${item.label}${item.badge ? ` (${item.badge})` : ''}` : undefined}
                       className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all duration-200 text-left group ${collapsed ? 'lg:justify-center lg:px-2' : ''} ${
                         isActive
                           ? 'bg-slate-900 text-white font-bold shadow-md dark:bg-slate-100 dark:text-slate-900'
@@ -126,8 +171,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
                       <div className="flex items-center gap-2.5 min-w-0">
                         <Icon className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-110 ${isActive ? 'text-emerald-400 dark:text-emerald-600' : 'text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300'}`} />
                         <span className={`truncate ${collapsed ? 'lg:hidden' : ''}`}>{item.label}</span>
+                        {item.isSecured && !collapsed && (
+                          <Lock className={`w-2.5 h-2.5 shrink-0 ${isActive ? 'text-white/60' : 'text-slate-400'}`} />
+                        )}
                       </div>
-                      {isActive && <ChevronRight className={`w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0 ${collapsed ? 'lg:hidden' : ''}`} />}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {item.badge && !collapsed && (
+                          <span className={`hidden xl:inline-block px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-tight ${item.badgeColor || 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'} ${isActive ? '!bg-white/20 !text-white' : ''}`}>
+                            {item.badge}
+                          </span>
+                        )}
+                        {isActive && <ChevronRight className={`w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0 ${collapsed ? 'lg:hidden' : ''}`} />}
+                      </div>
                     </button>
                   );
                 })}

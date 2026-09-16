@@ -22,6 +22,7 @@ import { CitizenProtocolPage } from './pages/CitizenProtocolPage';
 import { AttendancePage } from './pages/AttendancePage';
 import { MaterialFairnessPage } from './pages/MaterialFairnessPage';
 import { OfficerDashboardPage } from './pages/OfficerDashboardPage';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<string>('overview');
@@ -98,8 +99,8 @@ export function App() {
         totalWorks={livePortfolio.totalWorks || undefined}
         onClose={() => setIsSidebarOpen(false)}
         setActiveTab={(tab) => {
-        setSelectedWorkId(null);
-        setActiveTab(tab);
+          setSelectedWorkId(null);
+          setActiveTab(tab);
           setIsSidebarOpen(false);
         }}
       />
@@ -108,41 +109,43 @@ export function App() {
       <div className="flex-1 flex flex-col min-w-0">
         <Topbar
           searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        onSearchSubmit={handleSearchSubmit}
-        onOpenChat={() => setIsAiAssistantOpen(true)}
+          setSearchQuery={setSearchQuery}
+          onSearchSubmit={handleSearchSubmit}
+          onSelectWork={handleSelectWork}
+          onOpenChat={() => setIsAiAssistantOpen(true)}
           onOpenSidebar={() => setIsSidebarOpen(true)}
           onToggleSidebar={() => setIsSidebarCollapsed((value) => !value)}
           onToggleTheme={() => setIsDark((value) => !value)}
           isDark={isDark}
           isSidebarCollapsed={isSidebarCollapsed}
-      />
+        />
 
 
         <main className={`shell-main ${isSidebarCollapsed ? 'shell-main--collapsed' : ''} flex-1 overflow-y-auto pt-16 min-w-0 overflow-x-hidden`}>
-          {selectedWorkId ? (
-            <ProjectDetailPage workId={selectedWorkId} onBack={handleBackToMonitor} onSelectWork={handleSelectWork} onOpenEvidence={handleOpenEvidence} />
-          ) : (
-            <>
-              {activeTab === 'geotag-evidence' && <GeotagEvidenceAuditPage onSelectWork={handleSelectWork} onOpenEvidence={handleOpenEvidence} />}
-              {activeTab === 'citizen-protocol' && <CitizenProtocolPage />}
-              {activeTab === 'attendance' && <AttendancePage />}
-              {activeTab === 'material-fairness' && <MaterialFairnessPage />}
-              {activeTab === 'officer-dashboard' && <OfficerDashboardPage onSelectWork={handleSelectWork} />}
-              {activeTab === 'overview' && <OverviewPage onNavigateToRiskMonitor={handleNavigateToRiskMonitor} />}
-              {activeTab === 'mp-intelligence' && <MpIntelligencePage onSelectWork={handleSelectWork} />}
-              {activeTab === 'risk-monitor' && <RiskMonitorPage initialSeverity={initialSeverity} initialDimension="all" totalWorks={livePortfolio.totalWorks} onSelectWork={handleSelectWork} />}
-              {activeTab === 'state-risk-analytics' && <StateRiskAnalyticsPage onSelectWork={handleSelectWork} />}
-              {activeTab === 'duplicate-inspector' && <DuplicateInspectorPage onSelectWork={handleSelectWork} />}
-              {activeTab === 'financial-analytics' && <FinancialAnalyticsPage onSelectWork={handleSelectWork} onOpenBenchmarks={() => setActiveTab('financial-benchmarks')} />}
-              {activeTab === 'financial-benchmarks' && <FinancialBenchmarkPage />}
-              {activeTab === 'compliance-monitor' && <ComplianceMonitorPage onSelectWork={handleSelectWork} onOpenEvidence={handleOpenEvidence} />}
-              {activeTab === 'schedule-progress' && <RiskMonitorPage initialDimension="schedule" totalWorks={livePortfolio.totalWorks} onSelectWork={handleSelectWork} />}
-              {activeTab === 'data-sync' && <DataSyncPage />}
-              {activeTab === 'model-monitoring' && <ModelMonitoringPage />}
-
-            </>
-          )}
+          <ErrorBoundary onReset={() => { setSelectedWorkId(null); setActiveTab('overview'); }}>
+            {selectedWorkId ? (
+              <ProjectDetailPage workId={selectedWorkId} onBack={handleBackToMonitor} onSelectWork={handleSelectWork} onOpenEvidence={handleOpenEvidence} />
+            ) : (
+              <>
+                {activeTab === 'geotag-evidence' && <GeotagEvidenceAuditPage onSelectWork={handleSelectWork} onOpenEvidence={handleOpenEvidence} />}
+                {activeTab === 'citizen-protocol' && <CitizenProtocolPage />}
+                {activeTab === 'attendance' && <AttendancePage />}
+                {activeTab === 'material-fairness' && <MaterialFairnessPage />}
+                {activeTab === 'officer-dashboard' && <OfficerDashboardPage onSelectWork={handleSelectWork} />}
+                {activeTab === 'overview' && <OverviewPage onNavigateToRiskMonitor={handleNavigateToRiskMonitor} />}
+                {activeTab === 'mp-intelligence' && <MpIntelligencePage onSelectWork={handleSelectWork} />}
+                {activeTab === 'risk-monitor' && <RiskMonitorPage initialSeverity={initialSeverity} initialDimension="all" totalWorks={livePortfolio.totalWorks} onSelectWork={handleSelectWork} />}
+                {activeTab === 'state-risk-analytics' && <StateRiskAnalyticsPage onSelectWork={handleSelectWork} />}
+                {activeTab === 'duplicate-inspector' && <DuplicateInspectorPage onSelectWork={handleSelectWork} />}
+                {activeTab === 'financial-analytics' && <FinancialAnalyticsPage onSelectWork={handleSelectWork} onOpenBenchmarks={() => setActiveTab('financial-benchmarks')} />}
+                {activeTab === 'financial-benchmarks' && <FinancialBenchmarkPage />}
+                {activeTab === 'compliance-monitor' && <ComplianceMonitorPage onSelectWork={handleSelectWork} onOpenEvidence={handleOpenEvidence} />}
+                {activeTab === 'schedule-progress' && <RiskMonitorPage initialDimension="schedule" totalWorks={livePortfolio.totalWorks} onSelectWork={handleSelectWork} />}
+                {activeTab === 'data-sync' && <DataSyncPage />}
+                {activeTab === 'model-monitoring' && <ModelMonitoringPage />}
+              </>
+            )}
+          </ErrorBoundary>
         </main>
       </div>
 

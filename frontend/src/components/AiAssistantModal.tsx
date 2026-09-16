@@ -108,8 +108,21 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
       let actions: Array<{ label: string; action: () => void }> = [];
 
       const queryLower = textToSend.toLowerCase();
+      const workIdMatch = textToSend.match(/WS[\w\/\-_]+/i);
 
-      if (queryLower.includes('high risk') || queryLower.includes('critical') || queryLower.includes('composite')) {
+      if (workIdMatch) {
+        const wid = workIdMatch[0];
+        aiText = `Found reference to Work ID **${wid}**. Would you like to inspect its full 360° risk profile, candidate duplicate matches, geotags, and contractor muster logs?`;
+        actions = [
+          {
+            label: `🔍 Open 360° Profile for ${wid}`,
+            action: () => {
+              onSelectWork?.(wid);
+              onClose();
+            },
+          },
+        ];
+      } else if (queryLower.includes('high risk') || queryLower.includes('critical') || queryLower.includes('composite')) {
         aiText = `The latest ML Risk Model identifies **${highRiskWorks.toLocaleString()} review-priority works** out of **${totalWorks.toLocaleString()}** total works. Open the live queue to inspect the highest-priority records:`;
         actions = [
           {
@@ -138,6 +151,72 @@ export const AiAssistantModal: React.FC<AiAssistantModalProps> = ({
             label: 'Launch Candidate Duplicate Inspector',
             action: () => {
               onNavigateTab?.('duplicate-inspector');
+              onClose();
+            },
+          },
+        ];
+      } else if (queryLower.includes('officer') || queryLower.includes('implement') || queryLower.includes('statutory') || queryLower.includes('inspect')) {
+        aiText = `The **Implementing Officer Monitoring & Action Center** provides statutory action workflows, inspection scheduling, contractor muster logs, and rate fairness audits.`;
+        actions = [
+          {
+            label: '🛡️ Open Implementing Officer Center',
+            action: () => {
+              onNavigateTab?.('officer-dashboard');
+              onClose();
+            },
+          },
+        ];
+      } else if (queryLower.includes('citizen') || queryLower.includes('public') || queryLower.includes('feedback') || queryLower.includes('complaint')) {
+        aiText = `The **Citizen Protocol** empowers the public to browse local works by State and Constituency, view pre-detected geotag proofs, and submit photographic evidence with real-time GPS watermarks.`;
+        actions = [
+          {
+            label: '👥 Open Citizen Protocol',
+            action: () => {
+              onNavigateTab?.('citizen-protocol');
+              onClose();
+            },
+          },
+        ];
+      } else if (queryLower.includes('attendance') || queryLower.includes('labor') || queryLower.includes('muster') || queryLower.includes('worker') || queryLower.includes('headcount')) {
+        aiText = `**Contractor Daily Attendance & Labor Muster Verification** captures verified on-site worker headcounts with live camera proof, burning GPS coordinates and timestamps directly onto the image.`;
+        actions = [
+          {
+            label: '👷 Open Contractor Attendance System',
+            action: () => {
+              onNavigateTab?.('attendance');
+              onClose();
+            },
+          },
+        ];
+      } else if (queryLower.includes('material') || queryLower.includes('cement') || queryLower.includes('quality') || queryLower.includes('fairness') || queryLower.includes('sor') || queryLower.includes('price')) {
+        aiText = `The **Material Quality & Rate Fairness Engine** extracts technical parameters (IS codes, compressive strength, slump test) from vouchers/BOQs and checks prices against CPWD and State Schedule of Rates.`;
+        actions = [
+          {
+            label: '🧱 Open Material Quality & Fairness Engine',
+            action: () => {
+              onNavigateTab?.('material-fairness');
+              onClose();
+            },
+          },
+        ];
+      } else if (queryLower.includes('mp') || queryLower.includes('parliament') || queryLower.includes('representative')) {
+        aiText = `**MP Intelligence** tracks recommendation velocity, fund utilization ratios, and compliance signals across all Lok Sabha and Rajya Sabha parliamentarians.`;
+        actions = [
+          {
+            label: '🏛️ Open MP Intelligence',
+            action: () => {
+              onNavigateTab?.('mp-intelligence');
+              onClose();
+            },
+          },
+        ];
+      } else if (queryLower.includes('state') || queryLower.includes('district') || queryLower.includes('geo')) {
+        aiText = `**State Risk Analytics** provides state-by-state risk distributions, anomaly hot-spots, and constituency compliance benchmarks.`;
+        actions = [
+          {
+            label: '🗺️ Open State Risk Analytics',
+            action: () => {
+              onNavigateTab?.('state-risk-analytics');
               onClose();
             },
           },

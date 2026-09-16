@@ -375,6 +375,22 @@ def export_dashboard_snapshots(target_version: str = None) -> dict:
     # 6. Duplicate clusters & candidates
     print("[SNAPSHOT EXPORT] Building duplicate data...")
     cluster_records = [clean_record_for_json(r) for r in cluster_df.to_dict(orient="records")]
+    for r in cluster_records:
+        if isinstance(r.get("record_summaries"), str):
+            try:
+                r["record_summaries"] = json.loads(r["record_summaries"])
+            except Exception:
+                r["record_summaries"] = []
+        if isinstance(r.get("key_indicators"), str):
+            try:
+                r["key_indicators"] = json.loads(r["key_indicators"])
+            except Exception:
+                r["key_indicators"] = [r["key_indicators"]]
+        if isinstance(r.get("quantity_totals"), str):
+            try:
+                r["quantity_totals"] = json.loads(r["quantity_totals"])
+            except Exception:
+                r["quantity_totals"] = {}
     with open(os.path.join(staging_dir, "duplicate_clusters.json"), "w", encoding="utf-8") as f:
         json.dump(cluster_records, f, indent=2, ensure_ascii=False)
 

@@ -7,6 +7,7 @@ import { WorkInfoCards } from '../components/risk/WorkInfoCards';
 import { GeotagEvidenceCard } from '../components/GeotagEvidenceCard';
 import { CitizenEvidenceReviewPanel } from '../components/CitizenEvidenceReviewPanel';
 import { AttendanceEvidencePanel } from '../components/AttendanceEvidencePanel';
+import { MaterialEvidencePanel } from '../components/MaterialEvidencePanel';
 import { 
   ArrowLeft, 
   DollarSign, 
@@ -281,6 +282,7 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({ workId, on
           <GeotagEvidenceCard workId={work.work_id} onOpenEvidence={onOpenEvidence} onSelectWork={onSelectWork} />
           <CitizenEvidenceReviewPanel workId={work.work_id} />
           <AttendanceEvidencePanel workId={work.work_id} />
+          <MaterialEvidencePanel workId={work.work_id} />
         </div>
       )}
 

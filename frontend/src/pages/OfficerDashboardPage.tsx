@@ -30,6 +30,7 @@ import { fetchOfficerDashboard, fetchOfficerWork, reviewCitizenEvidence } from '
 import { OfficerDashboardResponse, OfficerWorkResponse, CitizenEvidenceRecord, AttendanceRecord } from '../types';
 import { RiskBadge } from '../components/cards/RiskBadge';
 import { CitizenEvidenceModal } from '../components/CitizenEvidenceModal';
+import { PortalAuthGate } from '../components/auth/PortalAuthGate';
 
 type QueueFocus = 'priority' | 'all' | 'high_priority' | 'material' | 'attendance' | 'citizen' | 'compliance' | 'schedule' | 'duplicate';
 
@@ -84,7 +85,7 @@ const DataWarning = ({ children }: { children: React.ReactNode }) => (
   </div>
 );
 
-export const OfficerDashboardPage: React.FC<OfficerDashboardPageProps> = ({ onSelectWork }) => {
+const OfficerDashboardInner: React.FC<OfficerDashboardPageProps> = ({ onSelectWork }) => {
   const [dashboard, setDashboard] = useState<OfficerDashboardResponse>(initialDashboard);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ state: '', constituency: '', work_status: '', severity: '', search: '' });
@@ -443,7 +444,7 @@ export const OfficerDashboardPage: React.FC<OfficerDashboardPageProps> = ({ onSe
                       {item.why_flagged}
                     </td>
                     <td className="px-4 py-4">
-                      <RiskBadge level={item.overall_risk} score={item.overall_risk_score} />
+                      <RiskBadge level={item.overall_risk || item.overall_risk_level} score={item.overall_risk_score ?? item.composite_risk_score} />
                     </td>
                     <td className="px-4 py-4">
                       <span className="font-semibold text-slate-700 dark:text-slate-300">{item.recommended_action}</span>
@@ -479,6 +480,22 @@ export const OfficerDashboardPage: React.FC<OfficerDashboardPageProps> = ({ onSe
         )}
       </section>
     </div>
+  );
+};
+
+export const OfficerDashboardPage: React.FC<OfficerDashboardPageProps> = (props) => {
+  return (
+    <PortalAuthGate
+      requiredRole="officer"
+      requiredEmail="naidupolimera.6@gmail.com"
+      portalTitle="Implementing Officer Monitoring & Action Center"
+      portalSubtitle="Statutory Physical Verification, Contractor Muster Review & Canonical Work Evidence Audit"
+      portalBadge="Implementing Officer Only"
+      portalIcon={ClipboardCheck}
+      accentColor="indigo"
+    >
+      <OfficerDashboardInner {...props} />
+    </PortalAuthGate>
   );
 };
 
@@ -631,10 +648,13 @@ const OfficerWorkView: React.FC<{
               Composite Risk Score
             </p>
             <p className="mt-1 text-3xl font-black text-slate-900 dark:text-slate-100">
-              {Number(work.composite_risk_score || 0).toFixed(1)}
+              {Number(work.composite_risk_score ?? (work as any).overall_risk_score ?? 0).toFixed(1)}
             </p>
             <div className="mt-2">
-              <RiskBadge level={work.overall_risk_level || 'LOW'} />
+              <RiskBadge
+                level={work.overall_risk_level || (work as any).overall_risk}
+                score={Number(work.composite_risk_score ?? (work as any).overall_risk_score ?? 0)}
+              />
             </div>
           </div>
         </div>
@@ -1201,6 +1221,11 @@ const OfficerWorkView: React.FC<{
         isOpen={isEvidenceModalOpen}
         work={work}
         initialRole={evidenceInitialRole}
+        allowedRoles={
+          evidenceInitialRole === 'contractor_attendance'
+            ? ['contractor_attendance', 'contractor_progress']
+            : ['citizen', 'officer_inspection']
+        }
         onClose={() => setIsEvidenceModalOpen(false)}
         onSubmitted={() => {
           setIsEvidenceModalOpen(false);

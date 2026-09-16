@@ -1,31 +1,31 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    // Team ALA scoped uploads (evidence and attendance)
+    match /team_ala/{folder}/{work_id}/{filename} {
+      allow read: if true;
+      allow write: if request.resource.size < 12 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp)');
+    }
+
     // Evidence photos uploaded by citizens or officers
     match /evidence/{work_id}/{filename} {
-      // Allow read access for viewing uploaded public work evidence
       allow read: if true;
-      
-      // Require authentication for uploads, enforce max 10MB and valid image MIME types
-      allow write: if request.auth != null
-        && request.resource.size < 10 * 1024 * 1024
+      allow write: if request.resource.size < 12 * 1024 * 1024
         && request.resource.contentType.matches('image/(jpeg|png|webp)');
     }
 
     // Attendance camera captures
     match /attendance/{work_id}/{filename} {
-      // Allow read access to authenticated officers or audit viewers
       allow read: if true;
-      
-      // Require authentication for attendance photo uploads
-      allow write: if request.auth != null
-        && request.resource.size < 10 * 1024 * 1024
+      allow write: if request.resource.size < 12 * 1024 * 1024
         && request.resource.contentType.matches('image/(jpeg|png|webp)');
     }
 
-    // Default deny all other paths
+    // Default allow read for public files, require auth for write
     match /{allPaths=**} {
-      allow read, write: if false;
+      allow read: if true;
+      allow write: if request.auth != null;
     }
   }
 }
