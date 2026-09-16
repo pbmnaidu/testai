@@ -1,9 +1,9 @@
 {
   "schema_version": "2.0.0",
-  "snapshot_version": "v_20260915_194248",
-  "generated_at": "2026-09-15T19:42:48.320171+00:00",
-  "dataset_version": "v_20260915_194248",
-  "base_path": "/data/snapshots/v_20260915_194248",
+  "snapshot_version": "v_20260915_225902",
+  "generated_at": "2026-09-15T22:59:02.293528+05:30",
+  "dataset_version": "v_20260915_225902",
+  "base_path": "/data/snapshots/v_20260915_225902",
   "row_counts": {
     "master_works": 79827,
     "duplicate_clusters": 2146,

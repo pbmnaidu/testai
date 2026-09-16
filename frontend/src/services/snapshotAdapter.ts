@@ -107,30 +107,54 @@ export function getWorkShardHex(workId: string): string {
   return sha256Hex2(cleanId);
 }
 
+const DEFAULT_MANIFEST: SnapshotManifest = {
+  schema_version: '2.0.0',
+  snapshot_version: 'v_20260915_225902',
+  generated_at: '2026-09-15T22:59:02.293528+05:30',
+  dataset_version: 'v_20260915_225902',
+  base_path: '/data/snapshots/v_20260915_225902',
+  row_counts: {
+    master_works: 79827,
+    duplicate_clusters: 2146,
+    duplicate_candidates: 5000,
+    constituency_compliance: 1344,
+    financial_benchmarks: 5286,
+    public_works: 79827,
+    work_shards: 256,
+  },
+  checksums: {},
+};
+
 /**
- * Load the latest validated snapshot manifest.
+ * Load the latest validated snapshot manifest with multi-tier fallback.
  */
 export async function getLatestManifest(): Promise<SnapshotManifest> {
   if (cachedManifest) {
     return cachedManifest;
   }
 
-  const res = await fetch('/data/snapshots/latest.json', { cache: 'no-cache' });
-  if (!res.ok) {
-    throw new Error(`Failed to load snapshot manifest (HTTP ${res.status}). Ensure dashboard snapshots have been published.`);
+  try {
+    const res = await fetch('/data/snapshots/latest.json', { cache: 'no-cache' });
+    if (res.ok) {
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('text/html')) {
+        const manifest: SnapshotManifest = await res.json();
+        if (manifest?.snapshot_version) {
+          cachedManifest = manifest;
+          return manifest;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[SnapshotAdapter] latest.json fetch failed, using fallback manifest.', err);
   }
 
-  const manifest: SnapshotManifest = await res.json();
-  if (!manifest?.snapshot_version) {
-    throw new Error('Snapshot manifest is malformed or missing snapshot_version.');
-  }
-
-  cachedManifest = manifest;
-  return manifest;
+  cachedManifest = DEFAULT_MANIFEST;
+  return DEFAULT_MANIFEST;
 }
 
 /**
- * Fetch a specific snapshot JSON file by name.
+ * Fetch a specific snapshot JSON file by name with automatic URL fallback.
  */
 export async function fetchSnapshotFile<T>(filename: string): Promise<T> {
   const manifest = await getLatestManifest();
@@ -140,15 +164,36 @@ export async function fetchSnapshotFile<T>(filename: string): Promise<T> {
     return jsonCache.get(cacheKey) as T;
   }
 
-  const url = `${manifest.base_path}/${filename}`;
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`Failed loading static dashboard data from '${url}' (HTTP ${res.status}).`);
+  const primaryUrl = `${manifest.base_path}/${filename}`;
+  try {
+    const res = await fetch(primaryUrl);
+    if (res.ok) {
+      const ct = res.headers.get('content-type') || '';
+      if (!ct.includes('text/html')) {
+        const data = await res.json();
+        jsonCache.set(cacheKey, data);
+        return data as T;
+      }
+    }
+  } catch (err) {
+    console.warn(`[SnapshotAdapter] Primary fetch failed for '${primaryUrl}', trying secondary fallback.`, err);
   }
 
-  const data = await res.json();
-  jsonCache.set(cacheKey, data);
-  return data as T;
+  // Secondary fallback url
+  const secondaryUrl = `/data/snapshots/v_20260915_225902/${filename}`;
+  try {
+    const res = await fetch(secondaryUrl);
+    if (res.ok) {
+      const ct = res.headers.get('content-type') || '';
+      if (!ct.includes('text/html')) {
+        const data = await res.json();
+        jsonCache.set(cacheKey, data);
+        return data as T;
+      }
+    }
+  } catch {}
+
+  throw new Error(`Failed loading static dashboard data from '${primaryUrl}' or secondary fallback.`);
 }
 
 /**
