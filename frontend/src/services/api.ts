@@ -591,9 +591,10 @@ export async function fetchSyncStatus(): Promise<SyncStatusResponse> {
 }
 
 export async function startSync(): Promise<SyncStatusResponse['job']> {
+  window.open(PIPELINE_WORKFLOW_URL, '_blank');
   return {
     status: 'ACTION_REQUIRED',
-    message: 'Open GitHub Actions and select “Run workflow” on branch chatBot. The new snapshot will be published after validation.',
+    message: 'GitHub Actions workflow opened in a new tab. Please click "Run workflow" on branch "chatBot" to start the sync. The dashboard will automatically update once the pipeline completes.',
     datasets: [],
     counters: {},
   };

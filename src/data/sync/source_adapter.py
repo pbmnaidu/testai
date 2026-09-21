@@ -58,12 +58,12 @@ def _decode_json_value(value: Any) -> Any:
 
 
 ALIASES = {
-    "t1": {"t1", "allocatedlimit", "allocatedlimits", "allocatedlimitdata"},
-    "t3": {"t3", "worksrecommended", "recommendedworks", "recommended"},
-    "t4": {"t4", "workssanctioned", "sanctionedworks", "sanctioned"},
-    "t5": {"t5", "workscompleted", "completedworks", "completed"},
-    "t6": {"t6", "expenditure", "expenditurerecords", "expendituredata"},
-    "t7": {"t7", "calamityconsents", "amountconsentedforcalamity", "calamity"},
+    "t1": {"t1", "allocatedlimit", "allocatedlimits", "allocatedlimitdata", "allocated", "allocatedlimitforhonblemps"},
+    "t3": {"t3", "worksrecommended", "recommendedworks", "recommended", "totalworksrecommended"},
+    "t4": {"t4", "workssanctioned", "sanctionedworks", "sanctioned", "sanction", "totalsanctionwork", "totalsanctioned"},
+    "t5": {"t5", "workscompleted", "completedworks", "completed", "totalworkscompleted"},
+    "t6": {"t6", "expenditure", "expenditurerecords", "expendituredata", "totalexpenditure", "expenditureoncompletedandongoingworksasondate"},
+    "t7": {"t7", "calamityconsents", "amountconsentedforcalamity", "calamity", "calimity", "totalcalimityconsent", "consent"},
 }
 
 
@@ -108,7 +108,7 @@ class MPLADSRestClient:
         if page is not None:
             request_data["page"] = page
         request_body = json.dumps(request_data).encode("utf-8")
-        attempts = max(1, int(os.getenv("MPLADS_SYNC_RETRIES", "3")))
+        attempts = max(3, int(os.getenv("MPLADS_SYNC_RETRIES", "4")))
         context = ssl.create_default_context() if VERIFY_SSL else ssl._create_unverified_context()
         opener = self._opener(context)
         last_error: Exception | None = None
@@ -129,13 +129,15 @@ class MPLADSRestClient:
                     if request_callback:
                         request_callback({"event": "api_request_completed", "request_id": request_id, "endpoint": self.source_url, "tile_key": tile_key, "page": page or 1, "attempt": attempt + 1, "response_bytes": len(body), "response_ms": response_ms})
                     return json.loads(body.decode("utf-8"))
-            except (HTTPError, URLError, http.client.RemoteDisconnected, ConnectionResetError, TimeoutError, json.JSONDecodeError) as exc:
+            except (HTTPError, URLError, http.client.RemoteDisconnected, ConnectionResetError, TimeoutError, OSError, json.JSONDecodeError) as exc:
                 last_error = exc
+                # Recreate opener on connection resets so subsequent attempts use fresh sockets
+                opener = self._opener(context)
                 if request_callback:
                     request_callback({"event": "api_request_failed", "request_id": request_id, "endpoint": self.source_url, "tile_key": tile_key, "page": page or 1, "attempt": attempt + 1, "response_ms": round((time.perf_counter() - request_started) * 1000, 1), "error": str(exc), "will_retry": attempt + 1 < attempts})
                 if attempt + 1 >= attempts:
                     raise
-                time.sleep(min(2 ** attempt, 8))
+                time.sleep(min(3 * (attempt + 1), 12))
         raise last_error or RuntimeError("official request failed")
 
     def _unwrap(self, payload: Any) -> Any:
@@ -301,7 +303,7 @@ class MPLADSRestClient:
                 return table, tile_key, None, str(exc), 0
 
         fetched = {}
-        with ThreadPoolExecutor(max_workers=len(SOURCE_TABLE_REQUESTS), thread_name_prefix="mospi-fetch") as executor:
+        with ThreadPoolExecutor(max_workers=2, thread_name_prefix="mospi-fetch") as executor:
             futures = [executor.submit(fetch_table, table, tile_key) for table, tile_key in SOURCE_TABLE_REQUESTS]
             for future in as_completed(futures):
                 table, tile_key, frame, error, pages = future.result()
