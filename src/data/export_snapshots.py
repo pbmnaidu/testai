@@ -640,11 +640,14 @@ def export_dashboard_snapshots(target_version: str = None) -> dict:
     with open(os.path.join(staging_dir, "metadata.json"), "w", encoding="utf-8") as f:
         json.dump(metadata_payload, f, indent=2, ensure_ascii=False)
 
-    # Atomic promotion in FRONTEND_PUBLIC_SNAPSHOTS
     final_public_dir = os.path.join(FRONTEND_PUBLIC_SNAPSHOTS, target_version)
     if os.path.exists(final_public_dir):
-        shutil.rmtree(final_public_dir)
-    os.replace(staging_dir, final_public_dir)
+        shutil.rmtree(final_public_dir, ignore_errors=True)
+    try:
+        os.replace(staging_dir, final_public_dir)
+    except (OSError, PermissionError):
+        # On Windows, os.replace on directories raises Access Denied; use shutil.move
+        shutil.move(staging_dir, final_public_dir)
 
     # Read previous version if exists
     latest_path = os.path.join(FRONTEND_PUBLIC_SNAPSHOTS, "latest.json")
