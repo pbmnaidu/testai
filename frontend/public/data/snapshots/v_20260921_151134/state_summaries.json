@@ -1,0 +1,1442 @@
+{
+  "KARNATAKA": {
+    "state": "KARNATAKA",
+    "total_works": 2687,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 7.2,
+        "flagged_works": 257
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 83.7,
+        "flagged_works": 2553
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 6.2,
+        "flagged_works": 203
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 33.6,
+        "flagged_works": 1262
+      }
+    ],
+    "dominant_signal": {
+      "key": "compliance",
+      "label": "Compliance",
+      "average_score": 83.7,
+      "flagged_works": 2553
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "BIHAR": {
+    "state": "BIHAR",
+    "total_works": 4558,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 3.9,
+        "flagged_works": 236
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 63.8,
+        "flagged_works": 3436
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 14.6,
+        "flagged_works": 742
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 25.5,
+        "flagged_works": 1300
+      }
+    ],
+    "dominant_signal": {
+      "key": "compliance",
+      "label": "Compliance",
+      "average_score": 63.8,
+      "flagged_works": 3436
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "WEST BENGAL": {
+    "state": "WEST BENGAL",
+    "total_works": 4826,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 8.3,
+        "flagged_works": 475
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 77.2,
+        "flagged_works": 4305
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 10.7,
+        "flagged_works": 576
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 44.3,
+        "flagged_works": 2971
+      }
+    ],
+    "dominant_signal": {
+      "key": "compliance",
+      "label": "Compliance",
+      "average_score": 77.2,
+      "flagged_works": 4305
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "GUJARAT": {
+    "state": "GUJARAT",
+    "total_works": 6429,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 5.8,
+        "flagged_works": 568
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 75.8,
+        "flagged_works": 5647
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 4.0,
+        "flagged_works": 288
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 49.2,
+        "flagged_works": 3903
+      }
+    ],
+    "dominant_signal": {
+      "key": "compliance",
+      "label": "Compliance",
+      "average_score": 75.8,
+      "flagged_works": 5647
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "PUNJAB": {
+    "state": "PUNJAB",
+    "total_works": 3643,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 5.8,
+        "flagged_works": 303
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 53.0,
+        "flagged_works": 2949
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 23.0,
+        "flagged_works": 945
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 41.0,
+        "flagged_works": 1954
+      }
+    ],
+    "dominant_signal": {
+      "key": "compliance",
+      "label": "Compliance",
+      "average_score": 53.0,
+      "flagged_works": 2949
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "MADHYA PRADESH": {
+    "state": "MADHYA PRADESH",
+    "total_works": 5683,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 9.0,
+        "flagged_works": 691
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 71.3,
+        "flagged_works": 4940
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 23.0,
+        "flagged_works": 1406
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 40.0,
+        "flagged_works": 3194
+      }
+    ],
+    "dominant_signal": {
+      "key": "compliance",
+      "label": "Compliance",
+      "average_score": 71.3,
+      "flagged_works": 4940
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "KERALA": {
+    "state": "KERALA",
+    "total_works": 2844,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 13.9,
+        "flagged_works": 412
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 77.9,
+        "flagged_works": 2542
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 2.5,
+        "flagged_works": 81
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 45.2,
+        "flagged_works": 1801
+      }
+    ],
+    "dominant_signal": {
+      "key": "compliance",
+      "label": "Compliance",
+      "average_score": 77.9,
+      "flagged_works": 2542
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "TAMIL NADU": {
+    "state": "TAMIL NADU",
+    "total_works": 4122,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 5.6,
+        "flagged_works": 307
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 69.5,
+        "flagged_works": 3424
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 3.9,
+        "flagged_works": 191
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 21.0,
+        "flagged_works": 857
+      }
+    ],
+    "dominant_signal": {
+      "key": "compliance",
+      "label": "Compliance",
+      "average_score": 69.5,
+      "flagged_works": 3424
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "HARYANA": {
+    "state": "HARYANA",
+    "total_works": 1549,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 13.6,
+        "flagged_works": 266
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 68.8,
+        "flagged_works": 1371
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 12.3,
+        "flagged_works": 214
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 39.5,
+        "flagged_works": 866
+      }
+    ],
+    "dominant_signal": {
+      "key": "compliance",
+      "label": "Compliance",
+      "average_score": 68.8,
+      "flagged_works": 1371
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "RAJASTHAN": {
+    "state": "RAJASTHAN",
+    "total_works": 2271,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 11.6,
+        "flagged_works": 337
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 71.1,
+        "flagged_works": 1910
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 2.5,
+        "flagged_works": 65
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 44.2,
+        "flagged_works": 1440
+      }
+    ],
+    "dominant_signal": {
+      "key": "compliance",
+      "label": "Compliance",
+      "average_score": 71.1,
+      "flagged_works": 1910
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "CHHATTISGARH": {
+    "state": "CHHATTISGARH",
+    "total_works": 2126,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 6.3,
+        "flagged_works": 169
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 62.7,
+        "flagged_works": 1619
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 15.6,
+        "flagged_works": 367
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 42.6,
+        "flagged_works": 1251
+      }
+    ],
+    "dominant_signal": {
+      "key": "compliance",
+      "label": "Compliance",
+      "average_score": 62.7,
+      "flagged_works": 1619
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "ANDHRA PRADESH": {
+    "state": "ANDHRA PRADESH",
+    "total_works": 3057,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 9.3,
+        "flagged_works": 375
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 44.3,
+        "flagged_works": 1879
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 4.2,
+        "flagged_works": 161
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 42.1,
+        "flagged_works": 1747
+      }
+    ],
+    "dominant_signal": {
+      "key": "compliance",
+      "label": "Compliance",
+      "average_score": 44.3,
+      "flagged_works": 1879
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "MAHARASHTRA": {
+    "state": "MAHARASHTRA",
+    "total_works": 2440,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 9.2,
+        "flagged_works": 290
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 80.9,
+        "flagged_works": 2275
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 10.5,
+        "flagged_works": 290
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 30.2,
+        "flagged_works": 1017
+      }
+    ],
+    "dominant_signal": {
+      "key": "compliance",
+      "label": "Compliance",
+      "average_score": 80.9,
+      "flagged_works": 2275
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "UTTAR PRADESH": {
+    "state": "UTTAR PRADESH",
+    "total_works": 15238,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 5.9,
+        "flagged_works": 1107
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 73.2,
+        "flagged_works": 13030
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 3.7,
+        "flagged_works": 633
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 35.8,
+        "flagged_works": 8015
+      }
+    ],
+    "dominant_signal": {
+      "key": "compliance",
+      "label": "Compliance",
+      "average_score": 73.2,
+      "flagged_works": 13030
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "ODISHA": {
+    "state": "ODISHA",
+    "total_works": 4212,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 5.3,
+        "flagged_works": 311
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 76.2,
+        "flagged_works": 3639
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 5.6,
+        "flagged_works": 268
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 44.1,
+        "flagged_works": 2391
+      }
+    ],
+    "dominant_signal": {
+      "key": "compliance",
+      "label": "Compliance",
+      "average_score": 76.2,
+      "flagged_works": 3639
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "JHARKHAND": {
+    "state": "JHARKHAND",
+    "total_works": 3668,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 14.0,
+        "flagged_works": 779
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 70.9,
+        "flagged_works": 3003
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 2.5,
+        "flagged_works": 99
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 42.3,
+        "flagged_works": 2096
+      }
+    ],
+    "dominant_signal": {
+      "key": "compliance",
+      "label": "Compliance",
+      "average_score": 70.9,
+      "flagged_works": 3003
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "SIKKIM": {
+    "state": "SIKKIM",
+    "total_works": 64,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 4.4,
+        "flagged_works": 4
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 62.5,
+        "flagged_works": 45
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 17.2,
+        "flagged_works": 12
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 23.0,
+        "flagged_works": 17
+      }
+    ],
+    "dominant_signal": {
+      "key": "compliance",
+      "label": "Compliance",
+      "average_score": 62.5,
+      "flagged_works": 45
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "ASSAM": {
+    "state": "ASSAM",
+    "total_works": 1619,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 10.9,
+        "flagged_works": 229
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 83.6,
+        "flagged_works": 1530
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 0.8,
+        "flagged_works": 16
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 44.5,
+        "flagged_works": 1074
+      }
+    ],
+    "dominant_signal": {
+      "key": "compliance",
+      "label": "Compliance",
+      "average_score": 83.6,
+      "flagged_works": 1530
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "HIMACHAL PRADESH": {
+    "state": "HIMACHAL PRADESH",
+    "total_works": 1524,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 4.9,
+        "flagged_works": 113
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 74.6,
+        "flagged_works": 1398
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 0.7,
+        "flagged_works": 12
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 47.8,
+        "flagged_works": 1034
+      }
+    ],
+    "dominant_signal": {
+      "key": "compliance",
+      "label": "Compliance",
+      "average_score": 74.6,
+      "flagged_works": 1398
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "ARUNACHAL PRADESH": {
+    "state": "ARUNACHAL PRADESH",
+    "total_works": 246,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 0.3,
+        "flagged_works": 1
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 72.3,
+        "flagged_works": 207
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 0.9,
+        "flagged_works": 3
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 7.2,
+        "flagged_works": 13
+      }
+    ],
+    "dominant_signal": {
+      "key": "compliance",
+      "label": "Compliance",
+      "average_score": 72.3,
+      "flagged_works": 207
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "TELANGANA": {
+    "state": "TELANGANA",
+    "total_works": 3858,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 7.7,
+        "flagged_works": 346
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 72.0,
+        "flagged_works": 3337
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 4.8,
+        "flagged_works": 217
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 31.6,
+        "flagged_works": 1365
+      }
+    ],
+    "dominant_signal": {
+      "key": "compliance",
+      "label": "Compliance",
+      "average_score": 72.0,
+      "flagged_works": 3337
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "NAGALAND": {
+    "state": "NAGALAND",
+    "total_works": 54,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 8.0,
+        "flagged_works": 5
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 63.2,
+        "flagged_works": 38
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 25.6,
+        "flagged_works": 15
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 22.9,
+        "flagged_works": 8
+      }
+    ],
+    "dominant_signal": {
+      "key": "compliance",
+      "label": "Compliance",
+      "average_score": 63.2,
+      "flagged_works": 38
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "MEGHALAYA": {
+    "state": "MEGHALAYA",
+    "total_works": 476,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 3.0,
+        "flagged_works": 17
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 79.0,
+        "flagged_works": 433
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 13.2,
+        "flagged_works": 69
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 36.8,
+        "flagged_works": 270
+      }
+    ],
+    "dominant_signal": {
+      "key": "compliance",
+      "label": "Compliance",
+      "average_score": 79.0,
+      "flagged_works": 433
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "MIZORAM": {
+    "state": "MIZORAM",
+    "total_works": 172,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 0.0,
+        "flagged_works": 0
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 80.3,
+        "flagged_works": 156
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 2.1,
+        "flagged_works": 4
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 35.6,
+        "flagged_works": 89
+      }
+    ],
+    "dominant_signal": {
+      "key": "compliance",
+      "label": "Compliance",
+      "average_score": 80.3,
+      "flagged_works": 156
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "GOA": {
+    "state": "GOA",
+    "total_works": 83,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 2.2,
+        "flagged_works": 2
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 90.8,
+        "flagged_works": 82
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 1.5,
+        "flagged_works": 2
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 21.7,
+        "flagged_works": 21
+      }
+    ],
+    "dominant_signal": {
+      "key": "compliance",
+      "label": "Compliance",
+      "average_score": 90.8,
+      "flagged_works": 82
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "DELHI": {
+    "state": "DELHI",
+    "total_works": 481,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 15.8,
+        "flagged_works": 102
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 57.1,
+        "flagged_works": 330
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 29.2,
+        "flagged_works": 156
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 47.7,
+        "flagged_works": 327
+      }
+    ],
+    "dominant_signal": {
+      "key": "compliance",
+      "label": "Compliance",
+      "average_score": 57.1,
+      "flagged_works": 330
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "PUDUCHERRY": {
+    "state": "PUDUCHERRY",
+    "total_works": 33,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 31.8,
+        "flagged_works": 14
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 72.4,
+        "flagged_works": 28
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 11.1,
+        "flagged_works": 5
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 18.2,
+        "flagged_works": 5
+      }
+    ],
+    "dominant_signal": {
+      "key": "compliance",
+      "label": "Compliance",
+      "average_score": 72.4,
+      "flagged_works": 28
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "JAMMU AND KASHMIR": {
+    "state": "JAMMU AND KASHMIR",
+    "total_works": 887,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 16.0,
+        "flagged_works": 180
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 68.3,
+        "flagged_works": 731
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 3.8,
+        "flagged_works": 38
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 43.6,
+        "flagged_works": 560
+      }
+    ],
+    "dominant_signal": {
+      "key": "compliance",
+      "label": "Compliance",
+      "average_score": 68.3,
+      "flagged_works": 731
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "UTTARAKHAND": {
+    "state": "UTTARAKHAND",
+    "total_works": 692,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 8.2,
+        "flagged_works": 75
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 86.0,
+        "flagged_works": 656
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 15.2,
+        "flagged_works": 116
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 38.3,
+        "flagged_works": 383
+      }
+    ],
+    "dominant_signal": {
+      "key": "compliance",
+      "label": "Compliance",
+      "average_score": 86.0,
+      "flagged_works": 656
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "MANIPUR": {
+    "state": "MANIPUR",
+    "total_works": 77,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 23.2,
+        "flagged_works": 24
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 31.7,
+        "flagged_works": 30
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 12.5,
+        "flagged_works": 15
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 36.5,
+        "flagged_works": 45
+      }
+    ],
+    "dominant_signal": {
+      "key": "schedule",
+      "label": "Schedule",
+      "average_score": 36.5,
+      "flagged_works": 45
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "CHANDIGARH": {
+    "state": "CHANDIGARH",
+    "total_works": 94,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 21.0,
+        "flagged_works": 25
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 62.5,
+        "flagged_works": 72
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 0.0,
+        "flagged_works": 0
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 43.5,
+        "flagged_works": 61
+      }
+    ],
+    "dominant_signal": {
+      "key": "compliance",
+      "label": "Compliance",
+      "average_score": 62.5,
+      "flagged_works": 72
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "TRIPURA": {
+    "state": "TRIPURA",
+    "total_works": 54,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 3.4,
+        "flagged_works": 2
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 86.6,
+        "flagged_works": 54
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 47.7,
+        "flagged_works": 28
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 31.8,
+        "flagged_works": 26
+      }
+    ],
+    "dominant_signal": {
+      "key": "compliance",
+      "label": "Compliance",
+      "average_score": 86.6,
+      "flagged_works": 54
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "ANDAMAN AND NICOBAR ISLANDS": {
+    "state": "ANDAMAN AND NICOBAR ISLANDS",
+    "total_works": 13,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 7.5,
+        "flagged_works": 1
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 58.8,
+        "flagged_works": 10
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 0.0,
+        "flagged_works": 0
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 65.8,
+        "flagged_works": 13
+      }
+    ],
+    "dominant_signal": {
+      "key": "schedule",
+      "label": "Schedule",
+      "average_score": 65.8,
+      "flagged_works": 13
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "LAKSHADWEEP": {
+    "state": "LAKSHADWEEP",
+    "total_works": 26,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 10.2,
+        "flagged_works": 3
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 49.0,
+        "flagged_works": 24
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 0.0,
+        "flagged_works": 0
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 49.0,
+        "flagged_works": 16
+      }
+    ],
+    "dominant_signal": {
+      "key": "compliance",
+      "label": "Compliance",
+      "average_score": 49.0,
+      "flagged_works": 24
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "LADAKH": {
+    "state": "LADAKH",
+    "total_works": 19,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 0.0,
+        "flagged_works": 0
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 24.2,
+        "flagged_works": 6
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 0.0,
+        "flagged_works": 0
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 25.0,
+        "flagged_works": 7
+      }
+    ],
+    "dominant_signal": {
+      "key": "schedule",
+      "label": "Schedule",
+      "average_score": 25.0,
+      "flagged_works": 7
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  },
+  "THE DADRA AND NAGAR HAVELI AND DAMAN AND DIU": {
+    "state": "THE DADRA AND NAGAR HAVELI AND DAMAN AND DIU",
+    "total_works": 1,
+    "signals": [
+      {
+        "key": "financial",
+        "label": "Financial",
+        "average_score": 0.0,
+        "flagged_works": 0
+      },
+      {
+        "key": "compliance",
+        "label": "Compliance",
+        "average_score": 85.0,
+        "flagged_works": 1
+      },
+      {
+        "key": "duplicate",
+        "label": "Duplicate",
+        "average_score": 0.0,
+        "flagged_works": 0
+      },
+      {
+        "key": "schedule",
+        "label": "Schedule",
+        "average_score": 20.0,
+        "flagged_works": 0
+      }
+    ],
+    "dominant_signal": {
+      "key": "compliance",
+      "label": "Compliance",
+      "average_score": 85.0,
+      "flagged_works": 1
+    },
+    "metadata": {
+      "generated_at": "2026-09-21T15:11:34.501819+00:00",
+      "dataset_version": "v_20260921_151134"
+    }
+  }
+}
