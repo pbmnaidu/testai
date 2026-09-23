@@ -1,7 +1,7 @@
 {
-  "total_snapshots_generated": 7,
-  "active_snapshot_version": "v_20260922_233153",
-  "last_updated_at": "2026-09-22T23:31:53.915302+05:30",
+  "total_snapshots_generated": 8,
+  "active_snapshot_version": "v_20260923_093631",
+  "last_updated_at": "2026-09-23T09:36:31.793395+00:00",
   "history": [
     {
       "snapshot_id": "v_20260915_194248",
@@ -48,6 +48,13 @@
     {
       "snapshot_id": "v_20260922_233153",
       "generated_at": "2026-09-22T23:31:53.915302+05:30",
+      "total_works": 81910,
+      "status": "ARCHIVED (DATA PRUNED)",
+      "retained_on_disk": false
+    },
+    {
+      "snapshot_id": "v_20260923_093631",
+      "generated_at": "2026-09-23T09:36:31.793395+00:00",
       "total_works": 81910,
       "status": "VERIFIED_ACTIVE",
       "retained_on_disk": true
