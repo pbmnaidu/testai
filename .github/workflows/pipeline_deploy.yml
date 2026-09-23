@@ -44,9 +44,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run Auto Sync & Full ML Pipeline
+      - name: Run Full ML Pipeline & Export Dashboard Snapshots
         run: |
-          python scripts/auto_sync_pipeline.py
+          python src/run_pipeline.py
+
+      - name: Validate Generated Snapshots & Checksums
+        run: |
+          python src/data/validate_snapshots.py
 
       - name: Rebase generated changes onto latest frontend-ui-migration
         run: |

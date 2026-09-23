@@ -24,6 +24,14 @@ import {
   FilterOptions,
 } from '../types';
 
+export interface SnapshotHistoryEntry {
+  snapshot_id: string;
+  generated_at: string;
+  total_works?: number;
+  status: string;
+  retained_on_disk?: boolean;
+}
+
 export interface SnapshotManifest {
   schema_version: string;
   snapshot_version: string;
@@ -33,6 +41,8 @@ export interface SnapshotManifest {
   row_counts: Record<string, number>;
   checksums: Record<string, string>;
   previous_snapshot_version?: string | null;
+  total_snapshots_generated?: number;
+  generation_history?: SnapshotHistoryEntry[];
 }
 
 // In-memory runtime caches
@@ -40,6 +50,19 @@ let cachedManifest: SnapshotManifest | null = null;
 const jsonCache = new Map<string, any>();
 const shardCache = new Map<string, Record<string, any>>();
 let riskIndexCache: any[] | null = null;
+let aliasCache: Record<string, string> | null = null;
+
+export async function getWorkIdAliases(): Promise<Record<string, string>> {
+  if (aliasCache) return aliasCache;
+  try {
+    const res = await fetch('/data/snapshots/work_id_aliases.json');
+    if (res.ok) {
+      aliasCache = await res.json();
+      return aliasCache!;
+    }
+  } catch {}
+  return {};
+}
 
 /**
  * Synchronous Pure JavaScript SHA-256 implementation to compute work detail shard (00-ff)
@@ -266,15 +289,55 @@ export async function resolveWorkDetail(workId: string): Promise<{ work: WorkRec
     }
   }
 
-  // If still not found in the deterministic shard, check if it exists in risk index
+  // If not found in the deterministic shard, try resolving via alias mapping (legacy <-> authentic ID)
+  if (!found) {
+    try {
+      const aliases = await getWorkIdAliases();
+      const aliasId = aliases[cleanId];
+      if (aliasId && aliasId !== cleanId) {
+        const altShardHex = getWorkShardHex(aliasId);
+        const altCacheKey = `${manifest.snapshot_version}:${altShardHex}`;
+        let altShardData = shardCache.get(altCacheKey);
+        if (!altShardData) {
+          try {
+            const altRes = await fetch(`${manifest.base_path}/work_details/${altShardHex}.json`);
+            if (altRes.ok) {
+              const parsed = await altRes.json();
+              if (parsed) {
+                altShardData = parsed;
+                shardCache.set(altCacheKey, parsed);
+              }
+            }
+          } catch {}
+        }
+        if (altShardData) {
+          found = altShardData[cleanId] || altShardData[aliasId];
+        }
+      }
+    } catch {}
+  }
+
+  // If still not found, search in the risk monitor index with alias & legacy ID support
   if (!found) {
     const allIndex = await getRiskIndexRecords();
+    const cleanLower = cleanId.toLowerCase();
+    const cleanTail = cleanId.split('/').pop() || cleanId;
     const match = allIndex.find((r: any) =>
       r.work_id === cleanId ||
-      String(r.work_id).toLowerCase() === cleanId.toLowerCase() ||
-      String(r.work_id).split('/').pop() === cleanId.split('/').pop()
+      r.legacy_work_id === cleanId ||
+      String(r.work_id).toLowerCase() === cleanLower ||
+      String(r.legacy_work_id || '').toLowerCase() === cleanLower ||
+      String(r.work_id).split('/').pop() === cleanTail
     );
     if (match) {
+      // If found in index and has a legacy or target ID, try loading full shard for it
+      const targetId = match.work_id || match.legacy_work_id;
+      if (targetId && targetId !== cleanId) {
+        try {
+          const resDetail = await resolveWorkDetail(targetId);
+          if (resDetail && resDetail.work) return resDetail;
+        } catch {}
+      }
       return {
         work: match as WorkRecord,
         candidate_duplicates: [],

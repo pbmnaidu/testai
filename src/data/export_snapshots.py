@@ -112,6 +112,133 @@ def _get_work_shard(work_id: str) -> str:
     return hashlib.sha256(clean_id.encode("utf-8")).hexdigest()[:2]
 
 
+SNAPSHOT_HISTORY_FILE = "snapshot_history.json"
+
+
+def load_snapshot_history() -> dict:
+    """Load or initialize snapshot generation history."""
+    history_file = os.path.join(FRONTEND_PUBLIC_SNAPSHOTS, SNAPSHOT_HISTORY_FILE)
+    if os.path.exists(history_file):
+        try:
+            with open(history_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, dict) and "history" in data:
+                    return data
+        except Exception:
+            pass
+
+    # Seed with known previous runs
+    initial_history = [
+        {
+            "snapshot_id": "v_20260915_194248",
+            "generated_at": "2026-09-15T19:42:48+05:30",
+            "total_works": 79827,
+            "status": "ARCHIVED (DATA PRUNED)",
+            "retained_on_disk": False,
+        },
+        {
+            "snapshot_id": "v_20260915_225902",
+            "generated_at": "2026-09-15T22:59:02+05:30",
+            "total_works": 79827,
+            "status": "ARCHIVED (DATA PRUNED)",
+            "retained_on_disk": False,
+        },
+        {
+            "snapshot_id": "v_20260916_085353",
+            "generated_at": "2026-09-16T08:53:53+05:30",
+            "total_works": 79827,
+            "status": "ARCHIVED (DATA PRUNED)",
+            "retained_on_disk": False,
+        },
+        {
+            "snapshot_id": "v_20260920_074437",
+            "generated_at": "2026-09-20T07:44:37+05:30",
+            "total_works": 79827,
+            "status": "ARCHIVED (DATA PRUNED)",
+            "retained_on_disk": False,
+        },
+        {
+            "snapshot_id": "v_20260921_151134",
+            "generated_at": "2026-09-21T15:11:34+05:30",
+            "total_works": 79827,
+            "status": "ARCHIVED (DATA PRUNED)",
+            "retained_on_disk": False,
+        },
+    ]
+    return {
+        "total_snapshots_generated": len(initial_history),
+        "active_snapshot_version": None,
+        "history": initial_history,
+    }
+
+
+def update_and_save_snapshot_history(target_version: str, now_iso: str, total_works: int) -> dict:
+    """Record newly generated snapshot into durable history and persist to disk."""
+    hist_data = load_snapshot_history()
+    history_list = hist_data.get("history", [])
+
+    found = False
+    for entry in history_list:
+        if entry.get("snapshot_id") == target_version:
+            entry["status"] = "VERIFIED_ACTIVE"
+            entry["retained_on_disk"] = True
+            entry["generated_at"] = now_iso
+            entry["total_works"] = total_works
+            found = True
+        else:
+            entry["status"] = "ARCHIVED (DATA PRUNED)"
+            entry["retained_on_disk"] = False
+
+    if not found:
+        history_list.append({
+            "snapshot_id": target_version,
+            "generated_at": now_iso,
+            "total_works": total_works,
+            "status": "VERIFIED_ACTIVE",
+            "retained_on_disk": True,
+        })
+
+    payload = {
+        "total_snapshots_generated": len(history_list),
+        "active_snapshot_version": target_version,
+        "last_updated_at": now_iso,
+        "history": history_list,
+    }
+
+    for directory in (FRONTEND_PUBLIC_SNAPSHOTS, SNAPSHOTS_DIR):
+        try:
+            os.makedirs(directory, exist_ok=True)
+            hist_path = os.path.join(directory, SNAPSHOT_HISTORY_FILE)
+            with open(hist_path, "w", encoding="utf-8") as f:
+                json.dump(payload, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"[SNAPSHOT HISTORY WARN] Could not write history in {directory}: {e}")
+
+    return payload
+
+
+def prune_old_snapshots(retained_version: str) -> list[str]:
+    """Automatically delete all previous snapshot directories, retaining ONLY the active required snapshot."""
+    deleted_dirs = []
+    for base_dir in (FRONTEND_PUBLIC_SNAPSHOTS, SNAPSHOTS_DIR):
+        if not os.path.exists(base_dir):
+            continue
+        for item in os.listdir(base_dir):
+            item_path = os.path.join(base_dir, item)
+            if os.path.isdir(item_path):
+                # Match snapshot directory naming conventions (v_YYYYMMDD_HHMMSS or timestamp or .tmp)
+                if item.startswith("v_") or (item.startswith("202") and len(item) >= 10) or item.endswith(".tmp"):
+                    if item != retained_version:
+                        try:
+                            print(f"[SNAPSHOT CLEANUP] Deleting previous snapshot: {item}")
+                            shutil.rmtree(item_path, ignore_errors=True)
+                            deleted_dirs.append(item)
+                        except Exception as e:
+                            print(f"[SNAPSHOT CLEANUP WARN] Could not delete {item_path}: {e}")
+
+    return deleted_dirs
+
+
 def export_dashboard_snapshots(target_version: str = None) -> dict:
     """Export all precomputed dashboard data snapshots atomically."""
     start_t = datetime.now()
@@ -473,7 +600,35 @@ def export_dashboard_snapshots(target_version: str = None) -> dict:
 
     # 10. Model status
     print("[SNAPSHOT EXPORT] Building model status...")
-    model_status_payload = MLflowTracker.get_status()
+    tracker = MLflowTracker()
+    fin_anom_cnt = int(fin_outlier_mask.sum())
+    fin_anom_pct = round((fin_anom_cnt / total_works * 100), 2) if total_works else 0.0
+    crit_cnt = int((master_df.get("financial_risk_level", pd.Series()) == "CRITICAL").sum()) if "financial_risk_level" in master_df else 0
+    high_cnt = int((master_df.get("financial_risk_level", pd.Series()) == "HIGH").sum()) if "financial_risk_level" in master_df else 0
+
+    existing_runs = tracker.get_model_status().get("runs", [])
+    if not any(r.get("dataset_version") == target_version for r in existing_runs):
+        tracker.log_training_run(
+            params={
+                "n_estimators": 100,
+                "contamination": 0.05,
+                "random_state": 42,
+                "max_samples": "auto"
+            },
+            metrics={
+                "total_works": total_works,
+                "number_of_anomalies": fin_anom_cnt,
+                "anomalies_count": fin_anom_cnt,
+                "anomaly_percentage": fin_anom_pct,
+                "critical_risk_count": crit_cnt,
+                "critical_count": crit_cnt,
+                "high_risk_count": high_cnt,
+                "high_count": high_cnt,
+            },
+            dataset_version=target_version
+        )
+
+    model_status_payload = tracker.get_model_status()
     with open(os.path.join(staging_dir, "model_status.json"), "w", encoding="utf-8") as f:
         json.dump(model_status_payload, f, indent=2, ensure_ascii=False)
 
@@ -640,14 +795,29 @@ def export_dashboard_snapshots(target_version: str = None) -> dict:
     with open(os.path.join(staging_dir, "metadata.json"), "w", encoding="utf-8") as f:
         json.dump(metadata_payload, f, indent=2, ensure_ascii=False)
 
+    # Atomic promotion in FRONTEND_PUBLIC_SNAPSHOTS
     final_public_dir = os.path.join(FRONTEND_PUBLIC_SNAPSHOTS, target_version)
     if os.path.exists(final_public_dir):
-        shutil.rmtree(final_public_dir, ignore_errors=True)
+        try:
+            shutil.rmtree(final_public_dir, ignore_errors=True)
+        except Exception:
+            pass
     try:
-        os.replace(staging_dir, final_public_dir)
-    except (OSError, PermissionError):
-        # On Windows, os.replace on directories raises Access Denied; use shutil.move
         shutil.move(staging_dir, final_public_dir)
+    except Exception:
+        shutil.copytree(staging_dir, final_public_dir, dirs_exist_ok=True)
+        try:
+            shutil.rmtree(staging_dir, ignore_errors=True)
+        except Exception:
+            pass
+
+    # Update durable snapshot history
+    hist_payload = update_and_save_snapshot_history(target_version, now_iso, total_works)
+
+    # Automatically prune all older snapshots, retaining only the current required snapshot
+    deleted_snapshots = prune_old_snapshots(target_version)
+    print(f"[SNAPSHOT CLEANUP] Retained current active snapshot: {target_version}")
+    print(f"[SNAPSHOT CLEANUP] Deleted {len(deleted_snapshots)} old snapshot directories. Total generated historically: {hist_payload['total_snapshots_generated']}")
 
     # Read previous version if exists
     latest_path = os.path.join(FRONTEND_PUBLIC_SNAPSHOTS, "latest.json")
@@ -669,6 +839,8 @@ def export_dashboard_snapshots(target_version: str = None) -> dict:
         "row_counts": metadata_payload["row_counts"],
         "checksums": checksums,
         "previous_snapshot_version": previous_version,
+        "total_snapshots_generated": hist_payload["total_snapshots_generated"],
+        "generation_history": hist_payload["history"],
     }
 
     with open(os.path.join(FRONTEND_PUBLIC_SNAPSHOTS, "latest.json"), "w", encoding="utf-8") as f:

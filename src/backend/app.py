@@ -3015,7 +3015,213 @@ async def create_attendance(
     return att_record
 
 
+# ============================================================================
+# MATERIAL QUALITY & PRICE FAIRNESS ENGINE API
+# ============================================================================
+
+MATERIAL_RECORDS_PATH = os.path.join(DATA_DIR, "material_assessments.json")
+_MATERIAL_LOCK = threading.RLock()
+
+
+def _read_material_records() -> list[dict]:
+    with _MATERIAL_LOCK:
+        if os.path.exists(MATERIAL_RECORDS_PATH):
+            try:
+                with open(MATERIAL_RECORDS_PATH, "r", encoding="utf-8") as handle:
+                    data = json.load(handle)
+                    return data if isinstance(data, list) else []
+            except Exception:
+                return []
+        return []
+
+
+def _write_material_records(records: list[dict]) -> None:
+    with _MATERIAL_LOCK:
+        temp_p = f"{MATERIAL_RECORDS_PATH}.tmp"
+        with open(temp_p, "w", encoding="utf-8") as handle:
+            json.dump(records, handle, ensure_ascii=False, indent=2)
+        os.replace(temp_p, MATERIAL_RECORDS_PATH)
+
+
+@app.get("/api/material/samples")
+def get_material_samples():
+    """Return pre-configured real-world audit test vouchers."""
+    return {"total": len(SAMPLE_DOCUMENTS), "samples": SAMPLE_DOCUMENTS}
+
+
+@app.get("/api/material/benchmarks")
+def get_material_benchmarks(state: str = None, material: str = None):
+    """Return specification benchmarks with optional state and material filters."""
+    df = load_specification_benchmarks(_BACKEND_ROOT)
+    if state and state.strip():
+        st = state.strip().casefold()
+        if st != "all":
+            df = df[df["state"].str.casefold().str.contains(st, na=False)]
+    if material and material.strip():
+        mat = material.strip().casefold()
+        if mat != "all":
+            df = df[
+                df["material"].str.casefold().str.contains(mat, na=False) |
+                df["grade"].str.casefold().str.contains(mat, na=False)
+            ]
+    records = df.to_dict(orient="records")
+    return {"total": len(records), "benchmarks": records}
+
+
+@app.post("/api/material/upload-sor")
+async def upload_material_sor(file: UploadFile = File(...)):
+    """Ingest custom Schedule of Rates / contractor rate list CSV."""
+    content = await file.read()
+    try:
+        csv_text = content.decode("utf-8", errors="ignore")
+        res = ingest_custom_benchmark_module(csv_text)
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to parse CSV: {str(e)}")
+
+
+@app.post("/api/material/analyze")
+async def analyze_material(
+    file: UploadFile = File(None),
+    sample_id: str = Form(None),
+    raw_text: str = Form(None),
+    quoted_price: float = Form(None),
+    state: str = Form("National Baseline"),
+    work_id: str = Form(None),
+):
+    """Perform quality-aware OCR and unit price fairness evaluation."""
+    file_bytes = None
+    filename = "uploaded_document"
+    if file:
+        file_bytes = await file.read()
+        filename = file.filename or "uploaded_document"
+
+    result = analyze_material_price_fairness(
+        file_bytes=file_bytes,
+        filename=filename,
+        raw_text=raw_text,
+        quoted_unit_price=quoted_price,
+        state=state or "National Baseline",
+        base_dir=_BACKEND_ROOT,
+        sample_id=sample_id,
+    )
+    if work_id:
+        result["extracted_attributes"]["work_id"] = work_id
+        if "contractor_procurement" in result:
+            result["contractor_procurement"]["work_id"] = work_id
+
+    return result
+
+
+@app.post("/api/material/save")
+async def save_material_assessment_api(request: Request):
+    """Save an analyzed material assessment into the work audit database."""
+    body = await request.json()
+    work_id = body.get("work_id") or body.get("extracted_attributes", {}).get("work_id") or "UNLINKED"
+    assessment_id = body.get("assessment_id") or f"MAT-{int(datetime.now().timestamp())}-{uuid.uuid4().hex[:6].upper()}"
+    now = datetime.now().astimezone().isoformat()
+
+    record = {
+        **body,
+        "assessment_id": assessment_id,
+        "work_id": work_id,
+        "saved_at": now,
+        "inspection_status": body.get("inspection_status") or "SAVED_LOCAL_ARCHIVE",
+    }
+
+    records = _read_material_records()
+    records = [r for r in records if r.get("assessment_id") != assessment_id]
+    records.insert(0, record)
+    _write_material_records(records)
+
+    return {"status": "SUCCESS", "assessment_id": assessment_id, "record": record}
+
+
+@app.get("/api/material/assessments")
+def get_material_assessments(work_id: str = None, status: str = None):
+    """Retrieve saved material assessments."""
+    records = _read_material_records()
+    if work_id:
+        records = [r for r in records if str(r.get("work_id", "")).strip() == str(work_id).strip()]
+    if status:
+        records = [r for r in records if str(r.get("inspection_status", "")).upper() == status.strip().upper()]
+    return {"total": len(records), "assessments": records}
+
+
+@app.post("/api/material/request-inspection")
+async def request_material_inspection(request: Request):
+    """Send an inspection request to the Inspection Officer portal."""
+    body = await request.json()
+    work_id = body.get("work_id") or "UNKNOWN_WORK"
+    assessment_id = body.get("assessment_id") or f"MAT-{int(datetime.now().timestamp())}-{uuid.uuid4().hex[:6].upper()}"
+    now = datetime.now().astimezone().isoformat()
+
+    record = {
+        **body,
+        "assessment_id": assessment_id,
+        "work_id": work_id,
+        "inspection_status": "PENDING_OFFICER_INSPECTION",
+        "inspection_requested_at": now,
+        "contractor_notes": body.get("contractor_notes", "Contractor submitted material test certificate for officer verification."),
+    }
+
+    records = _read_material_records()
+    records = [r for r in records if r.get("assessment_id") != assessment_id]
+    records.insert(0, record)
+    _write_material_records(records)
+
+    return {
+        "status": "SUCCESS",
+        "message": f"Material inspection request for Work ID {work_id} dispatched to Inspection Officer Portal.",
+        "assessment_id": assessment_id,
+        "record": record,
+    }
+
+
+@app.post("/api/material/officer-action")
+async def officer_material_action(request: Request):
+    """Record an Inspection Officer decision on material quality & rate."""
+    body = await request.json()
+    assessment_id = body.get("assessment_id")
+    action = body.get("action")
+    officer_notes = body.get("officer_notes", "")
+    now = datetime.now().astimezone().isoformat()
+
+    if not assessment_id:
+        raise HTTPException(status_code=400, detail="assessment_id is required")
+
+    records = _read_material_records()
+    found = False
+    for r in records:
+        if r.get("assessment_id") == assessment_id:
+            r["inspection_status"] = "APPROVED_BY_OFFICER" if action == "APPROVE" else (
+                "FIELD_TEST_ORDERED" if action == "ORDER_TEST" else "REJECTED_NON_COMPLIANT"
+            )
+            r["officer_action"] = action
+            r["officer_action_notes"] = officer_notes
+            r["officer_reviewed_at"] = now
+            found = True
+            break
+
+    if found:
+        _write_material_records(records)
+        return {"status": "SUCCESS", "message": f"Officer action '{action}' recorded successfully."}
+    else:
+        new_rec = {
+            "assessment_id": assessment_id,
+            "work_id": body.get("work_id", "GENERAL"),
+            "inspection_status": "APPROVED_BY_OFFICER" if action == "APPROVE" else "FIELD_TEST_ORDERED",
+            "officer_action": action,
+            "officer_action_notes": officer_notes,
+            "officer_reviewed_at": now,
+        }
+        records.insert(0, new_rec)
+        _write_material_records(records)
+        return {"status": "SUCCESS", "message": "Officer action recorded."}
+
+
 if __name__ == "__main__":
     import uvicorn
     print("Starting FastAPI server on http://127.0.0.1:8000 ...")
     uvicorn.run(app, host="127.0.0.1", port=8000)
+

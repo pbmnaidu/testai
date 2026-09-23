@@ -22,7 +22,7 @@ interface AuthContextType {
   user: UserProfile | null;
   role: UserRole;
   isLoading: boolean;
-  loginWithGoogle: () => Promise<UserProfile>;
+  loginWithGoogle: (targetRole?: UserRole) => Promise<UserProfile>;
   loginWithCredentials: (email: string, password?: string, role?: UserRole) => Promise<UserProfile>;
   loginAsDemo: (role: UserRole) => Promise<UserProfile>;
   register: (data: {
@@ -103,10 +103,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const handleLoginWithGoogle = async (): Promise<UserProfile> => {
+  const handleLoginWithGoogle = async (targetRole?: UserRole): Promise<UserProfile> => {
     setIsLoading(true);
     try {
-      const profile = await signInWithGoogle();
+      const profile = await signInWithGoogle(targetRole);
       setUser(profile);
       return profile;
     } finally {

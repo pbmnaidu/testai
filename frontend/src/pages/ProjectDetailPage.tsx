@@ -5,6 +5,7 @@ import { RiskBadge } from '../components/cards/RiskBadge';
 import { RiskEvidencePanel } from '../components/risk/RiskEvidencePanel';
 import { WorkInfoCards } from '../components/risk/WorkInfoCards';
 import { GeotagEvidenceCard } from '../components/GeotagEvidenceCard';
+import { MaterialEvidencePanel } from '../components/MaterialEvidencePanel';
 import { 
   ArrowLeft, 
   DollarSign, 
@@ -115,6 +116,11 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({ workId, on
                 <span className="font-mono font-bold text-slate-900 bg-slate-100 px-3 py-1 rounded-xl border border-slate-200">
                   {work.work_id}
                 </span>
+                {work.legacy_work_id && work.legacy_work_id !== work.work_id && (
+                  <span className="font-mono text-slate-500 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200/60 text-[11px]" title="Legacy Dataset ID">
+                    Legacy: {work.legacy_work_id}
+                  </span>
+                )}
                 <span className="px-3 py-1 rounded-xl bg-slate-100 text-slate-700 font-semibold border border-slate-200">
                   {work.work_category}
                 </span>
@@ -277,6 +283,7 @@ export const ProjectDetailPage: React.FC<ProjectDetailPageProps> = ({ workId, on
           </div>
           <WorkInfoCards work={work} />
           <GeotagEvidenceCard workId={work.work_id} onOpenEvidence={onOpenEvidence} onSelectWork={onSelectWork} />
+          <MaterialEvidencePanel workId={work.work_id} />
         </div>
       )}
 

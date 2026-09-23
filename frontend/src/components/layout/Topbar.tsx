@@ -51,9 +51,8 @@ export const Topbar: React.FC<TopbarProps> = ({
   isSidebarCollapsed,
   activeTab = 'overview',
 }) => {
-  const { user, role, logout, switchRole, designatedOfficerEmail } = useAuth();
+  const { user, role, logout } = useAuth();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [roleSwitchError, setRoleSwitchError] = useState('');
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click
@@ -66,20 +65,6 @@ export const Topbar: React.FC<TopbarProps> = ({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const handleRoleChange = async (newRole: UserRole) => {
-    setRoleSwitchError('');
-    if (newRole === 'officer' && (user?.email || '').toLowerCase() !== designatedOfficerEmail.toLowerCase()) {
-      setRoleSwitchError(`Officer privileges are restricted strictly to ${designatedOfficerEmail}`);
-      return;
-    }
-    try {
-      await switchRole(newRole);
-      setIsUserMenuOpen(false);
-    } catch (err: any) {
-      setRoleSwitchError(err.message || 'Failed to switch role');
-    }
-  };
 
   const getBreadcrumb = () => {
     switch (activeTab) {
@@ -150,27 +135,31 @@ export const Topbar: React.FC<TopbarProps> = ({
           />
         </form>
 
-        <button
-          type="button"
-          id="citizen-login-btn"
-          onClick={onOpenCitizenPortal}
-          className="shell-topbar__action shell-topbar__action--citizen"
-          title="Citizen Portal: Report works with geotagged proof"
-        >
-          <Compass className="w-3.5 h-3.5 text-[#b24e28]" />
-          <span>Citizen Portal</span>
-        </button>
+        {activeRole === 'citizen' && (
+          <button
+            type="button"
+            id="citizen-login-btn"
+            onClick={onOpenCitizenPortal}
+            className="shell-topbar__action shell-topbar__action--citizen"
+            title="Citizen Portal: Report works with geotagged proof"
+          >
+            <Compass className="w-3.5 h-3.5 text-[#b24e28]" />
+            <span>Citizen Portal</span>
+          </button>
+        )}
 
-        <button
-          type="button"
-          id="officer-center-btn"
-          onClick={onOpenOfficerCenter}
-          className="shell-topbar__action shell-topbar__action--officer"
-          title="Implementing Officer Center"
-        >
-          <ClipboardCheck className="w-3.5 h-3.5 text-[#4b8c72]" />
-          <span>Officer Center</span>
-        </button>
+        {activeRole === 'officer' && (
+          <button
+            type="button"
+            id="officer-center-btn"
+            onClick={onOpenOfficerCenter}
+            className="shell-topbar__action shell-topbar__action--officer"
+            title="Implementing Officer Center"
+          >
+            <ClipboardCheck className="w-3.5 h-3.5 text-[#4b8c72]" />
+            <span>Officer Center</span>
+          </button>
+        )}
 
         {/* Authenticated User Session Pill */}
         {user && (
@@ -237,37 +226,25 @@ export const Topbar: React.FC<TopbarProps> = ({
                   )}
                 </div>
 
-                {/* Role Switcher */}
-                <div className="space-y-1.5">
-                  <div className="text-[9px] font-editorial-mono font-bold uppercase tracking-wider text-[#7b817c]">
-                    Switch Active Protocol
+                {/* Designated Role (Locked to particular authenticated role) */}
+                <div className="space-y-1.5 p-2.5 rounded-xl bg-[#fbfaf6] border border-[#ded7ca]">
+                  <div className="text-[9px] font-editorial-mono font-bold uppercase tracking-wider text-[#7b817c] flex items-center justify-between">
+                    <span>Designated Role</span>
+                    <span className="text-[8px] text-[#4b8c72] font-semibold bg-[#e8f0ea] px-1.5 py-0.2 rounded-xs border border-[#d2dfd4]">LOCKED</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-1.5 bg-[#fbfaf6] p-1.5 rounded-xl border border-[#ded7ca]">
-                    {(['officer', 'citizen', 'contractor', 'material_contractor'] as UserRole[]).map((r) => {
-                      const isCurrent = user.role === r;
-                      const conf = ROLE_META[r];
-                      return (
-                        <button
-                          key={r}
-                          type="button"
-                          onClick={() => handleRoleChange(r)}
-                          className={`py-1.5 px-2 rounded-lg text-[10px] font-bold text-center transition flex items-center justify-center gap-1 ${
-                            isCurrent
-                              ? 'bg-[#263a42] text-white shadow-xs'
-                              : 'text-[#7b817c] hover:text-[#263a42] hover:bg-[#f2ede4]'
-                          }`}
-                        >
-                          <span>{conf.short}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {roleSwitchError && (
-                    <div className="text-[10px] text-rose-700 bg-rose-50 border border-rose-200 rounded-lg p-2 leading-tight flex items-start gap-1">
-                      <AlertCircle className="w-3 h-3 shrink-0 mt-0.5" />
-                      <span>{roleSwitchError}</span>
+                  <div className="flex items-center gap-2 pt-0.5">
+                    <span className={`p-1 rounded-md ${currentMeta.badgeClass}`}>
+                      {React.createElement(currentMeta.icon, { className: 'w-3.5 h-3.5' })}
+                    </span>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold text-[#263a42]">
+                        {currentMeta.full}
+                      </span>
+                      <span className="text-[9px] text-[#7b817c]">
+                        Permissions are strictly restricted to this account.
+                      </span>
                     </div>
-                  )}
+                  </div>
                 </div>
 
                 {/* Sign Out Button */}

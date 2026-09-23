@@ -142,7 +142,7 @@ let anonymousAuthDisabled = false;
 /**
  * Sign in with Google Popup and persist user profile in Cloud Firestore.
  */
-export async function signInWithGoogle(): Promise<UserProfile> {
+export async function signInWithGoogle(targetRole?: UserRole): Promise<UserProfile> {
   try {
     const cred = await signInWithPopup(auth, googleProvider);
     const user = cred.user;
@@ -158,10 +158,18 @@ export async function signInWithGoogle(): Promise<UserProfile> {
       }
     } catch {}
 
-    const resolvedRole: UserRole = isDesignatedOfficer ? 'officer' : (existingProfile?.role || 'citizen');
-    const resolvedDesignation = isDesignatedOfficer
-      ? 'Senior Implementing & Inspection Officer / Nodal Admin'
-      : (existingProfile?.designation || (resolvedRole === 'citizen' ? 'Verified Citizen' : 'Implementing Officer'));
+    // If role is specified during login/registration, use it. If not specified, default to citizen.
+    const requestedRole: UserRole = targetRole || (existingProfile?.role ? existingProfile.role : 'citizen');
+    const resolvedRole: UserRole = isDesignatedOfficer ? 'officer' : requestedRole;
+
+    let resolvedDesignation = 'Verified Citizen Auditor';
+    if (resolvedRole === 'officer') {
+      resolvedDesignation = 'Senior Implementing & Inspection Officer / Nodal Admin';
+    } else if (resolvedRole === 'contractor') {
+      resolvedDesignation = 'Civil Works Contractor (Muster Roll & Attendance)';
+    } else if (resolvedRole === 'material_contractor') {
+      resolvedDesignation = 'Material Contractor & Vendor (Quality Assurance)';
+    }
 
     const profile: UserProfile = {
       uid: user.uid,
@@ -169,12 +177,13 @@ export async function signInWithGoogle(): Promise<UserProfile> {
       displayName: user.displayName || (user.email ? user.email.split('@')[0] : 'Authorized User'),
       photoURL: user.photoURL,
       role: resolvedRole,
-      designation: resolvedDesignation,
+      designation: existingProfile?.role === resolvedRole && existingProfile?.designation ? existingProfile.designation : resolvedDesignation,
       organization: existingProfile?.organization || (isDesignatedOfficer ? 'Ministry of Statistics & Programme Implementation (MPLADS)' : ''),
       state: existingProfile?.state || '',
       constituency: existingProfile?.constituency || '',
       createdAt: existingProfile?.createdAt || nowIso,
       lastLoginAt: nowIso,
+      approvalStatus: 'APPROVED',
       isSystemAdmin: isDesignatedOfficer || existingProfile?.isSystemAdmin || false,
     };
 

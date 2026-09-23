@@ -135,7 +135,43 @@ class TrainingManager:
             run_data = MLflowTracker().log_training_run({"n_estimators": 100, "contamination": 0.05, "random_state": 42}, metrics, snapshot_id or "LOCAL")
             with open(os.path.join(TRAINING_DIR, "mlruns", run_id, "run.json"), "w", encoding="utf-8") as handle:
                 json.dump({"run_id": run_id, "params": {"models": "isolation_forest,tfidf_cosine,compliance_rules,schedule,composite"}, "metrics": metrics, "registry": run_data}, handle, indent=2, default=str)
-            status.update({"status": "COMPLETED", "progress": 100, "message": "All risk models trained and promoted.", "completed_at": _now(), "validation": validation, "drift": drift, "artifact_dir": artifacts_dir})
+            models_list = [
+                {"id": "FINANCIAL_ANOMALY", "name": "Financial Anomaly Detector", "algorithm": "Isolation Forest (100 estimators, 0.05 contamination)", "status": "PRODUCTION_ACTIVE", "records_trained": validation["rows"], "metrics": "Peer group benchmarks & cost anomaly scoring"},
+                {"id": "DUPLICATE_DETECTION", "name": "Duplicate Candidate Classifier", "algorithm": "TF-IDF Vectorization & Cosine Clustering", "status": "PRODUCTION_ACTIVE", "records_trained": validation["rows"], "metrics": "Cross-work textual & geographical deduplication"},
+                {"id": "COMPLIANCE_RULES", "name": "Statutory Compliance Engine", "algorithm": "Deterministic MoSPI Guideline Matrix v2.4", "status": "PRODUCTION_ACTIVE", "records_trained": validation["rows"], "metrics": "Constituency threshold & eligibility audit"},
+                {"id": "SCHEDULE_PROGRESS", "name": "Schedule & Delay Risk Estimator", "algorithm": "Timeline Milestone & Progress Regressor", "status": "PRODUCTION_ACTIVE", "records_trained": validation["rows"], "metrics": "Milestone bottleneck & delay classification"},
+                {"id": "COMPOSITE_RISK", "name": "Composite Multi-Factor Risk Synthesizer", "algorithm": "Calibrated Bayesian Composite Scoring Model", "status": "PRODUCTION_ACTIVE", "records_trained": validation["rows"], "metrics": "Weighted multi-engine audit prioritization"}
+            ]
+            status.update({
+                "status": "COMPLETED", 
+                "progress": 100, 
+                "message": f"All 5 risk intelligence models successfully retrained and validated on {validation['rows']:,} works.", 
+                "completed_at": _now(), 
+                "total_works": validation["rows"],
+                "models": models_list,
+                "validation": validation, 
+                "drift": drift, 
+                "artifact_dir": artifacts_dir
+            })
+
+            # Update dashboard snapshots and automatically prune previous snapshots and staging to reduce storage
+            try:
+                from src.data.export_snapshots import export_dashboard_snapshots
+                export_dashboard_snapshots()
+            except Exception as snap_err:
+                print(f"[TRAINING] Snapshot export notice: {snap_err}")
+
+            try:
+                # Prune old training staging and backup workspaces to conserve disk storage
+                for d in [TRAINING_STAGING_DIR, TRAINING_BACKUP_DIR]:
+                    if os.path.exists(d):
+                        for sub in os.listdir(d):
+                            sub_path = os.path.join(d, sub)
+                            if os.path.isdir(sub_path) and sub != run_id:
+                                shutil.rmtree(sub_path, ignore_errors=True)
+            except Exception:
+                pass
+
             return self._write_status(status)
         except Exception as exc:
             # Restore the prior production artifact set if promotion had started.

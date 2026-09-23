@@ -31,7 +31,8 @@ import {
   Mail,
   Phone,
   ShieldCheck,
-  Filter
+  Filter,
+  X
 } from 'lucide-react';
 import { 
   fetchOfficerDashboard, 
@@ -48,6 +49,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { RiskBadge } from '../components/cards/RiskBadge';
 import { MaterialFairnessPage } from './MaterialFairnessPage';
+import { MaterialEvidencePanel } from '../components/MaterialEvidencePanel';
 
 const initialDashboard: OfficerDashboardResponse = {
   selected_filters: {}, 
@@ -120,6 +122,7 @@ export const OfficerDashboardPage: React.FC = () => {
   const [citizenComplaints, setCitizenComplaints] = useState<CitizenComplaint[]>([]);
   const [complaintsLoading, setComplaintsLoading] = useState<boolean>(false);
   const [complaintActionSuccess, setComplaintActionSuccess] = useState<string>('');
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   // Contractor & Vendor Approvals State
   const [requests, setRequests] = useState<RegistrationRequest[]>([]);
@@ -557,7 +560,9 @@ export const OfficerDashboardPage: React.FC = () => {
                               key={i}
                               src={img}
                               alt="Citizen evidence"
-                              className="w-24 h-16 object-cover rounded-xl border border-slate-200 shadow-2xs"
+                              onClick={() => setPreviewImage(img)}
+                              className="w-24 h-16 object-cover rounded-xl border border-slate-200 shadow-2xs cursor-pointer hover:opacity-80 transition hover:ring-2 hover:ring-indigo-500 shrink-0"
+                              title="Click to inspect full image"
                             />
                           ))}
                         </div>
@@ -1177,6 +1182,39 @@ export const OfficerDashboardPage: React.FC = () => {
           </section>
         </>
       )}
+
+      {previewImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div
+            className="relative max-w-4xl max-h-[90vh] w-full bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-slate-700 flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 border-b border-slate-800 bg-slate-950/90 text-white">
+              <span className="text-xs font-bold flex items-center gap-2">
+                <Camera className="w-4 h-4 text-emerald-400" />
+                Statutory Photographic Ground Proof
+              </span>
+              <button
+                type="button"
+                onClick={() => setPreviewImage(null)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-4 flex items-center justify-center bg-slate-950/40 overflow-auto">
+              <img
+                src={previewImage}
+                alt="Enlarged Ground Proof"
+                className="max-h-[75vh] w-auto max-w-full object-contain rounded-xl shadow-md border border-slate-800"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -1190,6 +1228,7 @@ const OfficerWorkView: React.FC<{
 }> = ({ detail, onBack, onOpenMaterialScanner, actionNotice, onAction }) => {
   const { work } = detail;
   const rootRef = React.useRef<HTMLDivElement>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   
   const jumpTo = (id: string) => {
     const order: Record<string, number> = { 'risk-summary': 0, evidence: 1, financial: 2, material: 3, citizen: 3, compliance: 4, duplicates: 4, schedule: 5, actions: 1 };
@@ -1367,6 +1406,13 @@ const OfficerWorkView: React.FC<{
               <DataWarning>Material specification or detailed Bill of Quantities (BOQ) requires manual voucher verification.</DataWarning>
             </div>
           )}
+          <div className="mt-4 border-t border-slate-100 pt-2">
+            <MaterialEvidencePanel
+              workId={work.work_id}
+              showOfficerControls={true}
+              onNavigateToMaterial={onOpenMaterialScanner}
+            />
+          </div>
         </ModuleCard>
 
         {/* Real Citizen Grievances on this specific work */}
@@ -1396,7 +1442,14 @@ const OfficerWorkView: React.FC<{
                   {c.proof_images && c.proof_images.length > 0 && (
                     <div className="flex items-center gap-2 pt-1 overflow-x-auto">
                       {c.proof_images.map((img, i) => (
-                        <img key={i} src={img} alt="Evidence" className="w-16 h-12 object-cover rounded-lg border border-slate-300" />
+                        <img
+                          key={i}
+                          src={img}
+                          alt="Evidence"
+                          onClick={() => setPreviewImage(img)}
+                          className="w-16 h-12 object-cover rounded-lg border border-slate-300 cursor-pointer hover:opacity-80 transition hover:ring-2 hover:ring-amber-500 shrink-0"
+                          title="Click to inspect full image"
+                        />
                       ))}
                     </div>
                   )}
@@ -1525,6 +1578,40 @@ const OfficerWorkView: React.FC<{
           </div>
         </ModuleCard>
       </section>
+
+      {/* Statutory Photographic Proof Lightbox Modal */}
+      {previewImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div
+            className="relative max-w-4xl max-h-[90vh] w-full bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-slate-700 flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 border-b border-slate-800 bg-slate-950/90 text-white">
+              <span className="text-xs font-bold flex items-center gap-2">
+                <Camera className="w-4 h-4 text-emerald-400" />
+                Statutory Photographic Ground Proof
+              </span>
+              <button
+                type="button"
+                onClick={() => setPreviewImage(null)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-4 flex items-center justify-center bg-slate-950/40 overflow-auto">
+              <img
+                src={previewImage}
+                alt="Enlarged Ground Proof"
+                className="max-h-[75vh] w-auto max-w-full object-contain rounded-xl shadow-md border border-slate-800"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

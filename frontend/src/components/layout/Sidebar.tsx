@@ -17,6 +17,8 @@ import {
   X
 } from 'lucide-react';
 
+import { useAuth } from '../../context/AuthContext';
+
 interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
@@ -38,43 +40,109 @@ interface NavSection {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpen = false, onClose, collapsed = false, totalWorks }) => {
-  const sections: NavSection[] = [
-    {
-      title: 'Operations',
-      items: [
-        { id: 'officer-dashboard', label: 'Implementing Officer Center', icon: ClipboardCheck },
-        { id: 'citizen-portal', label: 'Citizen Grievance Portal', icon: Compass },
-        { id: 'attendance', label: 'Contractor Labor Attendance', icon: Clock },
-      ]
-    },
-    {
-      title: 'Analytics & Risk',
-      items: [
-        { id: 'overview', label: 'National Programme Review', icon: BarChart3 },
-        { id: 'risk-monitor', label: 'Risk Intelligence Monitor', icon: ShieldAlert },
-        { id: 'state-risk-analytics', label: 'State Risk & Records', icon: Map },
-        { id: 'mp-intelligence', label: 'MP Works & Fund Intelligence', icon: UserCheck },
-      ]
-    },
-    {
-      title: 'Risk Engines & Evidence',
-      items: [
-        { id: 'geotag-evidence', label: 'Field Photographic Evidence', icon: MapPin },
-        { id: 'duplicate-inspector', label: 'Candidate Duplicate Inspector', icon: Copy },
-        { id: 'financial-analytics', label: 'Financial Anomaly Analytics', icon: PieChart },
-        { id: 'compliance-monitor', label: 'Compliance Evidence Gaps', icon: CheckSquare },
-        { id: 'schedule-progress', label: 'Schedule & Progress Risk', icon: Clock },
-        { id: 'material-fairness', label: 'Material Quality & Price Fairness', icon: Scale },
-      ]
-    },
-    {
-      title: 'Platform Governance',
-      items: [
-        { id: 'data-sync', label: 'Data Sync & System Status', icon: RefreshCw },
-        { id: 'model-monitoring', label: 'MLflow Model Monitoring', icon: Cpu },
-      ]
-    }
-  ];
+  const { role } = useAuth();
+
+  // Role-based navigation generation
+  let sections: NavSection[] = [];
+
+  if (role === 'officer') {
+    sections = [
+      {
+        title: 'Operations',
+        items: [
+          { id: 'officer-dashboard', label: 'Implementing Officer Center', icon: ClipboardCheck },
+        ]
+      },
+      {
+        title: 'Analytics & Risk',
+        items: [
+          { id: 'overview', label: 'National Programme Review', icon: BarChart3 },
+          { id: 'risk-monitor', label: 'Risk Intelligence Monitor', icon: ShieldAlert },
+          { id: 'state-risk-analytics', label: 'State Risk & Records', icon: Map },
+          { id: 'mp-intelligence', label: 'MP Works & Fund Intelligence', icon: UserCheck },
+        ]
+      },
+      {
+        title: 'Risk Engines & Evidence',
+        items: [
+          { id: 'geotag-evidence', label: 'Field Photographic Evidence', icon: MapPin },
+          { id: 'duplicate-inspector', label: 'Candidate Duplicate Inspector', icon: Copy },
+          { id: 'financial-analytics', label: 'Financial Anomaly Analytics', icon: PieChart },
+          { id: 'compliance-monitor', label: 'Compliance Evidence Gaps', icon: CheckSquare },
+          { id: 'schedule-progress', label: 'Schedule & Progress Risk', icon: Clock },
+        ]
+      },
+      {
+        title: 'Platform Governance',
+        items: [
+          { id: 'data-sync', label: 'Data Sync & System Status', icon: RefreshCw },
+          { id: 'model-monitoring', label: 'MLflow Model Monitoring', icon: Cpu },
+        ]
+      }
+    ];
+  } else if (role === 'material_contractor') {
+    sections = [
+      {
+        title: 'Material Operations',
+        items: [
+          { id: 'material-fairness', label: 'Material Quality & Price Fairness', icon: Scale },
+        ]
+      }
+    ];
+  } else if (role === 'contractor') {
+    sections = [
+      {
+        title: 'Muster Operations',
+        items: [
+          { id: 'attendance', label: 'Contractor Labor Attendance', icon: Clock },
+        ]
+      }
+    ];
+  } else {
+    // Default / Citizen role: only citizen portal, Analytics & Risk, and Risk Engines & Evidence
+    sections = [
+      {
+        title: 'Operations',
+        items: [
+          { id: 'citizen-portal', label: 'Citizen Grievance Portal', icon: Compass },
+        ]
+      },
+      {
+        title: 'Analytics & Risk',
+        items: [
+          { id: 'overview', label: 'National Programme Review', icon: BarChart3 },
+          { id: 'risk-monitor', label: 'Risk Intelligence Monitor', icon: ShieldAlert },
+          { id: 'state-risk-analytics', label: 'State Risk & Records', icon: Map },
+          { id: 'mp-intelligence', label: 'MP Works & Fund Intelligence', icon: UserCheck },
+        ]
+      },
+      {
+        title: 'Risk Engines & Evidence',
+        items: [
+          { id: 'geotag-evidence', label: 'Field Photographic Evidence', icon: MapPin },
+          { id: 'duplicate-inspector', label: 'Candidate Duplicate Inspector', icon: Copy },
+          { id: 'financial-analytics', label: 'Financial Anomaly Analytics', icon: PieChart },
+          { id: 'compliance-monitor', label: 'Compliance Evidence Gaps', icon: CheckSquare },
+          { id: 'schedule-progress', label: 'Schedule & Progress Risk', icon: Clock },
+        ]
+      }
+    ];
+  }
+
+  // Calculate next upcoming executive review briefing (Thursdays at 09:30 IST)
+  const getNextBriefingDate = () => {
+    const now = new Date();
+    const day = now.getDay(); // 0: Sun, 4: Thu
+    const isTodayBeforeBriefing = day === 4 && (now.getHours() < 9 || (now.getHours() === 9 && now.getMinutes() < 30));
+    const daysUntilNext = isTodayBeforeBriefing ? 0 : ((4 - day + 7) % 7 || 7);
+    const nextDate = new Date(now);
+    nextDate.setDate(now.getDate() + daysUntilNext);
+    return nextDate.toLocaleDateString('en-GB', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+    });
+  };
 
   return (
     <>
@@ -137,17 +205,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, isOpe
           </div>
 
           {/* Bottom Briefing Card */}
-          <div className={`editorial-brief mt-auto ${collapsed ? 'lg:hidden' : ''}`}>
-            <span className="tiny">
-              Next briefing
-            </span>
-            <b>
-              Executive Review
-            </b>
-            <p>
-              Thursday, 18 September<br />09:30 IST
-            </p>
-          </div>
+          {role !== 'material_contractor' && role !== 'contractor' && (
+            <div className={`editorial-brief mt-auto ${collapsed ? 'lg:hidden' : ''}`}>
+              <span className="tiny">
+                Next briefing
+              </span>
+              <b>
+                Executive Review
+              </b>
+              <p>
+                {getNextBriefingDate()}<br />09:30 IST
+              </p>
+            </div>
+          )}
         </div>
       </aside>
     </>

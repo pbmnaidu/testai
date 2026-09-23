@@ -30,6 +30,7 @@ _sync_job_lock = threading.Lock()
 _job_status_lock = threading.Lock()
 _current_job_future: Optional[object] = None
 _current_job_id: Optional[str] = None
+_job_cancel_requested = threading.Event()
 
 
 def _now() -> datetime:
@@ -326,9 +327,33 @@ def preview_diff(filters: dict | None = None, progress_callback=None) -> dict:
     fetch = MPLADSRestClient().fetch_to_staging(staging_dir, progress_callback=progress_callback)
     if not fetch.get("success"):
         return {"success": False, "fetch": fetch, "source_url": SOURCE_URL}
-    diff = MPLADSDeltaEngine().compare_staging(staging_dir)
-    payload = {"success": True, "preview_token": token, "fetch": fetch, "diff": diff,
-               "filters": filters or {}, "created_at": datetime.now(timezone.utc).isoformat()}
+    if progress_callback:
+        progress_callback({"event": "delta_analysis_started", "message": "Analyzing changes against current active snapshot..."})
+    diff = MPLADSDeltaEngine().compare_staging(staging_dir, progress_callback=progress_callback)
+
+    review_records = []
+    for table_name, table_diff in diff.get("tables", {}).items():
+        for item in table_diff.get("new", []):
+            review_records.append({**item, "change_type": "NEW", "table": table_name})
+        for item in table_diff.get("modified", []):
+            review_records.append({**item, "change_type": "MODIFIED", "table": table_name})
+        for item in table_diff.get("removed", []):
+            review_records.append({**item, "change_type": "REMOVED", "table": table_name})
+
+    payload = {
+        "success": True,
+        "preview_token": token,
+        "fetch": fetch,
+        "diff": diff,
+        "review": {
+            "total": len(review_records),
+            "page": 1,
+            "limit": 50,
+            "records": review_records[:50],
+        },
+        "filters": filters or {},
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
     with open(os.path.join(staging_dir, "preview.json"), "w", encoding="utf-8") as handle:
         json.dump(payload, handle, indent=2, default=str)
     return payload
@@ -344,8 +369,10 @@ def commit_preview(preview_token: str, progress_callback=None) -> dict:
     diff = preview["diff"]
     fetch = preview.get("fetch", {})
     if progress_callback:
-        progress_callback({"event": "dataset_promotion_started", "message": "Promoting the validated dataset version."})
+        progress_callback({"event": "dataset_promotion_started", "message": "Promoting the validated dataset version..."})
     state = MPLADSDeltaEngine().commit_staging(staging_dir, diff)
+    if progress_callback:
+        progress_callback({"event": "snapshot_creation_started", "message": "Creating immutable snapshot of validated data..."})
     snapshot = create_snapshot()
     now = _now()
     counters = fetch.get("counters", {})
@@ -389,6 +416,8 @@ def run_sync_job(progress_callback=None, job_id: str | None = None) -> dict:
     job_id = job_id or f"SYNCJOB-{uuid.uuid4().hex[:12].upper()}"
 
     def emit(event: dict) -> None:
+        if _job_cancel_requested.is_set():
+            return
         _update_job_status(job_id, event)
         if progress_callback:
             progress_callback(event)
@@ -398,11 +427,23 @@ def run_sync_job(progress_callback=None, job_id: str | None = None) -> dict:
             job_id,
             status="RUNNING",
             started_at=_now().isoformat(),
-            message="Connecting to the official MPLADS data source.",
+            message="Connecting to the official MPLADS data source...",
             datasets=[],
-            counters={},
+            counters={
+                "records_received": 0,
+                "records_processed": 0,
+                "pages_fetched": 0,
+                "api_requests": 0,
+                "retry_count": 0,
+            },
         )
+        if _job_cancel_requested.is_set():
+            return {"success": False, "cancelled": True}
+
         preview = preview_diff(progress_callback=emit)
+        if _job_cancel_requested.is_set():
+            return {"success": False, "cancelled": True}
+
         if not preview.get("success"):
             now = _now()
             fetch = preview.get("fetch", {})
@@ -433,6 +474,9 @@ def run_sync_job(progress_callback=None, job_id: str | None = None) -> dict:
             return {"success": False, "sync": entry, "fetch": preview.get("fetch")}
 
         result = commit_preview(preview["preview_token"], progress_callback=emit)
+        if _job_cancel_requested.is_set():
+            return {"success": False, "cancelled": True}
+
         if result.get("success"):
             _update_job_status(
                 job_id,
@@ -463,8 +507,9 @@ def run_sync_job(progress_callback=None, job_id: str | None = None) -> dict:
 
 def reset_sync_job() -> dict:
     """Explicitly reset any synchronization job back to IDLE."""
-    global _current_job_future, _current_job_id
+    global _current_job_future, _current_job_id, _job_cancel_requested
     with _sync_job_lock:
+        _job_cancel_requested.set()
         if _current_job_future and hasattr(_current_job_future, "cancel") and not _current_job_future.done():
             try:
                 _current_job_future.cancel()
@@ -477,7 +522,13 @@ def reset_sync_job() -> dict:
             "status": "IDLE",
             "message": "Synchronization was reset. Ready to sync.",
             "datasets": [],
-            "counters": {},
+            "counters": {
+                "records_received": 0,
+                "records_processed": 0,
+                "pages_fetched": 0,
+                "api_requests": 0,
+                "retry_count": 0,
+            },
             "reset_at": now.isoformat(),
         }
         with _job_status_lock:
@@ -492,8 +543,9 @@ def reconcile_sync_state() -> dict:
 
 def start_sync_job(force: bool = False) -> dict:
     """Queue one non-blocking synchronization job and return its live status."""
-    global _current_job_future, _current_job_id
+    global _current_job_future, _current_job_id, _job_cancel_requested
     with _sync_job_lock:
+        _job_cancel_requested.clear()
         current = _read_job_status(reconcile=True)
         is_active = (
             _current_job_id == current.get("job_id") and
@@ -511,7 +563,13 @@ def start_sync_job(force: bool = False) -> dict:
             "message": "Synchronization queued.",
             "queued_at": _now().isoformat(),
             "datasets": [],
-            "counters": {},
+            "counters": {
+                "records_received": 0,
+                "records_processed": 0,
+                "pages_fetched": 0,
+                "api_requests": 0,
+                "retry_count": 0,
+            },
         }
         with _job_status_lock:
             _write_job_status(queued)

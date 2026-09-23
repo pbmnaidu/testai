@@ -712,13 +712,14 @@ html:not(.dark) .text-slate-200 { color: #334155 !important; }
 html:not(.dark) .text-slate-300 { color: #475569 !important; }
 html:not(.dark) .text-slate-400 { color: #64748b !important; }
 html:not(.dark) [class*="bg-slate-800"] { background-color: #f1f5f9 !important; }
-html:not(.dark) [class*="bg-slate-900"] { background-color: #1f3a63 !important; }
+html:not(.dark) [class*="bg-slate-900"] { 
+  background-color: #0f172a !important; 
+  color: #ffffff !important;
+}
 html:not(.dark) [class*="border-slate-800"] { border-color: #dbe3ee !important; }
-html:not(.dark) .hover\:bg-slate-800:hover { background-color: #e2e8f0 !important; }
+html:not(.dark) .hover\:bg-slate-800:hover { background-color: #1e293b !important; }
 
-/* Action buttons use dark utility classes in several pages. The daytime
-   palette remaps their hover background, so explicitly preserve a dark
-   button surface and white label/icon contrast in light mode. */
+/* Action buttons: ensure high contrast white text and clean backgrounds on all buttons */
 html:not(.dark) button.bg-indigo-600,
 html:not(.dark) button.bg-emerald-600,
 html:not(.dark) button.bg-slate-900 {
@@ -726,19 +727,21 @@ html:not(.dark) button.bg-slate-900 {
 }
 html:not(.dark) button.bg-indigo-600 { background-color: #4f46e5 !important; }
 html:not(.dark) button.bg-emerald-600 { background-color: #059669 !important; }
-html:not(.dark) button.bg-slate-900 { background-color: #1f3a63 !important; }
+html:not(.dark) button.bg-slate-900 { background-color: #0f172a !important; }
+html:not(.dark) button.bg-slate-900:hover,
 html:not(.dark) button.hover\:bg-slate-800:hover {
-  background-color: #294b7d !important;
+  background-color: #1e293b !important;
   color: #ffffff !important;
 }
 
-/* Keep labels readable when a dark-blue utility surface is remapped for the
-   daytime theme. Several audit cards intentionally retain a navy surface. */
+/* Ensure text inside dark containers is always bright and crystal clear */
 html:not(.dark) [class*="bg-slate-900"] .text-slate-100 { color: #f8fafc !important; }
-html:not(.dark) [class*="bg-slate-900"] .text-slate-200 { color: #e2e8f0 !important; }
-html:not(.dark) [class*="bg-slate-900"] .text-slate-300 { color: #cbd5e1 !important; }
+html:not(.dark) [class*="bg-slate-900"] .text-slate-200 { color: #f1f5f9 !important; }
+html:not(.dark) [class*="bg-slate-900"] .text-slate-300 { color: #e2e8f0 !important; }
 html:not(.dark) [class*="bg-slate-900"] .text-slate-400,
-html:not(.dark) [class*="bg-slate-900"] .text-slate-500 { color: #dbeafe !important; }
+html:not(.dark) [class*="bg-slate-900"] .text-slate-500 { color: #cbd5e1 !important; }
+html:not(.dark) [class*="bg-slate-900"] p,
+html:not(.dark) [class*="bg-slate-900"] span { color: inherit; }
 html:not(.dark) [class*="bg-slate-800"] .text-slate-500 { color: #475569 !important; }
 
 /* Make row hover states visibly distinct without washing out their labels. */

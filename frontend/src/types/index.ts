@@ -1,5 +1,6 @@
 export interface WorkRecord {
   work_id: string;
+  legacy_work_id?: string;
   work_category: string;
   State: string;
   Constituency: string;

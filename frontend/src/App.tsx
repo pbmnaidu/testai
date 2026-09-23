@@ -92,6 +92,47 @@ export function App() {
     try { window.localStorage.setItem('mplads-theme', isDark ? 'dark' : 'light'); } catch { /* storage unavailable */ }
   }, [isDark]);
 
+  // Role-based activeTab authorization and automatic redirection
+  useEffect(() => {
+    if (!user) return;
+    const currentRole = user.role;
+    const officerAllowed = [
+      'officer-dashboard', 'overview', 'risk-monitor', 'state-risk-analytics', 'mp-intelligence',
+      'geotag-evidence', 'duplicate-inspector', 'financial-analytics', 'financial-benchmarks',
+      'compliance-monitor', 'schedule-progress', 'data-sync', 'model-monitoring'
+    ];
+    const citizenAllowed = [
+      'citizen-portal', 'overview', 'risk-monitor', 'state-risk-analytics', 'mp-intelligence',
+      'geotag-evidence', 'duplicate-inspector', 'financial-analytics', 'financial-benchmarks',
+      'compliance-monitor', 'schedule-progress'
+    ];
+    const materialAllowed = ['material-fairness'];
+    const contractorAllowed = ['attendance'];
+
+    if (currentRole === 'material_contractor') {
+      if (!materialAllowed.includes(activeTab)) {
+        setActiveTab('material-fairness');
+        setSelectedWorkId(null);
+      }
+    } else if (currentRole === 'contractor') {
+      if (!contractorAllowed.includes(activeTab)) {
+        setActiveTab('attendance');
+        setSelectedWorkId(null);
+      }
+    } else if (currentRole === 'officer') {
+      if (!officerAllowed.includes(activeTab)) {
+        setActiveTab('officer-dashboard');
+        setSelectedWorkId(null);
+      }
+    } else {
+      // citizen
+      if (!citizenAllowed.includes(activeTab)) {
+        setActiveTab('citizen-portal');
+        setSelectedWorkId(null);
+      }
+    }
+  }, [user?.role]);
+
   // Loading state while resolving auth credentials
   if (isLoading) {
     return <SovereignSplashLoading />;

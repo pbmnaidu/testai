@@ -206,6 +206,7 @@ export const CitizenPortalPage: React.FC<{ onSelectWork?: (workId: string) => vo
   // Citizen Tracked Complaints State
   const [trackedComplaints, setTrackedComplaints] = useState<CitizenComplaint[]>([]);
   const [complaintsLoading, setComplaintsLoading] = useState<boolean>(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   // Load available states & constituencies on mount
   useEffect(() => {
@@ -1076,7 +1077,7 @@ export const CitizenPortalPage: React.FC<{ onSelectWork?: (workId: string) => vo
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
                     {uploadedImages.map((img, idx) => (
                       <div key={idx} className="relative rounded-xl border border-slate-200 overflow-hidden group aspect-video bg-slate-100">
-                        <img src={img} alt="Evidence preview" className="w-full h-full object-cover" />
+                        <img src={img} alt="Evidence preview" onClick={() => setPreviewImage(img)} className="w-full h-full object-cover cursor-pointer hover:opacity-90 transition-opacity" title="Click to view full image" />
                         <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <button
                             type="button"
@@ -1273,7 +1274,9 @@ export const CitizenPortalPage: React.FC<{ onSelectWork?: (workId: string) => vo
                             key={i}
                             src={img}
                             alt="Grievance proof"
-                            className="w-20 h-14 object-cover rounded-lg border border-slate-200"
+                            onClick={() => setPreviewImage(img)}
+                            className="w-20 h-14 object-cover rounded-lg border border-slate-200 cursor-pointer hover:opacity-80 transition hover:ring-2 hover:ring-emerald-500 shrink-0"
+                            title="Click to view full image"
                           />
                         ))}
                       </div>
@@ -1298,6 +1301,40 @@ export const CitizenPortalPage: React.FC<{ onSelectWork?: (workId: string) => vo
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Evidence Image Lightbox Modal */}
+      {previewImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div
+            className="relative max-w-4xl max-h-[90vh] w-full bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-slate-700 flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 border-b border-slate-800 bg-slate-950/90 text-white">
+              <span className="text-xs font-bold flex items-center gap-2">
+                <Camera className="w-4 h-4 text-emerald-400" />
+                Photographic Ground Evidence
+              </span>
+              <button
+                type="button"
+                onClick={() => setPreviewImage(null)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-4 flex items-center justify-center bg-slate-950/40 overflow-auto">
+              <img
+                src={previewImage}
+                alt="Enlarged Ground Evidence"
+                className="max-h-[75vh] w-auto max-w-full object-contain rounded-xl shadow-md border border-slate-800"
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>

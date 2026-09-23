@@ -149,8 +149,9 @@ export const PortalAuthGate: React.FC<PortalAuthGateProps> = ({
   const handleGoogleSignIn = async () => {
     setError('');
     setIsSubmitting(true);
+    const targetRole = Array.isArray(requiredRole) ? requiredRole[0] : requiredRole;
     try {
-      await loginWithGoogle();
+      await loginWithGoogle(targetRole);
     } catch (err: any) {
       setError(err.message || 'Google sign-in could not be completed.');
     } finally {

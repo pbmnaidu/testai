@@ -58,12 +58,12 @@ def _decode_json_value(value: Any) -> Any:
 
 
 ALIASES = {
-    "t1": {"t1", "allocatedlimit", "allocatedlimits", "allocatedlimitdata", "allocated", "allocatedlimitforhonblemps"},
-    "t3": {"t3", "worksrecommended", "recommendedworks", "recommended", "totalworksrecommended"},
-    "t4": {"t4", "workssanctioned", "sanctionedworks", "sanctioned", "sanction", "totalsanctionwork", "totalsanctioned"},
-    "t5": {"t5", "workscompleted", "completedworks", "completed", "totalworkscompleted"},
-    "t6": {"t6", "expenditure", "expenditurerecords", "expendituredata", "totalexpenditure", "expenditureoncompletedandongoingworksasondate"},
-    "t7": {"t7", "calamityconsents", "amountconsentedforcalamity", "calamity", "calimity", "totalcalimityconsent", "consent"},
+    "t1": {"t1", "allocatedlimit", "allocatedlimits", "allocatedlimitdata"},
+    "t3": {"t3", "worksrecommended", "recommendedworks", "recommended"},
+    "t4": {"t4", "workssanctioned", "sanctionedworks", "sanctioned"},
+    "t5": {"t5", "workscompleted", "completedworks", "completed"},
+    "t6": {"t6", "expenditure", "expenditurerecords", "expendituredata"},
+    "t7": {"t7", "calamityconsents", "amountconsentedforcalamity", "calamity"},
 }
 
 
@@ -108,7 +108,7 @@ class MPLADSRestClient:
         if page is not None:
             request_data["page"] = page
         request_body = json.dumps(request_data).encode("utf-8")
-        attempts = max(3, int(os.getenv("MPLADS_SYNC_RETRIES", "4")))
+        attempts = max(1, int(os.getenv("MPLADS_SYNC_RETRIES", "2")))
         context = ssl.create_default_context() if VERIFY_SSL else ssl._create_unverified_context()
         opener = self._opener(context)
         last_error: Exception | None = None
@@ -129,15 +129,13 @@ class MPLADSRestClient:
                     if request_callback:
                         request_callback({"event": "api_request_completed", "request_id": request_id, "endpoint": self.source_url, "tile_key": tile_key, "page": page or 1, "attempt": attempt + 1, "response_bytes": len(body), "response_ms": response_ms})
                     return json.loads(body.decode("utf-8"))
-            except (HTTPError, URLError, http.client.RemoteDisconnected, ConnectionResetError, TimeoutError, OSError, json.JSONDecodeError) as exc:
+            except (HTTPError, URLError, http.client.RemoteDisconnected, ConnectionResetError, TimeoutError, json.JSONDecodeError) as exc:
                 last_error = exc
-                # Recreate opener on connection resets so subsequent attempts use fresh sockets
-                opener = self._opener(context)
                 if request_callback:
                     request_callback({"event": "api_request_failed", "request_id": request_id, "endpoint": self.source_url, "tile_key": tile_key, "page": page or 1, "attempt": attempt + 1, "response_ms": round((time.perf_counter() - request_started) * 1000, 1), "error": str(exc), "will_retry": attempt + 1 < attempts})
                 if attempt + 1 >= attempts:
                     raise
-                time.sleep(min(3 * (attempt + 1), 12))
+                time.sleep(min(2 ** attempt, 4))
         raise last_error or RuntimeError("official request failed")
 
     def _unwrap(self, payload: Any) -> Any:
@@ -271,11 +269,29 @@ class MPLADSRestClient:
                 counters = dict(stats)
             emit({**event, **counters})
 
-        emit({"event": "fetch_started", "datasets": [table for table, _ in SOURCE_TABLE_REQUESTS]})
+        emit({"event": "fetch_started", "datasets": [table for table, _ in SOURCE_TABLE_REQUESTS], "message": "Connecting to the official MPLADS data source..."})
+        for table, tile_key in SOURCE_TABLE_REQUESTS:
+            emit({
+                "event": "dataset_fetch_started",
+                "dataset": table,
+                "label": tile_key,
+                "status": "QUEUED",
+                "records_received": 0,
+                "records_processed": 0,
+                "pages_fetched": 0,
+                "records_failed": 0,
+                "message": f"Connecting to official MPLADS data source for {tile_key}..."
+            })
 
         def fetch_table(table: str, tile_key: str):
             try:
-                emit({"event": "dataset_fetch_started", "dataset": table, "label": tile_key})
+                emit({
+                    "event": "dataset_fetch_started",
+                    "dataset": table,
+                    "label": tile_key,
+                    "status": "RUNNING",
+                    "message": f"Fetching {tile_key} from official MPLADS portal..."
+                })
                 page = 1
                 payload = self.fetch_payload(tile_key, DEFAULT_COMBO, request_callback=request_event)
                 page_payloads = [payload]
@@ -302,49 +318,82 @@ class MPLADSRestClient:
             except Exception as exc:
                 return table, tile_key, None, str(exc), 0
 
-        fetched = {}
-        with ThreadPoolExecutor(max_workers=2, thread_name_prefix="mospi-fetch") as executor:
-            futures = [executor.submit(fetch_table, table, tile_key) for table, tile_key in SOURCE_TABLE_REQUESTS]
-            for future in as_completed(futures):
-                table, tile_key, frame, error, pages = future.result()
-                fetched[table] = (tile_key, frame, error, pages)
+        with ThreadPoolExecutor(max_workers=len(SOURCE_TABLE_REQUESTS), thread_name_prefix="mospi-fetch") as executor:
+            future_to_table = {
+                executor.submit(fetch_table, table, tile_key): (table, tile_key)
+                for table, tile_key in SOURCE_TABLE_REQUESTS
+            }
+            for future in as_completed(future_to_table):
+                table, tile_key = future_to_table[future]
+                try:
+                    actual_table, actual_tile_key, frame, error, pages = future.result()
+                except Exception as exc:
+                    actual_table, actual_tile_key, frame, error, pages = table, tile_key, None, str(exc), 0
 
-        for table, tile_key in SOURCE_TABLE_REQUESTS:
-            actual_tile_key, frame, error, pages = fetched.get(table, (tile_key, None, "request did not complete", 0))
-            if error:
-                errors.append(f"{table} ({actual_tile_key}): {error}")
-                with stats_lock:
-                    stats["datasets_failed"] += 1
-                    counters = dict(stats)
-                emit({"event": "dataset_failed", "dataset": table, "label": actual_tile_key, "error": error, **counters})
-                continue
-            frame = _normalise_frame(frame)
-            if table == "t6" and "expenditure_amount" not in frame.columns and "completed_disbursed_amount" in frame.columns:
-                frame = frame.rename(columns={"completed_disbursed_amount": "expenditure_amount"})
-            for amount_column in ("sanction_amount", "recommended_amount", "allocated_amount", "completed_disbursed_amount", "expenditure_amount", "consent_amount"):
-                if amount_column in frame.columns:
-                    frame[amount_column] = pd.to_numeric(frame[amount_column].astype(str).str.replace("₹", "", regex=False).str.replace(",", "", regex=False), errors="coerce")
-            for date_column in ("recommended_date", "sanction_date", "completion_date", "expenditure_date", "consent_date"):
-                if date_column in frame.columns:
-                    frame[date_column] = pd.to_datetime(frame[date_column], errors="coerce")
-            path = os.path.join(staging_dir, MONITORED_FILES[table])
-            frame.to_parquet(path, index=False)
-            missing = self._missing_required_columns(table, frame)
-            written[table] = {"tile_key": tile_key, "path": path, "rows": int(len(frame)), "columns": list(frame.columns), "missing_required_column_groups": missing}
-            if missing:
-                errors.append(f"{table} ({tile_key}) missing required column groups: {missing}")
-                with stats_lock:
-                    stats["datasets_failed"] += 1
-                    stats["records_failed"] += int(len(frame))
-                    counters = dict(stats)
-                emit({"event": "dataset_failed", "dataset": table, "label": tile_key, "records_received": int(len(frame)), "error": "Required columns were missing.", **counters})
-            else:
-                with stats_lock:
-                    stats["pages_fetched"] += pages
-                    stats["records_received"] += int(len(frame))
-                    stats["records_processed"] += int(len(frame))
-                    counters = dict(stats)
-                emit({"event": "dataset_completed", "dataset": table, "label": tile_key, "records_received": int(len(frame),), "records_processed": int(len(frame)), "pages_fetched": pages, **counters})
+                if error:
+                    errors.append(f"{table} ({actual_tile_key}): {error}")
+                    with stats_lock:
+                        stats["datasets_failed"] += 1
+                        counters = dict(stats)
+                    emit({
+                        "event": "dataset_failed",
+                        "dataset": table,
+                        "label": actual_tile_key,
+                        "status": "FAILED",
+                        "error": error,
+                        "message": f"Dataset {table.upper()} failed: {error}",
+                        **counters
+                    })
+                    continue
+
+                frame = _normalise_frame(frame)
+                if table == "t6" and "expenditure_amount" not in frame.columns and "completed_disbursed_amount" in frame.columns:
+                    frame = frame.rename(columns={"completed_disbursed_amount": "expenditure_amount"})
+                for amount_column in ("sanction_amount", "recommended_amount", "allocated_amount", "completed_disbursed_amount", "expenditure_amount", "consent_amount"):
+                    if amount_column in frame.columns:
+                        frame[amount_column] = pd.to_numeric(frame[amount_column].astype(str).str.replace("₹", "", regex=False).str.replace(",", "", regex=False), errors="coerce")
+                for date_column in ("recommended_date", "sanction_date", "completion_date", "expenditure_date", "consent_date"):
+                    if date_column in frame.columns:
+                        frame[date_column] = pd.to_datetime(frame[date_column], errors="coerce")
+
+                path = os.path.join(staging_dir, MONITORED_FILES[table])
+                frame.to_parquet(path, index=False)
+                missing = self._missing_required_columns(table, frame)
+                written[table] = {"tile_key": tile_key, "path": path, "rows": int(len(frame)), "columns": list(frame.columns), "missing_required_column_groups": missing}
+
+                if missing:
+                    errors.append(f"{table} ({tile_key}) missing required column groups: {missing}")
+                    with stats_lock:
+                        stats["datasets_failed"] += 1
+                        stats["records_failed"] += int(len(frame))
+                        counters = dict(stats)
+                    emit({
+                        "event": "dataset_failed",
+                        "dataset": table,
+                        "label": tile_key,
+                        "status": "FAILED",
+                        "records_received": int(len(frame)),
+                        "error": "Required columns were missing.",
+                        "message": f"Dataset {table.upper()} missing required columns.",
+                        **counters
+                    })
+                else:
+                    with stats_lock:
+                        stats["pages_fetched"] += pages
+                        stats["records_received"] += int(len(frame))
+                        stats["records_processed"] += int(len(frame))
+                        counters = dict(stats)
+                    emit({
+                        "event": "dataset_completed",
+                        "dataset": table,
+                        "label": tile_key,
+                        "status": "COMPLETED",
+                        "records_received": int(len(frame)),
+                        "records_processed": int(len(frame)),
+                        "pages_fetched": pages,
+                        "message": f"Received {tile_key} ({len(frame):,} records). Fetching remaining official datasets...",
+                        **counters
+                    })
         missing_tables = [table for table, _ in SOURCE_TABLE_REQUESTS if table not in written]
         if missing_tables:
             errors.append(f"missing datasets: {', '.join(missing_tables)}")

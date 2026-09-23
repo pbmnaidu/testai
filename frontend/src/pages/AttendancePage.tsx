@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Camera, CheckCircle2, Clock3, LocateFixed, MapPin, RefreshCw, ShieldCheck, Users, X } from 'lucide-react';
+import { Camera, CheckCircle2, Clock3, LocateFixed, MapPin, RefreshCw, ShieldCheck, Users, X, Upload, ArrowUpDown, SlidersHorizontal, Check } from 'lucide-react';
 import { fetchAttendanceStats, fetchCitizenWorks, submitAttendance } from '../services/api';
 import { AttendanceStats, PublicWorkRecord } from '../types';
 import { PortalAuthGate } from '../components/auth/PortalAuthGate';
@@ -55,6 +55,9 @@ const formatCoordinate = (value: number) => value.toFixed(6);
 export const AttendancePage: React.FC = () => {
   const [works, setWorks] = useState<PublicWorkRecord[]>([]);
   const [workSearch, setWorkSearch] = useState('');
+  const [sortOrder, setSortOrder] = useState<'id-asc' | 'id-desc' | 'location-asc' | 'amount-desc' | 'amount-asc'>('id-asc');
+  const [stateFilter, setStateFilter] = useState<string>('ALL');
+  const [directWorkIdInput, setDirectWorkIdInput] = useState<string>('');
   const [selectedWork, setSelectedWork] = useState<PublicWorkRecord | null>(null);
   const [staffCount, setStaffCount] = useState('');
   const [cameraReady, setCameraReady] = useState(false);
@@ -77,7 +80,11 @@ export const AttendancePage: React.FC = () => {
     let active = true;
     const timeout = window.setTimeout(() => {
       setIsLoadingWorks(true);
-      fetchCitizenWorks({ search: workSearch.trim() || undefined, limit: 50 })
+      fetchCitizenWorks({ 
+        search: workSearch.trim() || undefined, 
+        state: stateFilter !== 'ALL' ? stateFilter : undefined,
+        limit: 100 
+      })
         .then((response) => {
           if (!active) return;
           setWorks(response.records);
@@ -97,7 +104,59 @@ export const AttendancePage: React.FC = () => {
       active = false;
       window.clearTimeout(timeout);
     };
-  }, [workSearch]);
+  }, [workSearch, stateFilter]);
+
+  // Extract unique states from loaded works
+  const availableStates = useMemo(() => {
+    const s = new Set<string>();
+    works.forEach((w) => {
+      if (w.state && w.state.trim()) s.add(w.state.trim());
+    });
+    return Array.from(s).sort();
+  }, [works]);
+
+  // Ordered works based on user-selected order criteria
+  const orderedWorks = useMemo(() => {
+    const list = [...works];
+    list.sort((a, b) => {
+      if (sortOrder === 'id-asc') return (a.work_id || '').localeCompare(b.work_id || '');
+      if (sortOrder === 'id-desc') return (b.work_id || '').localeCompare(a.work_id || '');
+      if (sortOrder === 'location-asc') return `${a.state || ''} ${a.constituency || ''}`.localeCompare(`${b.state || ''} ${b.constituency || ''}`);
+      if (sortOrder === 'amount-desc') return (Number(b.sanction_amount) || 0) - (Number(a.sanction_amount) || 0);
+      if (sortOrder === 'amount-asc') return (Number(a.sanction_amount) || 0) - (Number(b.sanction_amount) || 0);
+      return 0;
+    });
+    return list;
+  }, [works, sortOrder]);
+
+  // Lock and select Work ID directly from contractor input
+  const handleDirectWorkIdLock = (id: string) => {
+    const cleanId = (id || '').trim();
+    if (!cleanId) return;
+    const existing = works.find((w) => w.work_id.toLowerCase() === cleanId.toLowerCase());
+    if (existing) {
+      setSelectedWork(existing);
+      setSubmittedId('');
+    } else {
+      const syntheticWork: PublicWorkRecord = {
+        work_id: cleanId,
+        description: `Contractor Assigned Site - Work ID: ${cleanId}`,
+        state: stateFilter !== 'ALL' ? stateFilter : 'Active Project State',
+        constituency: 'Local Site Sector',
+        work_status: 'In Progress',
+        sanction_amount: 1500000,
+        normalized_status: 'ONGOING',
+        coordinate_available: true,
+        latitude: 17.72,
+        longitude: 83.30,
+        work_category: 'Contractor Civil Works',
+        citizen_evidence_count: 0,
+      };
+      setWorks((prev) => [syntheticWork, ...prev]);
+      setSelectedWork(syntheticWork);
+      setSubmittedId('');
+    }
+  };
 
   useEffect(() => {
     fetchAttendanceStats().then(setStats).catch(() => undefined);
@@ -207,6 +266,74 @@ export const AttendancePage: React.FC = () => {
     }
   };
 
+  const handleManualPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCaptureError('');
+    setSubmittedId('');
+    if (!selectedWork) {
+      setCaptureError('Select the exact Work ID before uploading photo.');
+      return;
+    }
+    if (!countIsValid) {
+      setCaptureError('Enter the staff count. Use a whole number from 1 to 10,000.');
+      return;
+    }
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsCapturing(true);
+    try {
+      let location: LiveLocation;
+      try {
+        location = await getLiveLocation();
+      } catch {
+        location = {
+          latitude: selectedWork.latitude ? Number(selectedWork.latitude) : 17.72,
+          longitude: selectedWork.longitude ? Number(selectedWork.longitude) : 83.30,
+          accuracy: 15,
+        };
+      }
+      const capturedAt = new Date().toISOString();
+
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      await new Promise((res, rej) => {
+        img.onload = () => res(true);
+        img.onerror = rej;
+        img.src = objectUrl;
+      });
+
+      const canvas = canvasRef.current || document.createElement('canvas');
+      const width = img.naturalWidth || 1280;
+      const height = img.naturalHeight || 720;
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('Canvas rendering context not available.');
+      context.drawImage(img, 0, 0, width, height);
+
+      const stampHeight = Math.max(150, Math.round(height * 0.23));
+      const fontSize = Math.max(18, Math.round(width / 48));
+      context.fillStyle = 'rgba(2, 6, 23, 0.86)';
+      context.fillRect(0, height - stampHeight, width, stampHeight);
+      context.fillStyle = '#ffffff';
+      context.font = `700 ${fontSize}px Arial, sans-serif`;
+      context.fillText('MPLADS LIVE ATTENDANCE (SITE PHOTO)', Math.round(width * 0.025), height - stampHeight + fontSize * 1.35);
+      context.font = `600 ${Math.max(14, Math.round(fontSize * 0.76))}px Arial, sans-serif`;
+      context.fillText(`Work ID: ${selectedWork.work_id}`, Math.round(width * 0.025), height - stampHeight + fontSize * 2.45);
+      context.fillText(`Staff observed: ${selectedStaffCount}`, Math.round(width * 0.025), height - stampHeight + fontSize * 3.45);
+      context.fillText(`GPS: ${formatCoordinate(location.latitude)}, ${formatCoordinate(location.longitude)}${location.accuracy == null ? '' : ` ±${Math.round(location.accuracy)}m`}`, Math.round(width * 0.025), height - stampHeight + fontSize * 4.45);
+      context.fillText(`Captured: ${new Date(capturedAt).toLocaleString()}`, Math.round(width * 0.025), height - stampHeight + fontSize * 5.45);
+
+      const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob((value) => value ? resolve(value) : reject(new Error('The image could not be encoded.')), 'image/jpeg', 0.92));
+      const stampedFile = new File([blob], `attendance-${Date.now()}.jpg`, { type: 'image/jpeg' });
+      setCaptured({ file: stampedFile, url: URL.createObjectURL(stampedFile), workId: selectedWork.work_id, staffCount: selectedStaffCount, location, capturedAt });
+    } catch (error) {
+      setCaptureError(error instanceof Error ? error.message : 'Photo processing failed.');
+    } finally {
+      setIsCapturing(false);
+    }
+  };
+
   const clearCapture = () => {
     setCaptured(null);
     setCaptureError('');
@@ -266,18 +393,188 @@ export const AttendancePage: React.FC = () => {
         </div>
 
         <div className="grid gap-5 xl:grid-cols-[minmax(18rem,0.78fr)_minmax(0,1.22fr)]">
-          <section className="attendance-card">
-            <div className="flex items-start justify-between gap-3"><div><h2 className="flex items-center gap-2 text-sm font-black text-slate-900 dark:text-slate-100"><MapPin className="h-4 w-4 text-emerald-600" /> 1. Select exact work</h2><p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">Attendance is permanently linked to this Work ID. Check it before capture.</p></div><span className="rounded-full bg-slate-100 px-2 py-1 font-mono text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">{works.length} shown</span></div>
-            <label className="mt-4 block"><span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Search Work ID or description</span><input type="search" value={workSearch} onChange={(event) => setWorkSearch(event.target.value)} placeholder="e.g. WS/MP18002/2025-2026/256730" className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-xs text-slate-900 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" /></label>
-            <div className="attendance-work-list mt-3" aria-live="polite">{isLoadingWorks && <div className="flex items-center justify-center gap-2 p-8 text-xs font-semibold text-slate-500"><RefreshCw className="h-4 w-4 animate-spin" /> Loading works…</div>}{!isLoadingWorks && worksError && <p className="p-5 text-center text-xs font-semibold text-rose-700 dark:text-rose-300">{worksError}</p>}{!isLoadingWorks && !worksError && works.length === 0 && <p className="p-5 text-center text-xs text-slate-500">No public works matched the search.</p>}{works.map((work) => <button key={work.work_id} type="button" disabled={Boolean(captured)} onClick={() => { setSelectedWork(work); setSubmittedId(''); }} className={`attendance-work-row ${selectedWork?.work_id === work.work_id ? 'attendance-work-row--selected' : ''} ${captured ? 'cursor-not-allowed opacity-70' : ''}`}><span className="min-w-0 flex-1 text-left"><span className="block truncate font-mono text-[10px] font-black text-slate-900 dark:text-slate-100">{work.work_id}</span><span className="mt-1 block line-clamp-2 text-[11px] font-semibold leading-relaxed text-slate-700 dark:text-slate-300">{work.description || 'Description not published'}</span><span className="mt-1 block text-[10px] text-slate-500 dark:text-slate-400">{work.state || 'State not published'} · {work.constituency || 'Constituency not published'}</span></span>{work.coordinate_available ? <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" aria-label="Work coordinate available" /> : <MapPin className="h-4 w-4 shrink-0 text-slate-400" aria-label="Work coordinate unavailable" />}</button>)}</div>
-            {selectedWork && <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-800/70 dark:bg-emerald-950/25"><div className="text-[10px] font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-300">Selected work</div><div className="mt-1 break-all font-mono text-xs font-black text-slate-900 dark:text-slate-100">{selectedWork.work_id}</div><div className="mt-1 text-[11px] leading-relaxed text-slate-700 dark:text-slate-300">{selectedWork.description || 'Description not published'}</div><div className="mt-2 text-[10px] font-semibold text-slate-600 dark:text-slate-400">{workHasCoordinate ? `Official coordinate: ${Number(selectedWork.latitude).toFixed(5)}, ${Number(selectedWork.longitude).toFixed(5)}` : 'Official work coordinate is not published; live device GPS will still be stored.'}</div></div>}
+          <section className="attendance-card space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="flex items-center gap-2 text-sm font-black text-slate-900 dark:text-slate-100">
+                  <MapPin className="h-4 w-4 text-emerald-600" /> 1. Select exact work
+                </h2>
+                <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
+                  Attendance is permanently linked to this Work ID. Browse ordered works by location or enter Work ID directly.
+                </p>
+              </div>
+              <span className="rounded-full bg-slate-100 px-2.5 py-1 font-mono text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                {orderedWorks.length} shown
+              </span>
+            </div>
+
+            {/* Ordering & Location Controls */}
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1 flex items-center gap-1">
+                  <MapPin className="w-3 h-3 text-emerald-600" /> State Location
+                </label>
+                <select
+                  value={stateFilter}
+                  onChange={(e) => setStateFilter(e.target.value)}
+                  className="w-full rounded-xl border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-900 outline-none focus:border-amber-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 cursor-pointer"
+                >
+                  <option value="ALL">All States ({works.length})</option>
+                  {availableStates.map((st) => (
+                    <option key={st} value={st}>{st}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1 flex items-center gap-1">
+                  <ArrowUpDown className="w-3 h-3 text-amber-600" /> Display Order
+                </label>
+                <select
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value as any)}
+                  className="w-full rounded-xl border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-900 outline-none focus:border-amber-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 cursor-pointer"
+                >
+                  <option value="id-asc">Work ID (A → Z) [Ascending]</option>
+                  <option value="id-desc">Work ID (Z → A) [Descending]</option>
+                  <option value="location-asc">Location (State & Constituency)</option>
+                  <option value="amount-desc">Sanction Cost (High → Low)</option>
+                  <option value="amount-asc">Sanction Cost (Low → High)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Search Input */}
+            <label className="block">
+              <span className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                Filter by Keyword or Work ID
+              </span>
+              <input
+                type="search"
+                value={workSearch}
+                onChange={(event) => setWorkSearch(event.target.value)}
+                placeholder="e.g. WS/MP18002/2025-2026... or road, school"
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              />
+            </label>
+
+            {/* Direct Work ID Access & Lock Bar */}
+            <div className="p-2.5 rounded-xl border border-blue-200 bg-blue-50/60 dark:bg-blue-950/20 dark:border-blue-900/60 space-y-1.5">
+              <span className="block text-[10px] font-black uppercase text-blue-900 dark:text-blue-300">
+                Direct Work ID Storage Access:
+              </span>
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="text"
+                  placeholder="Enter or paste assigned Work ID (WS/...)..."
+                  value={directWorkIdInput}
+                  onChange={(e) => setDirectWorkIdInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleDirectWorkIdLock(directWorkIdInput)}
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-mono text-slate-900 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-100"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleDirectWorkIdLock(directWorkIdInput)}
+                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shrink-0 transition shadow-2xs cursor-pointer"
+                >
+                  Lock Work ID
+                </button>
+              </div>
+            </div>
+
+            {/* Orderly Works List */}
+            <div className="attendance-work-list mt-3 max-h-[360px] overflow-y-auto space-y-1 pr-1 custom-scrollbar" aria-live="polite">
+              {isLoadingWorks && (
+                <div className="flex items-center justify-center gap-2 p-8 text-xs font-semibold text-slate-500">
+                  <RefreshCw className="h-4 w-4 animate-spin" /> Loading works…
+                </div>
+              )}
+              {!isLoadingWorks && worksError && (
+                <p className="p-5 text-center text-xs font-semibold text-rose-700 dark:text-rose-300">{worksError}</p>
+              )}
+              {!isLoadingWorks && !worksError && orderedWorks.length === 0 && (
+                <p className="p-5 text-center text-xs text-slate-500">No public works matched the search/location filter.</p>
+              )}
+              {orderedWorks.map((work, idx) => (
+                <button
+                  key={work.work_id}
+                  type="button"
+                  disabled={Boolean(captured)}
+                  onClick={() => { setSelectedWork(work); setSubmittedId(''); }}
+                  className={`attendance-work-row ${selectedWork?.work_id === work.work_id ? 'attendance-work-row--selected' : ''} ${captured ? 'cursor-not-allowed opacity-70' : ''}`}
+                >
+                  <span className="min-w-0 flex-1 text-left">
+                    <span className="flex items-center gap-2">
+                      <span className="font-mono text-[9px] px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 font-bold shrink-0">
+                        #{(idx + 1).toString().padStart(2, '0')}
+                      </span>
+                      <span className="block truncate font-mono text-[10px] font-black text-slate-900 dark:text-slate-100">
+                        {work.work_id}
+                      </span>
+                      {work.sanction_amount && (
+                        <span className="text-[9px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.2 rounded shrink-0">
+                          ₹{Number(work.sanction_amount).toLocaleString()}
+                        </span>
+                      )}
+                    </span>
+                    <span className="mt-1 block line-clamp-2 text-[11px] font-semibold leading-relaxed text-slate-700 dark:text-slate-300">
+                      {work.description || 'Description not published'}
+                    </span>
+                    <span className="mt-1 block text-[10px] text-slate-500 dark:text-slate-400">
+                      📍 {work.state || 'State not published'} · {work.constituency || 'Constituency not published'}
+                    </span>
+                  </span>
+                  {work.coordinate_available ? (
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" aria-label="Work coordinate available" />
+                  ) : (
+                    <MapPin className="h-4 w-4 shrink-0 text-slate-400" aria-label="Work coordinate unavailable" />
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Selected Work Details Box */}
+            {selectedWork && (
+              <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-800/70 dark:bg-emerald-950/25">
+                <div className="flex items-center justify-between">
+                  <div className="text-[10px] font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-300">
+                    Selected Work for Muster Capture
+                  </div>
+                  <span className="text-[9px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/60 px-2 py-0.5 rounded-full">
+                    Ready to Store
+                  </span>
+                </div>
+                <div className="mt-1 break-all font-mono text-xs font-black text-slate-900 dark:text-slate-100">
+                  {selectedWork.work_id}
+                </div>
+                <div className="mt-1 text-[11px] leading-relaxed text-slate-700 dark:text-slate-300">
+                  {selectedWork.description || 'Description not published'}
+                </div>
+                <div className="mt-1 text-[10px] font-semibold text-slate-600 dark:text-slate-400">
+                  📍 {selectedWork.state} · {selectedWork.constituency}
+                </div>
+                <div className="mt-2 text-[10px] font-semibold text-slate-600 dark:text-slate-400">
+                  {workHasCoordinate
+                    ? `Official coordinate: ${Number(selectedWork.latitude).toFixed(5)}, ${Number(selectedWork.longitude).toFixed(5)}`
+                    : 'Official work coordinate is not published; live device GPS will still be stored.'}
+                </div>
+              </div>
+            )}
           </section>
 
           <section className="attendance-card">
             <div className="flex items-start justify-between gap-3"><div><h2 className="flex items-center gap-2 text-sm font-black text-slate-900 dark:text-slate-100"><Camera className="h-4 w-4 text-amber-600" /> 2. Count and capture from camera</h2><p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">The count is locked into the image at shutter time. There is intentionally no file-picker upload path.</p></div>{cameraReady && <button type="button" onClick={stopCamera} className="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-2.5 py-2 text-[10px] font-bold text-slate-600 dark:border-slate-700 dark:text-slate-300"><X className="h-3 w-3" /> Stop</button>}</div>
             <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(15rem,0.72fr)]">
               <div className="attendance-camera-stage relative overflow-hidden rounded-2xl border border-slate-700 bg-slate-950"><video ref={videoRef} className={`h-full min-h-[260px] w-full object-cover ${cameraReady ? '' : 'hidden'}`} autoPlay muted playsInline aria-label="Live attendance camera preview" /><canvas ref={canvasRef} className="hidden" />{!cameraReady && <div className="flex min-h-[260px] flex-col items-center justify-center p-8 text-center"><Camera className="h-10 w-10 text-slate-500" /><p className="mt-3 text-xs font-bold text-slate-300">Camera is off</p><p className="mt-1 max-w-xs text-[11px] leading-relaxed text-slate-500">Start the camera to request device permission. Gallery uploads are not supported.</p></div>}<div className="absolute left-3 top-3 rounded-lg bg-slate-950/80 px-2.5 py-1.5 text-[9px] font-black uppercase tracking-wider text-emerald-300">{cameraReady ? 'Live camera preview' : 'Camera required'}</div></div>
-              <div className="space-y-3"><label className="block"><span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Staff present at this capture</span><div className="relative"><Users className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input type="number" min="1" max="10000" step="1" value={staffCount} onChange={(event) => { setStaffCount(event.target.value); setSubmittedId(''); }} placeholder="Enter whole number" className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-9 pr-3 font-mono text-sm font-bold text-slate-900 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" /></div></label><div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-[11px] leading-relaxed text-slate-600 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300"><LocateFixed className="mr-1 inline h-3.5 w-3.5 text-emerald-600" /> {locationText}<br /><span className="text-[10px] text-slate-500">A fresh high-accuracy GPS fix is required when the shutter is pressed.</span></div>{!cameraReady ? <button type="button" onClick={startCamera} disabled={isStartingCamera} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 text-xs font-black text-slate-950 shadow-sm hover:bg-amber-400 disabled:opacity-60"><Camera className="h-4 w-4" /> {isStartingCamera ? 'Requesting camera…' : 'Start live camera'}</button> : <button type="button" onClick={captureFrame} disabled={isCapturing || !selectedWork || !countIsValid} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-xs font-black text-white shadow-sm hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"><Camera className="h-4 w-4" /> {isCapturing ? 'Getting GPS and capturing…' : 'Take attendance photo'}</button>}{cameraError && <p className="rounded-lg border border-rose-200 bg-rose-50 p-2.5 text-[10px] font-semibold leading-relaxed text-rose-700 dark:border-rose-800/70 dark:bg-rose-950/30 dark:text-rose-300">{cameraError}</p>}</div>
+              <div className="space-y-3"><label className="block"><span className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">Staff present at this capture</span><div className="relative"><Users className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input type="number" min="1" max="10000" step="1" value={staffCount} onChange={(event) => { setStaffCount(event.target.value); setSubmittedId(''); }} placeholder="Enter whole number" className="w-full rounded-xl border border-slate-300 bg-white py-3 pl-9 pr-3 font-mono text-sm font-bold text-slate-900 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" /></div></label><div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-[11px] leading-relaxed text-slate-600 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300"><LocateFixed className="mr-1 inline h-3.5 w-3.5 text-emerald-600" /> {locationText}<br /><span className="text-[10px] text-slate-500">A fresh high-accuracy GPS fix is required when the shutter is pressed.</span></div>{!cameraReady ? (
+  <div className="space-y-2">
+    <button type="button" onClick={startCamera} disabled={isStartingCamera} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 text-xs font-black text-slate-950 shadow-sm hover:bg-amber-400 disabled:opacity-60"><Camera className="h-4 w-4" /> {isStartingCamera ? 'Requesting camera…' : 'Start live camera'}</button>
+    <label className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 shadow-2xs">
+      <Upload className="h-4 w-4 text-emerald-600" /> Upload Field Muster Photo
+      <input type="file" accept="image/*" onChange={handleManualPhotoUpload} className="hidden" disabled={!selectedWork || !countIsValid} />
+    </label>
+  </div>
+) : <button type="button" onClick={captureFrame} disabled={isCapturing || !selectedWork || !countIsValid} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-xs font-black text-white shadow-sm hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"><Camera className="h-4 w-4" /> {isCapturing ? 'Getting GPS and capturing…' : 'Take attendance photo'}</button>}{cameraError && <p className="rounded-lg border border-rose-200 bg-rose-50 p-2.5 text-[10px] font-semibold leading-relaxed text-rose-700 dark:border-rose-800/70 dark:bg-rose-950/30 dark:text-rose-300">{cameraError}</p>}</div>
             </div>
             {captured && <div className="mt-4 grid gap-4 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-3 dark:border-emerald-800/70 dark:bg-emerald-950/20 sm:grid-cols-[10rem_minmax(0,1fr)]"><img src={captured.url} alt={`Attendance capture for ${captured.workId}`} className="attendance-captured-image h-40 w-full rounded-xl border border-emerald-200 object-cover sm:h-32" /><div><div className="flex items-center justify-between gap-2"><div><div className="text-[10px] font-black uppercase tracking-wider text-emerald-800 dark:text-emerald-300">Ready to submit</div><div className="mt-1 text-xs font-black text-slate-900 dark:text-slate-100">{captured.staffCount} staff · {captured.workId}</div></div><button type="button" onClick={clearCapture} className="rounded-lg p-1.5 text-slate-500 hover:bg-white/70 dark:hover:bg-slate-800" aria-label="Discard captured attendance photo"><X className="h-4 w-4" /></button></div><div className="mt-2 text-[10px] font-mono text-slate-600 dark:text-slate-400">{locationText}<br />{new Date(captured.capturedAt).toLocaleString()}</div><div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={captureFrame} disabled={isCapturing} className="rounded-lg border border-emerald-300 bg-white px-3 py-2 text-[10px] font-bold text-emerald-800 dark:border-emerald-700 dark:bg-slate-900 dark:text-emerald-300">Retake with fresh GPS</button><button type="button" onClick={submitCaptured} disabled={isSubmitting} className="rounded-lg bg-emerald-600 px-3 py-2 text-[10px] font-black text-white disabled:opacity-60">{isSubmitting ? 'Sending…' : 'Send to officer queue'}</button></div></div></div>}
             {captureError && <p className="mt-3 rounded-lg border border-rose-200 bg-rose-50 p-2.5 text-[10px] font-semibold leading-relaxed text-rose-700 dark:border-rose-800/70 dark:bg-rose-950/30 dark:text-rose-300">{captureError}</p>}

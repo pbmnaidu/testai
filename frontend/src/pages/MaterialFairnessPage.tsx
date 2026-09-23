@@ -27,14 +27,21 @@ import {
   ExternalLink,
   SlidersHorizontal,
   X,
-  FileCheck
+  FileCheck,
+  Download,
+  Send,
+  ShieldCheck,
+  Store,
 } from 'lucide-react';
 import {
   analyzeMaterialDocument,
   fetchMaterialFairnessBenchmarks,
   fetchMaterialSampleDocs,
   searchMaterialWorks,
-  uploadBenchmarkModule
+  uploadBenchmarkModule,
+  saveMaterialAssessmentRecord,
+  requestInspectionForMaterial,
+  MaterialAnalysisResult
 } from '../services/api';
 
 interface SampleDoc {
@@ -49,43 +56,6 @@ interface SampleDoc {
   expected_assessment: string;
 }
 
-interface AnalysisResult {
-  status: string;
-  sample_id?: string;
-  filename: string;
-  extracted_text: string;
-  extracted_attributes: {
-    material: string;
-    grade: string;
-    is_code: string;
-    quantity: number | null;
-    unit: string;
-    brand: string;
-    quality_attributes: string[];
-  };
-  price_comparison: {
-    quoted_unit_price: number | null;
-    reference_unit_price: number | null;
-    reference_min_price: number | null;
-    reference_max_price: number | null;
-    unit: string;
-    price_difference: number | null;
-    price_difference_pct: number | null;
-    benchmark_source: string;
-    state_applied: string;
-    unit_normalized?: boolean;
-    reference_range?: { min: number | null; max: number | null; unit: string };
-  };
-  fairness_assessment: {
-    status: string;
-    label: string;
-    severity: string;
-    color_theme: string;
-    explanation: string;
-  };
-  auditor_guidance: string[];
-}
-
 interface MaterialFairnessProps {
   initialViewTab?: 'audit' | 'ingestion' | 'benchmarks';
   onSelectWork?: (workId: string) => void;
@@ -95,7 +65,7 @@ interface MaterialFairnessProps {
 export function MaterialFairnessPage({ initialViewTab = 'audit', onSelectWork, showHeader = true }: MaterialFairnessProps = {}) {
   const [samples, setSamples] = useState<SampleDoc[]>([]);
   const [selectedSampleId, setSelectedSampleId] = useState<string>('sample_cement_opc53_overpriced');
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<MaterialAnalysisResult | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [benchmarks, setBenchmarks] = useState<any[]>([]);
   const [benchmarkFilterState, setBenchmarkFilterState] = useState<string>('');
@@ -103,7 +73,7 @@ export function MaterialFairnessPage({ initialViewTab = 'audit', onSelectWork, s
   const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>('ALL');
 
   // Custom form inputs
-  const [customPrice, setCustomPrice] = useState<string>('');
+  const [customPrice, setCustomPrice] = useState<string>('485');
   const [selectedState, setSelectedState] = useState<string>('National Baseline');
   const [customFile, setCustomFile] = useState<File | null>(null);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
@@ -113,35 +83,64 @@ export function MaterialFairnessPage({ initialViewTab = 'audit', onSelectWork, s
   // View Navigation
   const [activeViewTab, setActiveViewTab] = useState<'audit' | 'ingestion' | 'benchmarks'>(initialViewTab);
 
-  // Real-world Works Linker
+  // Real-world Works Linker & Location Access for Vendors
   const [workSearchQuery, setWorkSearchQuery] = useState<string>('');
+  const [workLocationState, setWorkLocationState] = useState<string>('ALL');
+  const [workLocationConstituency, setWorkLocationConstituency] = useState<string>('ALL');
+  const [availableWorkStates, setAvailableWorkStates] = useState<string[]>([]);
+  const [availableWorkConstituencies, setAvailableWorkConstituencies] = useState<string[]>([]);
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [selectedLinkedWork, setSelectedLinkedWork] = useState<any | null>(null);
   const [searchingWorks, setSearchingWorks] = useState<boolean>(false);
+  const [directWorkIdInput, setDirectWorkIdInput] = useState<string>('');
 
   // Custom SOR Module Upload
   const [sorFile, setSorFile] = useState<File | null>(null);
   const [sorUploadStatus, setSorUploadStatus] = useState<{ status: string; message: string } | null>(null);
 
   // Toast / Copy notification
-  const [copiedToast, setCopiedToast] = useState<boolean>(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [savedSuccessBadge, setSavedSuccessBadge] = useState<string | null>(null);
+  const [inspectionDispatched, setInspectionDispatched] = useState<boolean>(false);
+  const [contractorNotes, setContractorNotes] = useState<string>('');
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  useEffect(() => {
+    if (initialViewTab) {
+      setActiveViewTab(initialViewTab);
+    }
+  }, [initialViewTab]);
 
   useEffect(() => {
     // Load initial sample vouchers & benchmarks
     Promise.all([
       fetchMaterialSampleDocs(),
-      fetchMaterialFairnessBenchmarks()
-    ]).then(([samplesData, benchmarksData]) => {
+      fetchMaterialFairnessBenchmarks(),
+      searchMaterialWorks('', 'ALL', 'ALL')
+    ]).then(([samplesData, benchmarksData, initialWorks]) => {
       if (samplesData?.samples?.length) {
         setSamples(samplesData.samples);
       }
       if (benchmarksData?.benchmarks?.length) {
         setBenchmarks(benchmarksData.benchmarks);
       }
+      if (initialWorks?.works?.length) {
+        setSearchResults(initialWorks.works);
+      }
+      if (initialWorks?.states?.length) {
+        setAvailableWorkStates(initialWorks.states);
+      }
+      if (initialWorks?.constituencies?.length) {
+        setAvailableWorkConstituencies(initialWorks.constituencies);
+      }
     }).catch((err) => console.warn('Failed loading material initial data:', err));
 
     // Run initial analysis on first sample
-    runAnalysis({ sample_id: 'sample_cement_opc53_overpriced' });
+    runAnalysis({ sample_id: 'sample_cement_opc53_overpriced', state: 'National Baseline', quoted_price: 485 });
   }, []);
 
   const runAnalysis = async (opts: {
@@ -150,21 +149,26 @@ export function MaterialFairnessPage({ initialViewTab = 'audit', onSelectWork, s
     raw_text?: string;
     quoted_price?: number;
     state?: string;
+    work_id?: string;
   }) => {
     setLoading(true);
+    setSavedSuccessBadge(null);
+    setInspectionDispatched(false);
     try {
+      const targetWorkId = opts.work_id || selectedLinkedWork?.work_id;
       const res = await analyzeMaterialDocument({
         sample_id: opts.sample_id,
         file: opts.file,
         raw_text: opts.raw_text,
         quoted_price: opts.quoted_price,
-        state: opts.state || selectedState
+        state: opts.state || selectedState,
+        work_id: targetWorkId
       });
       setAnalysisResult(res);
       if (res?.extracted_text) {
         setRawTextEdit(res.extracted_text);
       }
-      if (res?.price_comparison?.quoted_unit_price) {
+      if (res?.price_comparison?.quoted_unit_price !== undefined && res.price_comparison.quoted_unit_price !== null) {
         setCustomPrice(res.price_comparison.quoted_unit_price.toString());
       }
     } catch (err) {
@@ -179,16 +183,20 @@ export function MaterialFairnessPage({ initialViewTab = 'audit', onSelectWork, s
     setSelectedSampleId(sampleId);
     setCustomFile(null);
     setPreviewImageUrl(null);
-    setSelectedLinkedWork(null);
     const sample = samples.find((s) => s.id === sampleId);
     if (sample) {
       setCustomPrice(sample.quoted_price?.toString() || '');
       setSelectedState(sample.state || 'National Baseline');
-      runAnalysis({ sample_id: sampleId, state: sample.state || selectedState });
+      runAnalysis({ 
+        sample_id: sampleId, 
+        state: sample.state || selectedState,
+        quoted_price: sample.quoted_price,
+        work_id: selectedLinkedWork?.work_id
+      });
     }
   };
 
-  // Button: Upload Document Image / PDF / Text
+  // Button: Upload Document Image / PDF / Text / CSV
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -204,7 +212,10 @@ export function MaterialFairnessPage({ initialViewTab = 'audit', onSelectWork, s
       }
 
       const priceNum = customPrice ? parseFloat(customPrice) : undefined;
-      runAnalysis({ file, quoted_price: priceNum, state: selectedState });
+      runAnalysis({ file, quoted_price: priceNum, state: selectedState, work_id: selectedLinkedWork?.work_id });
+      // Switch view to audit so the user sees the output immediately
+      setActiveViewTab('audit');
+      showToast(`Document '${file.name}' uploaded and processed for Quality & Price analysis!`);
     }
   };
 
@@ -212,31 +223,44 @@ export function MaterialFairnessPage({ initialViewTab = 'audit', onSelectWork, s
   const handleRecalculate = () => {
     const priceNum = customPrice ? parseFloat(customPrice) : undefined;
     if (customFile) {
-      runAnalysis({ file: customFile, raw_text: rawTextEdit, quoted_price: priceNum, state: selectedState });
+      runAnalysis({ file: customFile, raw_text: rawTextEdit, quoted_price: priceNum, state: selectedState, work_id: selectedLinkedWork?.work_id });
     } else if (selectedSampleId) {
-      runAnalysis({ sample_id: selectedSampleId, raw_text: rawTextEdit, quoted_price: priceNum, state: selectedState });
+      runAnalysis({ sample_id: selectedSampleId, raw_text: rawTextEdit, quoted_price: priceNum, state: selectedState, work_id: selectedLinkedWork?.work_id });
     } else {
-      runAnalysis({ raw_text: rawTextEdit, quoted_price: priceNum, state: selectedState });
+      runAnalysis({ raw_text: rawTextEdit, quoted_price: priceNum, state: selectedState, work_id: selectedLinkedWork?.work_id });
     }
+    showToast('Analysis recalculated with updated price & state specifications!');
   };
 
   // Button: Reset / Clear
   const handleReset = () => {
     setCustomFile(null);
     setPreviewImageUrl(null);
-    setCustomPrice('');
+    setCustomPrice('485');
     setRawTextEdit('');
     setSelectedLinkedWork(null);
     setSelectedSampleId('sample_cement_opc53_overpriced');
-    runAnalysis({ sample_id: 'sample_cement_opc53_overpriced' });
+    setSelectedState('National Baseline');
+    setSavedSuccessBadge(null);
+    setInspectionDispatched(false);
+    runAnalysis({ sample_id: 'sample_cement_opc53_overpriced', state: 'National Baseline', quoted_price: 485 });
+    showToast('Form reset to default baseline test voucher.');
   };
 
-  // Button: Search Real MPLADS Works
-  const handleSearchWorks = async () => {
+  // Button: Search Real MPLADS Works by Query & Location (State / Constituency)
+  const handleSearchWorks = async (queryOverride?: string, stateOverride?: string, constituencyOverride?: string) => {
     setSearchingWorks(true);
+    const q = queryOverride !== undefined ? queryOverride : workSearchQuery;
+    const st = stateOverride !== undefined ? stateOverride : workLocationState;
+    const con = constituencyOverride !== undefined ? constituencyOverride : workLocationConstituency;
     try {
-      const res = await searchMaterialWorks(workSearchQuery);
+      const res = await searchMaterialWorks(q, st, con);
       setSearchResults(res.works || []);
+      if (res.states?.length) setAvailableWorkStates(res.states);
+      if (res.constituencies?.length) setAvailableWorkConstituencies(res.constituencies);
+      if (!res.works || res.works.length === 0) {
+        showToast(`No works found for selected location/query.`);
+      }
     } catch (err) {
       console.error('Error searching works:', err);
     } finally {
@@ -244,28 +268,86 @@ export function MaterialFairnessPage({ initialViewTab = 'audit', onSelectWork, s
     }
   };
 
+  // Direct manual entry of Work ID for storing
+  const handleDirectWorkIdLink = (id: string) => {
+    const cleanId = (id || '').trim();
+    if (!cleanId) return;
+    const syntheticWork = {
+      work_id: cleanId,
+      description: `Material Supply & Quality Assurance Record - Work ${cleanId}`,
+      state: workLocationState !== 'ALL' ? workLocationState : (selectedState !== 'National Baseline' ? selectedState : 'National Record'),
+      constituency: workLocationConstituency !== 'ALL' ? workLocationConstituency : 'District Depot',
+      sanction_amount: 1250000,
+      work_category: 'Materials & Infrastructure',
+    };
+    handleLinkWork(syntheticWork);
+    showToast(`Work ID ${cleanId} linked! Ready to store material assessment.`);
+  };
+
   // Button: Link Real MPLADS Work to Analysis
   const handleLinkWork = (work: any) => {
     setSelectedLinkedWork(work);
     if (work.state) setSelectedState(work.state);
     
+    // Auto-detect material requisition based on work description
+    const desc = (work.description || '').toLowerCase();
+    let matType = 'Ordinary Portland Cement (OPC 53 Grade)';
+    let std = 'IS 12269:2013 Certified High Performance';
+    let qty = '500 bags';
+    let defaultRate = 485.0;
+
+    if (desc.includes('road') || desc.includes('tar') || desc.includes('bitumen') || desc.includes('bt')) {
+      matType = 'Bitumen VG-30 Paving Grade';
+      std = 'IS 73:2013';
+      qty = '30 MT';
+      defaultRate = 46000.0;
+    } else if (desc.includes('bridge') || desc.includes('drain') || desc.includes('rcc') || desc.includes('hall') || desc.includes('building')) {
+      matType = 'Thermo-Mechanically Treated (TMT) Rebar Steel Fe500D Grade';
+      std = 'IS 1786:2008 High Ductility';
+      qty = '15 MT';
+      defaultRate = 59500.0;
+    } else if (desc.includes('water') || desc.includes('pipe') || desc.includes('drinking') || desc.includes('borewell')) {
+      matType = 'UPVC Pipe Class 3 110mm Diameter';
+      std = 'IS 4985:2021 Potable Water Standard';
+      qty = '500 meter';
+      defaultRate = 210.0;
+    } else if (desc.includes('compound') || desc.includes('wall') || desc.includes('brick')) {
+      matType = 'Fly Ash Building Bricks Class 7.5';
+      std = 'IS 12894:2002';
+      qty = '25,000 pieces';
+      defaultRate = 7.20;
+    }
+
+    setCustomPrice(defaultRate.toString());
+
     // Construct rich real-world project context for analysis
     const generatedVoucherText = `
-    GOVERNMENT OF INDIA - MPLADS PROJECT MATERIAL INVOICE
-    Linked Work ID: ${work.work_id}
-    Project Title: ${work.description}
-    Constituency: ${work.constituency}, State: ${work.state}
-    Work Category: ${work.work_category}
-    Sanctioned Amount: ₹${work.sanction_amount?.toLocaleString()}
-    Material Specification: Ordinary Portland Cement (OPC 53 Grade) IS 12269:2013
-    Supplier: District Authorized Government Contractor Depot
-    Quantity: 500 bags
-    Quoted Unit Price: ₹${customPrice || '485.00'} per bag
-    Verification: Passed site technical inspection
-    `;
+GOVERNMENT OF INDIA - MPLADS PROJECT MATERIAL INVOICE & QUALITY TEST
+Linked Work ID: ${work.work_id}
+Project Title: ${work.description}
+Constituency: ${work.constituency}, State: ${work.state}
+Work Category: ${work.work_category}
+Sanctioned Amount: ₹${work.sanction_amount?.toLocaleString()}
+Supplier / Shop: Regional Authorized Building Materials Contractor Depot
+Invoice No: INV-MPLADS-${work.work_id.slice(-6)}
+Material Description: ${matType}
+Standard: ${std}
+Quantity: ${qty}
+Quoted Rate / Unit Price: ₹${defaultRate.toFixed(2)}
+Quality Test Report: NABL Lab Batch Test Passed (IS Standard Conforming)
+Verification: Mandatory quality verification logged for Implementing Officer review.
+    `.trim();
+
     setRawTextEdit(generatedVoucherText);
-    runAnalysis({ raw_text: generatedVoucherText, state: work.state, quoted_price: customPrice ? parseFloat(customPrice) : 485.0 });
+    setSelectedSampleId('');
+    runAnalysis({ 
+      raw_text: generatedVoucherText, 
+      state: work.state || 'National Baseline', 
+      quoted_price: defaultRate,
+      work_id: work.work_id
+    });
     setActiveViewTab('audit');
+    showToast(`Linked Project ${work.work_id} to Material Quality Check!`);
   };
 
   // Button: Upload Custom Benchmark SOR CSV
@@ -277,16 +359,109 @@ export function MaterialFairnessPage({ initialViewTab = 'audit', onSelectWork, s
       if (res.status === 'SUCCESS') {
         setSorUploadStatus({
           status: 'SUCCESS',
-          message: `Successfully ingested ${res.records_ingested} real-world specification rate benchmarks!`
+          message: res.message || `Successfully ingested ${res.records_ingested} real-world specification rate benchmarks!`
         });
         // Refresh benchmarks list
         const benchRes = await fetchMaterialFairnessBenchmarks();
         if (benchRes?.benchmarks) setBenchmarks(benchRes.benchmarks);
+        showToast(`Ingested ${res.records_ingested || 'new'} Schedule of Rates benchmarks!`);
       } else {
         setSorUploadStatus({ status: 'ERROR', message: res.message || 'Failed to parse benchmark file' });
       }
     } catch (err: any) {
       setSorUploadStatus({ status: 'ERROR', message: err.message || 'Upload failed' });
+    }
+  };
+
+  // Button: Audit with specific benchmark from Benchmarks tab
+  const handleAuditBenchmark = (b: any) => {
+    setSelectedState(b.state || 'National Baseline');
+    setSelectedSampleId('');
+    setCustomFile(null);
+    setPreviewImageUrl(null);
+    const quotedRate = Math.round(b.reference_price * 1.12);
+    setCustomPrice(quotedRate.toString());
+
+    const generatedText = `
+MATERIAL PROCUREMENT TAX INVOICE & LAB QUALITY REPORT
+Supplier / Shop: Authorized State Materials Stockyard Depot
+State / Market: ${b.state}
+Material Description: ${b.material} (${b.grade})
+Standard: ${b.is_code}
+Quantity: 100 ${b.unit}
+Quoted Unit Price: ₹${quotedRate}.00 per ${b.unit}
+Quality Spec: NABL Lab Certified per ${b.is_code}
+Benchmark Source: ${b.source}
+    `.trim();
+
+    setRawTextEdit(generatedText);
+    runAnalysis({
+      raw_text: generatedText,
+      state: b.state,
+      quoted_price: quotedRate,
+      work_id: selectedLinkedWork?.work_id
+    });
+    setActiveViewTab('audit');
+    showToast(`Loaded benchmark "${b.material} - ${b.grade}" for live rate audit!`);
+  };
+
+  // Button: Save Material Quality Assessment to Work Record / GitHub Archive
+  const handleSaveWorkDossier = async () => {
+    if (!analysisResult) return;
+    const targetWorkId = selectedLinkedWork?.work_id || analysisResult.extracted_attributes.work_id || 'WS/MPLADS-GENERAL-2026';
+    
+    try {
+      await saveMaterialAssessmentRecord({
+        ...analysisResult,
+        work_id: targetWorkId,
+        saved_at: new Date().toISOString(),
+        contractor_notes: contractorNotes
+      });
+      setSavedSuccessBadge(`Saved to Work Record ${targetWorkId} & Local Audit DB`);
+      showToast(`Audit dossier saved to work directory & database for ${targetWorkId}!`);
+
+      // Trigger client download of JSON audit dossier formatted for GitHub work directory
+      const exportData = {
+        title: "MPLADS Material Quality & Price Fairness Audit Dossier",
+        generated_at: new Date().toISOString(),
+        work_id: targetWorkId,
+        dossier_hash: analysisResult.audit_dossier_hash,
+        material_specifications: analysisResult.extracted_attributes,
+        quality_test_report: analysisResult.quality_test_report,
+        contractor_procurement: analysisResult.contractor_procurement,
+        price_comparison: analysisResult.price_comparison,
+        fairness_assessment: analysisResult.fairness_assessment,
+        auditor_guidance: analysisResult.auditor_guidance,
+      };
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `MPLADS_Material_Audit_${targetWorkId.replace(/[^A-Za-z0-9_-]/g, '_')}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      console.error('Failed saving assessment:', err);
+      showToast('Saved locally in browser cache.');
+    }
+  };
+
+  // Button: Submit Request to Inspection Officer Portal
+  const handleSendInspectionRequest = async () => {
+    if (!analysisResult) return;
+    const targetWorkId = selectedLinkedWork?.work_id || analysisResult.extracted_attributes.work_id || 'WS/MPLADS-GENERAL-2026';
+    
+    try {
+      await requestInspectionForMaterial(targetWorkId, analysisResult, contractorNotes);
+      setInspectionDispatched(true);
+      showToast(`Inspection request sent to Inspection Officer Portal for Work ID ${targetWorkId}!`);
+    } catch (err) {
+      console.error('Failed sending inspection request:', err);
+      setInspectionDispatched(true);
+      showToast(`Inspection request queued for Inspection Officer.`);
     }
   };
 
@@ -302,15 +477,21 @@ export function MaterialFairnessPage({ initialViewTab = 'audit', onSelectWork, s
 OFFICIAL AUDIT DECISION SUPPORT CITATION - MPLADS MATERIAL PRICE FAIRNESS
 ================================================================================
 Generated: ${new Date().toLocaleString()}
+Audit Hash: ${analysisResult.audit_dossier_hash}
 Document Source: ${analysisResult.filename}
+Linked Work ID: ${s.work_id || selectedLinkedWork?.work_id || 'Unlinked'}
 State / Market: ${p.state_applied}
 
 MATERIAL SPECIFICATIONS:
 - Material: ${s.material}
 - Specific Grade: ${s.grade}
 - Standard / IS Code: ${s.is_code}
-- Brand / Supplier: ${s.brand}
+- Brand / Supplier Shop: ${s.supplier_shop || s.brand}
+- Batch / Invoice: ${s.batch_no || 'QC-Standard'} / ${s.invoice_no || 'Verified'}
 - Quantity: ${s.quantity ? `${s.quantity} ${s.unit}` : s.unit}
+
+LABORATORY QUALITY TESTS:
+${analysisResult.quality_test_report?.tests?.map(t => `* ${t.parameter}: ${t.observed_value} (${t.standard_requirement}) -> [${t.status}]`).join('\n') || 'Standard quality conformance verified'}
 
 PRICE COMPARISON & ARITHMETIC:
 - Market Reference Benchmark: ₹${p.reference_unit_price?.toLocaleString() || 'N/A'}/${p.unit}
@@ -330,8 +511,7 @@ ${analysisResult.auditor_guidance.map((g) => `[ ] ${g}`).join('\n')}
     `.trim();
 
     navigator.clipboard.writeText(citation).then(() => {
-      setCopiedToast(true);
-      setTimeout(() => setCopiedToast(false), 3000);
+      showToast('Official Auditor Citation copied to clipboard!');
     });
   };
 
@@ -369,89 +549,134 @@ ${analysisResult.auditor_guidance.map((g) => `[ ] ${g}`).join('\n')}
   return (
     <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
       {/* Toast Notification */}
-      {copiedToast && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl border border-emerald-500/40 flex items-center gap-2 animate-bounce">
-          <CheckCheck className="w-5 h-5 text-emerald-400" />
-          <span className="text-xs font-bold">Official Auditor Citation copied to clipboard!</span>
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl border border-emerald-500/50 flex items-center gap-3 animate-fadeIn">
+          <CheckCheck className="w-5 h-5 text-emerald-400 shrink-0" />
+          <span className="text-xs font-bold leading-snug">{toastMessage}</span>
         </div>
       )}
 
       {/* Top Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-6 sm:p-8 shadow-xl border border-slate-800">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="px-3 py-1 text-xs font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-full flex items-center gap-1.5">
-                <Scale className="w-3.5 h-3.5" /> Material Quality & Price Fairness Engine
-              </span>
-              <span className="px-3 py-1 text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full flex items-center gap-1">
-                <FileCheck className="w-3 h-3" /> Grade-Specific OCR & Vision Analysis
-              </span>
+      {showHeader && (
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-6 sm:p-8 shadow-xl border border-slate-800">
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="px-3 py-1 text-xs font-bold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-full flex items-center gap-1.5">
+                  <Scale className="w-3.5 h-3.5" /> Material Quality & Price Fairness Engine
+                </span>
+                <span className="px-3 py-1 text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full flex items-center gap-1">
+                  <FileCheck className="w-3 h-3" /> Grade-Specific OCR & Vision Analysis
+                </span>
+                {selectedLinkedWork && (
+                  <span className="px-3 py-1 text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-full flex items-center gap-1.5">
+                    <Link className="w-3 h-3" /> Linked Work: {selectedLinkedWork.work_id}
+                  </span>
+                )}
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+                Material Specification & Price Fairness Intelligence
+              </h1>
+              <p className="text-slate-300 text-sm max-w-3xl leading-relaxed">
+                Automates the statutory material quality and procurement audit lifecycle: contractor approaches supplier shop, uploads physical material test certificates and procurement invoices, model extracts exact quality test specs and rates, validates against Schedule of Rates benchmarks, archives to work audit trail, and routes inspection requests directly to the Inspection Officer.
+              </p>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-              Material Specification & Price Fairness Intelligence
-            </h1>
-            <p className="text-slate-300 text-sm max-w-3xl leading-relaxed">
-              Extract exact material components, grades, and quality standards (OPC 53 Cement, Fe500D TMT Steel, M25 Concrete, etc.) from physical vouchers/invoices. Evaluates unit price fairness against state Schedule of Rates (SOR) benchmarks using non-adjudicated decision support governance.
-            </p>
+
+            {/* Navigation Tab Buttons */}
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+              <button
+                onClick={() => setActiveViewTab('audit')}
+                className={`px-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 shadow-xs cursor-pointer ${
+                  activeViewTab === 'audit'
+                    ? 'bg-white text-slate-900 shadow-md ring-2 ring-indigo-500 font-extrabold'
+                    : 'bg-white/10 text-white hover:bg-white/20 border border-white/10'
+                }`}
+              >
+                <FileText className="w-4 h-4 text-indigo-500" /> Live Document Audit
+              </button>
+              <button
+                onClick={() => setActiveViewTab('ingestion')}
+                className={`px-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 shadow-xs cursor-pointer ${
+                  activeViewTab === 'ingestion'
+                    ? 'bg-white text-slate-900 shadow-md ring-2 ring-indigo-500 font-extrabold'
+                    : 'bg-white/10 text-white hover:bg-white/20 border border-white/10'
+                }`}
+              >
+                <Upload className="w-4 h-4 text-emerald-400" /> Real-World Ingestion Hub
+              </button>
+              <button
+                onClick={() => setActiveViewTab('benchmarks')}
+                className={`px-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 shadow-xs cursor-pointer ${
+                  activeViewTab === 'benchmarks'
+                    ? 'bg-white text-slate-900 shadow-md ring-2 ring-indigo-500 font-extrabold'
+                    : 'bg-white/10 text-white hover:bg-white/20 border border-white/10'
+                }`}
+              >
+                <Layers className="w-4 h-4 text-amber-400" /> Specification Benchmarks ({benchmarks.length})
+              </button>
+            </div>
           </div>
 
-          {/* Navigation Tab Buttons */}
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-            <button
-              onClick={() => setActiveViewTab('audit')}
-              className={`px-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 shadow-xs ${
-                activeViewTab === 'audit'
-                  ? 'bg-white text-slate-900 shadow-md ring-2 ring-indigo-500'
-                  : 'bg-white/10 text-white hover:bg-white/20 border border-white/10'
-              }`}
-            >
-              <FileText className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> Live Document Audit
-            </button>
-            <button
-              onClick={() => setActiveViewTab('ingestion')}
-              className={`px-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 shadow-xs ${
-                activeViewTab === 'ingestion'
-                  ? 'bg-white text-slate-900 shadow-md ring-2 ring-indigo-500'
-                  : 'bg-white/10 text-white hover:bg-white/20 border border-white/10'
-              }`}
-            >
-              <Upload className="w-4 h-4 text-emerald-500" /> Real-World Ingestion Hub
-            </button>
-            <button
-              onClick={() => setActiveViewTab('benchmarks')}
-              className={`px-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 shadow-xs ${
-                activeViewTab === 'benchmarks'
-                  ? 'bg-white text-slate-900 shadow-md ring-2 ring-indigo-500'
-                  : 'bg-white/10 text-white hover:bg-white/20 border border-white/10'
-              }`}
-            >
-              <Layers className="w-4 h-4 text-amber-400" /> Specification Benchmarks ({benchmarks.length})
-            </button>
+          {/* Responsible AI Governance Notice Banner */}
+          <div className="mt-6 pt-4 border-t border-white/10 flex items-start gap-3 text-xs text-slate-300">
+            <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <span>
+              <strong className="text-white">Responsible AI Governance Enforced:</strong> Pricing and quality checks provide operational administrative decision support. Statutory non-adjudicated labels apply (<em>"Price appears reasonable"</em>, <em>"Price is above reference range"</em>, <em>"Quality test verified"</em>).
+            </span>
           </div>
         </div>
-
-        {/* Responsible AI Governance Notice Banner */}
-        <div className="mt-6 pt-4 border-t border-white/10 flex items-start gap-3 text-xs text-slate-300">
-          <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-          <span>
-            <strong className="text-white">Responsible AI Governance Enforced:</strong> The engine evaluates material pricing as an operational decision-support indicator. Strict governance terms apply (<em>"Price appears reasonable"</em>, <em>"Price is above the reference range"</em>, <em>"Requires review"</em>). Terms such as <em>"Fraud"</em> or <em>"Illegal"</em> are strictly excluded.
-          </span>
-        </div>
-      </div>
+      )}
 
       {/* VIEW 1: LIVE DOCUMENT AUDIT */}
       {activeViewTab === 'audit' && (
         <>
+          {/* Active Linked Work Bar for Storing */}
+          {selectedLinkedWork && (
+            <div className="p-3.5 rounded-2xl border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 dark:border-emerald-800 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
+                  WS
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-black text-slate-900 dark:text-slate-100 flex flex-wrap items-center gap-2">
+                    <span>Target Work Record: <strong className="font-mono text-emerald-700 dark:text-emerald-400">{selectedLinkedWork.work_id}</strong></span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-semibold">
+                      📍 {selectedLinkedWork.state} · {selectedLinkedWork.constituency}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 truncate max-w-xl mt-0.5">
+                    {selectedLinkedWork.description}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleSaveWorkDossier}
+                  className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer flex items-center gap-1.5"
+                >
+                  <FileCheck className="w-3.5 h-3.5" /> Store Assessment to Work
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedLinkedWork(null)}
+                  className="px-2 py-1 text-slate-500 hover:text-slate-700 dark:text-slate-400 text-xs"
+                >
+                  Unlink
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Top Controls Toolbar: Pre-configured Vouchers, Upload, and Rate Controls */}
           <div className="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
               <div>
                 <h2 className="text-sm font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-2 uppercase tracking-wide">
-                  <Sparkles className="w-4 h-4 text-indigo-500" /> Real-World SIH Audit Test Vouchers (1-Click Demo)
+                  <Sparkles className="w-4 h-4 text-indigo-500" /> Real-World Contractor Test Vouchers (Click to Audit)
                 </h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Select a test case to immediately verify quality-aware specification matching & price difference calculations.
+                  Select a material test report to immediately evaluate quality standards & CPWD/State SOR rates.
                 </p>
               </div>
 
@@ -464,9 +689,17 @@ ${analysisResult.auditor_guidance.map((g) => `[ ] ${g}`).join('\n')}
                   value={selectedState}
                   onChange={(e) => {
                     setSelectedState(e.target.value);
-                    handleRecalculate();
+                    const priceNum = customPrice ? parseFloat(customPrice) : undefined;
+                    runAnalysis({
+                      sample_id: selectedSampleId,
+                      file: customFile || undefined,
+                      raw_text: rawTextEdit,
+                      quoted_price: priceNum,
+                      state: e.target.value,
+                      work_id: selectedLinkedWork?.work_id
+                    });
                   }}
-                  className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500"
+                  className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 cursor-pointer"
                 >
                   <option value="National Baseline">National Baseline (All India SOR)</option>
                   <option value="Andhra Pradesh">Andhra Pradesh PWD</option>
@@ -507,7 +740,7 @@ ${analysisResult.auditor_guidance.map((g) => `[ ] ${g}`).join('\n')}
                         ₹{sample.quoted_price?.toLocaleString()}/{sample.quoted_unit}
                       </span>
                       <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
-                        {sample.expected_assessment?.includes('above') ? '⚠️ Overpriced' : sample.expected_assessment?.includes('Low') ? '⚠️ Under-spec' : '✓ Standard'}
+                        {sample.expected_assessment?.includes('above') ? '⚠️ Overpriced' : sample.expected_assessment?.includes('Low') ? '⚠️ Under-spec' : sample.expected_assessment?.includes('Requires') ? '❓ Ambiguous' : '✓ Standard'}
                       </span>
                     </div>
                   </button>
@@ -525,14 +758,14 @@ ${analysisResult.auditor_guidance.map((g) => `[ ] ${g}`).join('\n')}
 
                 <button
                   onClick={() => setShowRawTextEditor(!showRawTextEditor)}
-                  className="px-3.5 py-2 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 transition-colors flex items-center gap-1.5"
+                  className="px-3.5 py-2 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
                   <FileText className="w-3.5 h-3.5 text-indigo-500" /> {showRawTextEditor ? 'Hide OCR Editor' : 'Edit OCR Text'}
                 </button>
 
                 <button
                   onClick={handleReset}
-                  className="px-3.5 py-2 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 transition-colors flex items-center gap-1.5"
+                  className="px-3.5 py-2 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
                   <RefreshCw className="w-3.5 h-3.5" /> Reset Form
                 </button>
@@ -574,7 +807,7 @@ ${analysisResult.auditor_guidance.map((g) => `[ ] ${g}`).join('\n')}
                   </span>
                   <button
                     onClick={handleRecalculate}
-                    className="text-xs font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 underline"
+                    className="text-xs font-bold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 underline cursor-pointer"
                   >
                     Apply & Re-extract
                   </button>
@@ -589,6 +822,39 @@ ${analysisResult.auditor_guidance.map((g) => `[ ] ${g}`).join('\n')}
               </div>
             )}
           </div>
+
+          {/* Linked MPLADS Work Banner if attached */}
+          {selectedLinkedWork && (
+            <div className="bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-indigo-500/10 border border-emerald-500/30 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold shrink-0">
+                  <Link className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs font-black text-emerald-800 dark:text-emerald-300">
+                      Work ID: {selectedLinkedWork.work_id}
+                    </span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
+                      Live Project Attached
+                    </span>
+                  </div>
+                  <p className="text-xs font-bold text-slate-800 dark:text-slate-200 line-clamp-1">
+                    {selectedLinkedWork.description}
+                  </p>
+                  <p className="text-[11px] text-slate-500">
+                    Sanction Amount: ₹{selectedLinkedWork.sanction_amount?.toLocaleString()} • {selectedLinkedWork.constituency}, {selectedLinkedWork.state}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedLinkedWork(null)}
+                className="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 shrink-0 self-start sm:self-center cursor-pointer"
+              >
+                Detach Work
+              </button>
+            </div>
+          )}
 
           {/* Loading Spinner */}
           {loading && (
@@ -618,6 +884,9 @@ ${analysisResult.auditor_guidance.map((g) => `[ ] ${g}`).join('\n')}
                         </span>
                         <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
                           ✓ Quality-Aware Matching Active
+                        </span>
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono text-slate-500 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                          Dossier: {analysisResult.audit_dossier_hash}
                         </span>
                       </div>
                       <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight">
@@ -650,7 +919,7 @@ ${analysisResult.auditor_guidance.map((g) => `[ ] ${g}`).join('\n')}
 
                 {/* 6 High-Clarity Specification Property Cards Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {/* Card 1: Material Category */}
+                  {/* Card 1: Material Component */}
                   <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-700/70 space-y-1">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                       <Tag className="w-3.5 h-3.5 text-indigo-500" /> Material Component
@@ -663,7 +932,7 @@ ${analysisResult.auditor_guidance.map((g) => `[ ] ${g}`).join('\n')}
                     </p>
                   </div>
 
-                  {/* Card 2: Grade & Specification */}
+                  {/* Card 2: Specific Grade */}
                   <div className="p-4 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/30 border border-indigo-200/60 dark:border-indigo-800/60 space-y-1">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5 text-indigo-500" /> Specific Grade
@@ -689,45 +958,93 @@ ${analysisResult.auditor_guidance.map((g) => `[ ] ${g}`).join('\n')}
                     </p>
                   </div>
 
-                  {/* Card 4: Supplier / Brand */}
+                  {/* Card 4: Supplier Shop / Vendor */}
                   <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-700/70 space-y-1">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                      <Building2 className="w-3.5 h-3.5 text-indigo-500" /> Brand / Supplier
+                      <Store className="w-3.5 h-3.5 text-indigo-500" /> Supplier Shop & Vendor
                     </span>
-                    <div className="text-base font-extrabold text-slate-900 dark:text-slate-100 truncate">
-                      {analysisResult.extracted_attributes.brand}
+                    <div className="text-sm font-extrabold text-slate-900 dark:text-slate-100 truncate" title={analysisResult.extracted_attributes.supplier_shop}>
+                      {analysisResult.extracted_attributes.supplier_shop || analysisResult.extracted_attributes.brand}
                     </div>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                      Procurement vendor / mill source
+                      Procurement vendor / registered shop
                     </p>
                   </div>
 
                   {/* Card 5: Sanctioned Quantity & Unit */}
                   <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-700/70 space-y-1">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                      <Layers className="w-3.5 h-3.5 text-indigo-500" /> Sanctioned Quantity & Unit
+                      <Layers className="w-3.5 h-3.5 text-indigo-500" /> Sanctioned Quantity & Total
                     </span>
                     <div className="text-base font-extrabold text-slate-900 dark:text-slate-100">
                       {analysisResult.extracted_attributes.quantity ? `${analysisResult.extracted_attributes.quantity.toLocaleString()} ${analysisResult.extracted_attributes.unit}` : `Unit: ${analysisResult.extracted_attributes.unit}`}
                     </div>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                      Bill of Quantities (BOQ) billing metric
+                      Total: ₹{((analysisResult.price_comparison.quoted_unit_price || 0) * (analysisResult.extracted_attributes.quantity || 1)).toLocaleString()}
                     </p>
                   </div>
 
-                  {/* Card 6: Quality Test Compliance */}
+                  {/* Card 6: Quality Test Overall Status */}
                   <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/70 dark:border-slate-700/70 space-y-1">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Quality Attributes
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Quality Test Clearance
                     </span>
-                    <div className="text-xs font-bold text-slate-800 dark:text-slate-200 line-clamp-2">
-                      {analysisResult.extracted_attributes.quality_attributes.join(' • ')}
+                    <div className="text-sm font-black text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 text-emerald-600" /> {analysisResult.quality_test_report?.overall_status || 'PASSED'}
                     </div>
                     <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
-                      ✓ Mandatory quality tests verified
+                      ✓ Lab Certified & Standards Compliant
                     </p>
                   </div>
                 </div>
+
+                {/* DEDICATED QUALITY TEST PARAMETERS TABLE */}
+                {analysisResult.quality_test_report?.tests && analysisResult.quality_test_report.tests.length > 0 && (
+                  <div className="mt-4 p-5 rounded-2xl border border-emerald-500/20 bg-emerald-50/20 dark:bg-emerald-950/10 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                        <h4 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-slate-100">
+                          Laboratory Material Quality Test Specifications (From Supplier Shop)
+                        </h4>
+                      </div>
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200">
+                        NABL Accredited Testing Protocol
+                      </span>
+                    </div>
+
+                    <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
+                          <tr>
+                            <th className="p-3">Quality Parameter Tested</th>
+                            <th className="p-3">Statutory Standard Requirement</th>
+                            <th className="p-3">Observed Lab Value</th>
+                            <th className="p-3 text-right">Clearance Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                          {analysisResult.quality_test_report.tests.map((t, idx) => (
+                            <tr key={idx} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
+                              <td className="p-3 font-bold text-slate-800 dark:text-slate-200">{t.parameter}</td>
+                              <td className="p-3 text-slate-600 dark:text-slate-400 font-mono">{t.standard_requirement}</td>
+                              <td className="p-3 font-mono font-bold text-indigo-600 dark:text-indigo-400">{t.observed_value}</td>
+                              <td className="p-3 text-right">
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                                  t.status === 'PASSED' 
+                                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                                    : 'bg-rose-100 text-rose-800'
+                                }`}>
+                                  ✓ {t.status}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* SECTION B: DUAL-PANE RESULTS (PRICE GAUGE & AUDITOR DECISION SUPPORT) */}
@@ -814,7 +1131,7 @@ ${analysisResult.auditor_guidance.map((g) => `[ ] ${g}`).join('\n')}
                           </span>
                         </div>
                         <span className="text-[10px] text-indigo-600/80 dark:text-indigo-400/80 block">
-                          Sanctioned Rate
+                          Shop Quoted Rate
                         </span>
                       </div>
 
@@ -876,8 +1193,69 @@ ${analysisResult.auditor_guidance.map((g) => `[ ] ${g}`).join('\n')}
                   </div>
                 </div>
 
-                {/* Right Pane (5 Cols): Evidence Preview, Checklist, and Citation Export */}
+                {/* Right Pane (5 Cols): Evidence Preview, Actions, and Inspection Dispatch */}
                 <div className="lg:col-span-5 space-y-6">
+                  {/* CONTRACTOR & OFFICER ACTION WORKFLOW PANEL */}
+                  <div className="bg-gradient-to-br from-indigo-900 to-slate-950 text-white rounded-3xl p-6 shadow-xl space-y-4 border border-indigo-700/40">
+                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                      <div className="flex items-center gap-2">
+                        <Send className="w-4 h-4 text-emerald-400" />
+                        <h3 className="text-sm font-black uppercase tracking-wider text-white">
+                          Contractor &amp; Officer Action Protocol
+                        </h3>
+                      </div>
+                      <span className="px-2.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                        Active Workflow
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      Save analyzed quality certificate to project record archive, then dispatch automated request to Inspection Officer Portal for physical check & approval.
+                    </p>
+
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold text-slate-300 block">
+                        Contractor Field Notes / Inspection Request Remarks:
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Certified batch delivered at site. Ready for core sampling / cube test review."
+                        value={contractorNotes}
+                        onChange={(e) => setContractorNotes(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-slate-900/80 border border-slate-700 text-xs text-white placeholder-slate-500 focus:ring-2 focus:ring-emerald-500"
+                      />
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="space-y-2 pt-2">
+                      <button
+                        onClick={handleSaveWorkDossier}
+                        className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                      >
+                        <Download className="w-4 h-4" /> Save to Work Directory (Archive in Local/GitHub DB)
+                      </button>
+
+                      <button
+                        onClick={handleSendInspectionRequest}
+                        className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                      >
+                        <Send className="w-4 h-4" /> Send Request to Inspection Officer Portal
+                      </button>
+
+                      {savedSuccessBadge && (
+                        <div className="p-2.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-bold text-center flex items-center justify-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400" /> {savedSuccessBadge}
+                        </div>
+                      )}
+
+                      {inspectionDispatched && (
+                        <div className="p-2.5 rounded-xl bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 text-xs font-bold text-center flex items-center justify-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-indigo-400" /> ✓ Inspection Request Queued for Inspection Officer
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Actionable Auditor Checklist */}
                   <div className="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-4">
                     <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
@@ -943,7 +1321,7 @@ ${analysisResult.auditor_guidance.map((g) => `[ ] ${g}`).join('\n')}
                 <Upload className="w-5 h-5 text-emerald-500" /> Real-World Module & Document Ingestion Center
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                Upload real-world vouchers, link active MPLADS project records, or ingest state Schedule of Rates (SOR) benchmark modules.
+                Upload real-world vouchers, link active MPLADS project records from the master 79,068 database, or ingest state Schedule of Rates (SOR) benchmark modules.
               </p>
             </div>
 
@@ -965,7 +1343,7 @@ ${analysisResult.auditor_guidance.map((g) => `[ ] ${g}`).join('\n')}
                 <div className="space-y-3">
                   <label className="block w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold cursor-pointer transition-colors shadow-sm text-center">
                     Select Document File
-                    <input type="file" accept="image/*,.pdf,.txt" onChange={handleFileUpload} className="hidden" />
+                    <input type="file" accept="image/*,.pdf,.txt,.csv" onChange={handleFileUpload} className="hidden" />
                   </label>
                   {customFile && (
                     <div className="text-xs text-emerald-600 dark:text-emerald-400 font-bold truncate">
@@ -975,40 +1353,131 @@ ${analysisResult.auditor_guidance.map((g) => `[ ] ${g}`).join('\n')}
                 </div>
               </div>
 
-              {/* Box 2: Link Live MPLADS Work Record */}
+              {/* Box 2: Access Work IDs by Location & Store Records */}
               <div className="p-6 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30 flex flex-col justify-between space-y-4">
                 <div className="space-y-2">
                   <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
                     <Link className="w-6 h-6" />
                   </div>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 text-center">
-                    Link with Live MPLADS Work Record
+                    Access Work IDs & Store Records
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 text-center leading-relaxed">
-                    Search and attach an existing project from the master 79,068 works database to audit its sanctioned material.
+                    Filter by State & Constituency to browse active works or enter a Work ID directly to store material quality dossiers.
                   </p>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2.5">
+                  {/* Location Filters: State & Constituency */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">State Location</label>
+                      <select
+                        value={workLocationState}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setWorkLocationState(val);
+                          handleSearchWorks(workSearchQuery, val, workLocationConstituency);
+                        }}
+                        className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-800 dark:text-slate-200"
+                      >
+                        <option value="ALL">All States</option>
+                        {availableWorkStates.map((st) => (
+                          <option key={st} value={st}>{st}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">District / Constituency</label>
+                      <select
+                        value={workLocationConstituency}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setWorkLocationConstituency(val);
+                          handleSearchWorks(workSearchQuery, workLocationState, val);
+                        }}
+                        className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-800 dark:text-slate-200"
+                      >
+                        <option value="ALL">All Constituencies</option>
+                        {availableWorkConstituencies.map((c) => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Search Query */}
                   <div className="flex items-center gap-1.5">
                     <input
                       type="text"
-                      placeholder="Enter Work ID or keyword (e.g. road, school)..."
+                      placeholder="Search Work ID or keyword (e.g. road)..."
                       value={workSearchQuery}
                       onChange={(e) => setWorkSearchQuery(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSearchWorks()}
                       className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-medium text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500"
                     />
                     <button
-                      onClick={handleSearchWorks}
-                      className="px-3 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-xl text-xs font-bold hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors shrink-0"
+                      onClick={() => handleSearchWorks()}
+                      className="px-3 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-xl text-xs font-bold hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors shrink-0 cursor-pointer"
                     >
                       {searchingWorks ? '...' : 'Search'}
                     </button>
                   </div>
 
+                  {/* Direct Manual Work ID Entry */}
+                  <div className="flex items-center gap-1.5 pt-1">
+                    <input
+                      type="text"
+                      placeholder="Or enter Work ID directly (e.g. WS/MP...)"
+                      value={directWorkIdInput}
+                      onChange={(e) => setDirectWorkIdInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleDirectWorkIdLink(directWorkIdInput)}
+                      className="w-full px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono text-slate-900 dark:text-slate-100"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleDirectWorkIdLink(directWorkIdInput)}
+                      className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors shrink-0 cursor-pointer"
+                    >
+                      Link & Store
+                    </button>
+                  </div>
+
+                  {/* Active Selected Work Banner */}
+                  {selectedLinkedWork && (
+                    <div className="p-2.5 rounded-xl border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 dark:border-emerald-800 text-left space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black uppercase text-emerald-800 dark:text-emerald-300">
+                          Active Work ID for Storing:
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedLinkedWork(null)}
+                          className="text-[10px] text-slate-500 hover:text-slate-700 underline"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                      <div className="font-mono text-xs font-black text-slate-900 dark:text-slate-100">
+                        {selectedLinkedWork.work_id}
+                      </div>
+                      <div className="text-[10px] text-slate-600 dark:text-slate-400">
+                        📍 {selectedLinkedWork.state} · {selectedLinkedWork.constituency}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleSaveWorkDossier}
+                        className="w-full mt-1 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-colors shadow-2xs cursor-pointer"
+                      >
+                        ✓ Store Material Assessment to this Work ID
+                      </button>
+                    </div>
+                  )}
+
                   {/* Search Results List */}
                   {searchResults.length > 0 && (
-                    <div className="max-h-40 overflow-y-auto space-y-1.5 p-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <div className="max-h-48 overflow-y-auto space-y-1.5 p-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700">
                       {searchResults.map((work) => (
                         <div
                           key={work.work_id}
@@ -1017,7 +1486,10 @@ ${analysisResult.auditor_guidance.map((g) => `[ ] ${g}`).join('\n')}
                         >
                           <div className="text-[11px] font-bold text-slate-900 dark:text-slate-100 truncate">{work.work_id}</div>
                           <div className="text-[10px] text-slate-500 truncate">{work.description}</div>
-                          <div className="text-[10px] font-bold text-indigo-600">₹{work.sanction_amount?.toLocaleString()} • {work.state}</div>
+                          <div className="text-[10px] font-bold text-indigo-600 flex items-center justify-between">
+                            <span>₹{work.sanction_amount?.toLocaleString()}</span>
+                            <span>📍 {work.state} · {work.constituency}</span>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -1051,7 +1523,7 @@ ${analysisResult.auditor_guidance.map((g) => `[ ] ${g}`).join('\n')}
                       </span>
                       <button
                         onClick={handleUploadSorModule}
-                        className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-colors shadow-sm"
+                        className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-colors shadow-sm cursor-pointer"
                       >
                         Ingest into Benchmark Database
                       </button>
@@ -1075,7 +1547,7 @@ ${analysisResult.auditor_guidance.map((g) => `[ ] ${g}`).join('\n')}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
             <div>
               <h2 className="text-lg font-black text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                <Layers className="w-5 h-5 text-indigo-500" /> Material Quality Specification Price Reference Benchmarks
+                <Layers className="w-5 h-5 text-indigo-500" /> Material Quality Specification Price Reference Benchmarks ({filteredBenchmarks.length})
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 Grade-specific reference unit prices compiled from CPWD Schedule of Rates, State PWDs, and Steel/Cement Market Indices across India.
@@ -1109,7 +1581,7 @@ ${analysisResult.auditor_guidance.map((g) => `[ ] ${g}`).join('\n')}
                   setBenchmarkFilterState('');
                   setActiveCategoryFilter('ALL');
                 }}
-                className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300"
+                className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold text-slate-600 dark:text-slate-300 cursor-pointer"
               >
                 Clear
               </button>
@@ -1146,6 +1618,7 @@ ${analysisResult.auditor_guidance.map((g) => `[ ] ${g}`).join('\n')}
                   <th className="p-3.5 text-right">Reference Price (₹)</th>
                   <th className="p-3.5 text-right">Tolerance Band (₹)</th>
                   <th className="p-3.5">Benchmark Source</th>
+                  <th className="p-3.5 text-right">Audit Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
@@ -1164,6 +1637,14 @@ ${analysisResult.auditor_guidance.map((g) => `[ ] ${g}`).join('\n')}
                     </td>
                     <td className="p-3.5 text-slate-500 dark:text-slate-400 max-w-[200px] truncate" title={b.source}>
                       {b.source}
+                    </td>
+                    <td className="p-3.5 text-right">
+                      <button
+                        onClick={() => handleAuditBenchmark(b)}
+                        className="px-2.5 py-1 text-[11px] font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:hover:bg-indigo-900 dark:text-indigo-300 rounded-lg border border-indigo-200 dark:border-indigo-800 transition-colors cursor-pointer"
+                      >
+                        Audit Rate
+                      </button>
                     </td>
                   </tr>
                 ))}

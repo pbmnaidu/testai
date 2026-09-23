@@ -162,7 +162,7 @@ class MPLADSDeltaEngine:
     def _load(self, path: str) -> pd.DataFrame:
         return pd.read_parquet(path) if os.path.exists(path) else pd.DataFrame()
 
-    def compare_frames(self, current: pd.DataFrame, incoming: pd.DataFrame, table: str, include_records: bool = True) -> dict:
+    def compare_frames(self, current: pd.DataFrame, incoming: pd.DataFrame, table: str, include_records: bool = True, sample_limit: int = 50) -> dict:
         old = _indexed(current, table, include_data=include_records)
         new = _indexed(incoming, table, include_data=include_records)
         new_keys_only = new.index.difference(old.index).sort_values()
@@ -174,43 +174,71 @@ class MPLADSDeltaEngine:
         modified_count = int(modified_mask.sum())
         modified_keys = common[modified_mask].tolist() if include_records else []
 
-        def records(keys, left, right):
-            if not include_records:
+        def sample_records(keys, left, right):
+            if not include_records or len(keys) == 0:
                 return []
+            sample_keys = list(keys[:sample_limit])
+            left_sample = {}
+            if left is not None and not left.empty:
+                left_avail = [k for k in sample_keys if k in left.index]
+                if left_avail:
+                    left_sample = (
+                        left.loc[left_avail]
+                        .drop(columns=["_row_hash"], errors="ignore")
+                        .to_dict(orient="index")
+                    )
+            right_sample = {}
+            if right is not None and not right.empty:
+                right_avail = [k for k in sample_keys if k in right.index]
+                if right_avail:
+                    right_sample = (
+                        right.loc[right_avail]
+                        .drop(columns=["_row_hash"], errors="ignore")
+                        .to_dict(orient="index")
+                    )
             output = []
-            for key in keys:
-                old_row = left.loc[key].drop(labels=["_row_hash"], errors="ignore").to_dict() if key in left.index else None
-                new_row = right.loc[key].drop(labels=["_row_hash"], errors="ignore").to_dict() if key in right.index else None
-                output.append({"table": table, "composite_key": key, "old": old_row, "new": new_row})
+            for key in sample_keys:
+                output.append({
+                    "table": table,
+                    "composite_key": key,
+                    "old": left_sample.get(key),
+                    "new": right_sample.get(key)
+                })
             return output
 
         return {
             "table": table,
-            "new": records(new_keys_only, old, new),
-            "modified": records(modified_keys, old, new),
-            "removed": records(removed_keys, old, new),
+            "new": sample_records(new_keys_only, old, new),
+            "modified": sample_records(modified_keys, old, new),
+            "removed": sample_records(removed_keys, old, new),
             "new_count": len(new_keys_only),
-            "modified_count": len(modified_keys),
+            "modified_count": modified_count,
             "removed_count": len(removed_keys),
             "unchanged_count": len(common) - modified_count,
         }
 
-    def compare_staging(self, staging_dir: str) -> dict:
+    def compare_staging(self, staging_dir: str, progress_callback=None) -> dict:
         result = {"generated_at": datetime.now(timezone.utc).isoformat(), "tables": {},
                   "new_count": 0, "updated_count": 0, "removed_count": 0, "unchanged_count": 0}
         for table, filename in MONITORED_FILES.items():
             incoming_path = os.path.join(staging_dir, filename)
             if not os.path.exists(incoming_path):
                 continue
+            if progress_callback:
+                progress_callback({
+                    "event": "comparing_delta",
+                    "table": table,
+                    "message": f"Comparing dataset {table.upper()} against current snapshot..."
+                })
             diff = self.compare_frames(
                 self._load(os.path.join(self.processed_dir, filename)),
                 self._load(incoming_path), table,
             )
             result["tables"][table] = diff
-            result["new_count"] += len(diff["new"])
-            result["updated_count"] += len(diff["modified"])
-            result["removed_count"] += len(diff["removed"])
-            result["unchanged_count"] += diff["unchanged_count"]
+            result["new_count"] += diff.get("new_count", 0)
+            result["updated_count"] += diff.get("modified_count", 0)
+            result["removed_count"] += diff.get("removed_count", 0)
+            result["unchanged_count"] += diff.get("unchanged_count", 0)
         result["total_changes"] = result["new_count"] + result["updated_count"]
         return result
 

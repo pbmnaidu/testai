@@ -1,0 +1,56 @@
+{
+  "total_snapshots_generated": 7,
+  "active_snapshot_version": "v_20260922_233153",
+  "last_updated_at": "2026-09-22T23:31:53.915302+05:30",
+  "history": [
+    {
+      "snapshot_id": "v_20260915_194248",
+      "generated_at": "2026-09-15T19:42:48+05:30",
+      "total_works": 79827,
+      "status": "ARCHIVED (DATA PRUNED)",
+      "retained_on_disk": false
+    },
+    {
+      "snapshot_id": "v_20260915_225902",
+      "generated_at": "2026-09-15T22:59:02+05:30",
+      "total_works": 79827,
+      "status": "ARCHIVED (DATA PRUNED)",
+      "retained_on_disk": false
+    },
+    {
+      "snapshot_id": "v_20260916_085353",
+      "generated_at": "2026-09-16T08:53:53+05:30",
+      "total_works": 79827,
+      "status": "ARCHIVED (DATA PRUNED)",
+      "retained_on_disk": false
+    },
+    {
+      "snapshot_id": "v_20260920_074437",
+      "generated_at": "2026-09-20T07:44:37+05:30",
+      "total_works": 79827,
+      "status": "ARCHIVED (DATA PRUNED)",
+      "retained_on_disk": false
+    },
+    {
+      "snapshot_id": "v_20260921_151134",
+      "generated_at": "2026-09-21T15:11:34+05:30",
+      "total_works": 79827,
+      "status": "ARCHIVED (DATA PRUNED)",
+      "retained_on_disk": false
+    },
+    {
+      "snapshot_id": "v_20260921_195519",
+      "generated_at": "2026-09-21T19:55:19.700499+05:30",
+      "total_works": 79827,
+      "status": "ARCHIVED (DATA PRUNED)",
+      "retained_on_disk": false
+    },
+    {
+      "snapshot_id": "v_20260922_233153",
+      "generated_at": "2026-09-22T23:31:53.915302+05:30",
+      "total_works": 81910,
+      "status": "VERIFIED_ACTIVE",
+      "retained_on_disk": true
+    }
+  ]
+}
